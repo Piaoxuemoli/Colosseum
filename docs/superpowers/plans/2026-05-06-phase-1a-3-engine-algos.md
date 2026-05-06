@@ -397,7 +397,7 @@ git commit -m "feat(p1a): port pot-manager with side-pot textbook tests"
 
 **Source:** `old/src/games/poker/engine/equity.ts`
 
-- [ ] **Step 1: 复制并适配 import**
+- [x] **Step 1: 复制并适配 import**
 
 ```bash
 cp old/src/games/poker/engine/equity.ts games/poker/engine/equity.ts
@@ -405,7 +405,7 @@ cp old/src/games/poker/engine/equity.ts games/poker/engine/equity.ts
 
 编辑 `games/poker/engine/equity.ts` 把 import 路径改成 `./card` 和 `./evaluator`。
 
-- [ ] **Step 2: 写收敛性测试**
+- [x] **Step 2: 写收敛性测试**
 
 Create `games/poker/engine/__tests__/equity.test.ts`:
 
@@ -447,12 +447,12 @@ describe('computeEquity', () => {
 
 **签名按 `grep -n "^export" games/poker/engine/equity.ts` 实际调整。**
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/equity.test.ts`
 Expected: 2 passed（蒙特卡洛有随机性，偶尔失败可提高 iterations 到 2000）。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/equity.ts games/poker/engine/__tests__/equity.test.ts
