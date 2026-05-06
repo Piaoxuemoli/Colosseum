@@ -170,12 +170,30 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
         return this.rejectAction(next, agentId, action, 'blind actions are engine-controlled')
     }
 
-    next.currentActor = this.findNextActor(next)
+    const notFolded = next.players.filter(
+      (candidate) =>
+        candidate.status !== 'folded' && candidate.status !== 'eliminated' && candidate.status !== 'sittingOut',
+    )
+    if (notFolded.length <= 1) {
+      next.currentActor = null
+      next.handComplete = true
+      events.push(...this.settleHand(next))
+      return { nextState: next, events }
+    }
+
+    if (this.isStreetComplete(next)) {
+      events.push(...this.advanceStreet(next))
+    } else {
+      next.currentActor = this.findNextActor(next)
+    }
+
     return { nextState: next, events }
   }
 
-  boundary(_prevState: PokerState, _nextState: PokerState): BoundaryKind | null {
-    throw new Error('not implemented yet (Task 16)')
+  boundary(prevState: PokerState, nextState: PokerState): BoundaryKind | null {
+    if (!prevState.handComplete && nextState.handComplete) return 'hand-end'
+    if (!prevState.matchComplete && nextState.matchComplete) return 'match-end'
+    return null
   }
 
   finalize(_state: PokerState): MatchResult {
@@ -254,10 +272,73 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     return null
   }
 
+  private isStreetComplete(state: PokerState): boolean {
+    const active = state.players.filter((player) => player.status === 'active')
+    if (active.length === 0) return true
+
+    const activeOrAllIn = state.players.filter((player) => player.status === 'active' || player.status === 'allIn')
+    const maxBet = Math.max(...activeOrAllIn.map((player) => player.currentBet))
+
+    return active.every((player) => player.currentBet === maxBet && player.hasActedThisStreet)
+  }
+
+  private advanceStreet(state: PokerState): GameEvent[] {
+    const events: GameEvent[] = []
+
+    for (const player of state.players) {
+      player.currentBet = 0
+      player.hasActedThisStreet = false
+    }
+    state.betsThisStreet = 0
+
+    if (state.phase === 'preflop') {
+      const result = dealCards(state.deck, 3)
+      state.communityCards.push(...result.dealt)
+      state.deck = result.remaining
+      state.phase = 'flop'
+      events.push(this.makeEvent({ kind: 'poker/deal-flop', actorAgentId: null, payload: { cards: result.dealt } }))
+    } else if (state.phase === 'flop') {
+      const result = dealCards(state.deck, 1)
+      state.communityCards.push(...result.dealt)
+      state.deck = result.remaining
+      state.phase = 'turn'
+      events.push(this.makeEvent({ kind: 'poker/deal-turn', actorAgentId: null, payload: { cards: result.dealt } }))
+    } else if (state.phase === 'turn') {
+      const result = dealCards(state.deck, 1)
+      state.communityCards.push(...result.dealt)
+      state.deck = result.remaining
+      state.phase = 'river'
+      events.push(this.makeEvent({ kind: 'poker/deal-river', actorAgentId: null, payload: { cards: result.dealt } }))
+    } else if (state.phase === 'river') {
+      state.phase = 'showdown'
+      state.currentActor = null
+      state.handComplete = true
+      events.push(this.makeEvent({ kind: 'poker/showdown', actorAgentId: null, payload: {} }))
+      events.push(...this.settleHand(state))
+      return events
+    }
+
+    state.currentActor = this.firstPostflopActor(state)
+    return events
+  }
+
+  private firstPostflopActor(state: PokerState): string | null {
+    const firstIndex = (state.dealerIndex + 1) % state.players.length
+    for (let offset = 0; offset < state.players.length; offset++) {
+      const player = state.players[(firstIndex + offset) % state.players.length]
+      if (player.status === 'active') return player.id
+    }
+    return null
+  }
+
   private resetOtherActivePlayers(state: PokerState, actorId: string): void {
     for (const player of state.players) {
       if (player.id !== actorId && player.status === 'active') player.hasActedThisStreet = false
     }
+  }
+
+  private settleHand(_state: PokerState): GameEvent[] {
+    return []
   }
 
   protected makeEvent(input: {

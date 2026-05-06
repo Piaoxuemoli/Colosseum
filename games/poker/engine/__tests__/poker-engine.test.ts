@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PokerEngine } from '../poker-engine'
-import type { PokerConfig } from '../poker-types'
+import type { PokerAction, PokerConfig } from '../poker-types'
 
 const defaultConfig: PokerConfig = {
   smallBlind: 2,
@@ -109,5 +109,44 @@ describe('PokerEngine.applyAction', () => {
     expect(actor).not.toBeNull()
 
     expect(engine.availableActions(state, actor!).map((action) => action.type)).not.toContain('raise')
+  })
+})
+
+describe('PokerEngine street transitions', () => {
+  it('flop is dealt after preflop completes', () => {
+    const engine = new PokerEngine()
+    let state = engine.createInitialState(defaultConfig, ['a', 'b', 'c', 'd', 'e', 'f'])
+    let guard = 30
+
+    while (state.phase === 'preflop' && guard-- > 0) {
+      const actor = engine.currentActor(state)
+      if (!actor) break
+      const player = state.players.find((candidate) => candidate.id === actor)
+      expect(player).toBeDefined()
+      const maxBet = Math.max(...state.players.map((candidate) => candidate.currentBet))
+      const toCall = maxBet - player!.currentBet
+      const action: PokerAction = toCall > 0 ? { type: 'call', amount: toCall } : { type: 'check' }
+      state = engine.applyAction(state, actor, action).nextState
+    }
+
+    expect(state.phase).toBe('flop')
+    expect(state.communityCards.length).toBe(3)
+    expect(state.betsThisStreet).toBe(0)
+  })
+
+  it('hand-end boundary when only 1 non-folded remains', () => {
+    const engine = new PokerEngine()
+    let state = engine.createInitialState(defaultConfig, ['a', 'b', 'c', 'd', 'e', 'f'])
+
+    for (let i = 0; i < 5; i++) {
+      const actor = engine.currentActor(state)
+      if (!actor) break
+      const previous = state
+      state = engine.applyAction(state, actor, { type: 'fold' }).nextState
+
+      if (i === 4) {
+        expect(engine.boundary(previous, state)).toBe('hand-end')
+      }
+    }
   })
 })
