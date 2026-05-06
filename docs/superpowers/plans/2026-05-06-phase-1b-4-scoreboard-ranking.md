@@ -614,7 +614,7 @@ git commit -m "feat(p1b-4): ActionLog + ThinkingLog"
 
 **Context:** 右侧 `w-80` 容器，从上到下：ErrorBadge 行 → LiveScoreboard → Tabs(Actions / Thinking) → ChipChart。
 
-- [ ] **Step 1: RightPanel**
+- [x] **Step 1: RightPanel**
 
 ```tsx
 'use client'
@@ -651,7 +651,7 @@ export function RightPanel({ matchId }: { matchId: string }) {
 }
 ```
 
-- [ ] **Step 2: 接入 SpectatorView**
+- [x] **Step 2: 接入 SpectatorView**
 
 在 `app/matches/[matchId]/SpectatorView.tsx` 的根容器修改为左右布局：
 
@@ -670,7 +670,7 @@ return (
 )
 ```
 
-- [ ] **Step 3: 确认 shadcn/ui 有 tabs**
+- [x] **Step 3: 确认 shadcn/ui 有 tabs**
 
 ```bash
 npx shadcn@latest add tabs popover badge
@@ -678,7 +678,7 @@ npx shadcn@latest add tabs popover badge
 
 （P1b-2 已装了 badge，这里补 tabs/popover。）
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/match/RightPanel.tsx app/matches/\[matchId\]/SpectatorView.tsx components/ui/
