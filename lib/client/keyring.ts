@@ -3,6 +3,7 @@
 const STORAGE_KEY = 'colosseum:profile-keys'
 
 type KeyMap = Record<string, string>
+export type MatchKeyUpload = { profileId: string; apiKey: string }
 
 function readAll(): KeyMap {
   if (typeof window === 'undefined') return {}
@@ -39,4 +40,17 @@ export const keyring = {
   has(profileId: string): boolean {
     return !!readAll()[profileId]
   },
+}
+
+export async function uploadKeysForMatch(matchId: string, entries: MatchKeyUpload[]): Promise<void> {
+  await Promise.all(
+    entries.map(async (entry) => {
+      const res = await fetch(`/api/matches/${matchId}/keys`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(entry),
+      })
+      if (!res.ok) throw new Error(`上传 ${entry.profileId} 的 API Key 失败`)
+    }),
+  )
 }
