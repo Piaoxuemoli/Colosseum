@@ -22,7 +22,7 @@
 - Create: `games/poker/engine/poker-engine.ts`（骨架 + `createInitialState` + `currentActor`）
 - Create: `games/poker/engine/__tests__/poker-engine.test.ts`
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 Create `games/poker/engine/__tests__/poker-engine.test.ts`:
 
@@ -67,12 +67,12 @@ describe('PokerEngine.createInitialState', () => {
 })
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 失败（engine 不存在）。
 
-- [ ] **Step 3: 写实现（骨架）**
+- [x] **Step 3: 写实现（骨架）**
 
 Create `games/poker/engine/poker-engine.ts`:
 
@@ -182,12 +182,12 @@ export class PokerEngine
 }
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 3 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
