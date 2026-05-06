@@ -15,9 +15,14 @@ node_modules/
 dist/
 dist-ssr/
 .next/
+.next-build/
 out/
 build/
 tsconfig.tsbuildinfo
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 
 # === 日志 ===
 *.log

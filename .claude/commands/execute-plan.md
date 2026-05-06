@@ -23,7 +23,7 @@
 9. 运行该 task 指定的验证命令；如果可行，再运行局部 lint/typecheck/test。
 10. 验证通过后，更新 plan checkbox 和 `docs/ai/session-state.md`。
 11. 如果当前会话已允许自动分步提交，用 `npm run commit:step -- "<type>(<scope>): <summary>"` 创建 task 边界提交。
-12. 最后报告：完成内容、验证命令与结果、提交哈希（如已提交）、下一步未完成 task。
+12. 最后报告：完成内容、验证命令与结果、当前本地分支、提交哈希（如已提交）、是否已推送、下一步未完成 task。不要提示 PR / MR，除非用户明确要求。
 
 ## Guardrails
 

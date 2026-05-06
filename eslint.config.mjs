@@ -7,6 +7,7 @@ export default [
       'old/**',
       'node_modules/**',
       '.next/**',
+      '.next-build/**',
       'dist/**',
       'build/**',
       'next-env.d.ts',
