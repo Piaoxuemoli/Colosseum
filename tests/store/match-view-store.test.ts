@@ -20,22 +20,7 @@ function event(input: Partial<GameEvent>): GameEvent {
 
 describe('match-view-store', () => {
   beforeEach(() => {
-    useMatchViewStore.setState({
-      matchId: '',
-      initialized: false,
-      events: [],
-      thinkingByAgent: {},
-      currentActor: null,
-      phase: 'waiting',
-      handNumber: 0,
-      communityCards: [],
-      pot: 0,
-      dealerIndex: 0,
-      players: [],
-      matchComplete: false,
-      winnerAgentId: null,
-      fallbackCount: 0,
-    })
+    useMatchViewStore.getState().reset()
   })
 
   it('ingest event appends to list', () => {
@@ -82,5 +67,29 @@ describe('match-view-store', () => {
     const state = useMatchViewStore.getState()
     expect(state.pot).toBe(10)
     expect(state.players[0].chips).toBe(190)
+  })
+
+  it('records explicit chip snapshots', () => {
+    const store = useMatchViewStore.getState()
+    store.recordHandSnapshot(1, { a: 100, b: 150 })
+    store.recordHandSnapshot(2, { a: 90, b: 160 })
+
+    expect(useMatchViewStore.getState().chipHistory).toHaveLength(2)
+    expect(useMatchViewStore.getState().chipHistory[1].chips.b).toBe(160)
+  })
+
+  it('increments error count on agent_error event', () => {
+    const store = useMatchViewStore.getState()
+    store.ingestEvent(event({ kind: 'agent_error' }))
+    store.ingestEvent(event({ kind: 'agent_error' }))
+
+    expect(useMatchViewStore.getState().errorCount).toBe(2)
+  })
+
+  it('sets status to settled on match-end', () => {
+    useMatchViewStore.getState().ingestEvent(event({ kind: 'poker/match-end', payload: { winnerId: 'agt_1' } }))
+
+    expect(useMatchViewStore.getState().status).toBe('settled')
+    expect(useMatchViewStore.getState().matchComplete).toBe(true)
   })
 })
