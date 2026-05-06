@@ -390,7 +390,7 @@ git commit -m "feat(p1b): SSE subscription hook"
 **Files:**
 - Create: `games/poker/ui/PlayingCard.tsx`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/ui/PlayingCard.tsx`:
 
@@ -450,7 +450,7 @@ export function PlayingCard({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/ui/PlayingCard.tsx
