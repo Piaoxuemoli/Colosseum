@@ -23,7 +23,7 @@
 
 **Context:** 简单规则 Bot：preflop 按手牌强度；postflop 按已下注比例 + 随机噪声。核心职责是"永远返回合法动作"，作为三层校验的最终 fallback。
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 Create `games/poker/agent/__tests__/bot-strategy.test.ts`:
 
@@ -63,7 +63,7 @@ describe('PokerBotStrategy', () => {
 })
 ```
 
-- [ ] **Step 2: 写实现**
+- [x] **Step 2: 写实现**
 
 Create `games/poker/agent/bot-strategy.ts`:
 
@@ -147,12 +147,12 @@ export class PokerBotStrategy implements BotStrategy {
 }
 ```
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/agent/__tests__/bot-strategy.test.ts`
 Expected: 2 passed。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/agent/bot-strategy.ts games/poker/agent/__tests__/bot-strategy.test.ts
