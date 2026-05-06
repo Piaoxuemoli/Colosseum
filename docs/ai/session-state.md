@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1a-*.md`
 - Current phase: Phase 1A — poker engine and GM foundation
-- Current task: Phase 1A-1 complete; next Phase 1A-2 Task 5
+- Current task: Phase 1A-2 Task 5 complete; next Task 6
 
 ## Last Known Status
 
@@ -33,6 +33,7 @@
 | 2026-05-06 | `npm run db:generate` + `npm run db:migrate` | Passed | Task 4 generated/applied `0001_foamy_meteorite.sql` for 9 SQLite tables |
 | 2026-05-06 | `npm test` | Passed | Task 4 regression: 18 files, 39 tests |
 | 2026-05-06 | `npm run typecheck` | Passed | Task 4 schema expansion typecheck |
+| 2026-05-06 | `npm test tests/lib/db/queries/agents.test.ts` | Passed | Task 5 agents/profiles queries round trip on migrated temp SQLite DB |
 
 ## Open Questions / Blockers
 
