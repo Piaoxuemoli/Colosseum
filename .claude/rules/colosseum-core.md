@@ -1,0 +1,18 @@
+# Colosseum Rule Router
+
+Keep this rule thin. Do not duplicate detailed project conventions here; route to `docs/ai/rules/` instead.
+
+## Always Read
+
+- `AGENTS.md`
+
+## Read On Demand
+
+- Project context / architecture constraints: `docs/ai/rules/project-context.md`
+- Lint / formatting / typecheck / tests: `docs/ai/rules/linting-and-quality.md`
+- UI design / visual style / components: `docs/ai/rules/ui-style.md`
+- Frontend / backend / API / data / security: `docs/ai/rules/frontend-backend.md`
+- Specs / plans / session state: `docs/ai/rules/spec-plan-workflow.md`
+- Git branches / commits / merges: `docs/ai/rules/git-workflow.md`
+
+If a task touches multiple areas, read only the relevant docs before editing.

@@ -1,0 +1,15 @@
+---
+description: Route UI work to Colosseum visual and component style docs
+globs: **/*.tsx,**/*.css,**/components/**/*.ts,**/components/**/*.tsx,**/games/**/ui/**/*.ts,**/games/**/ui/**/*.tsx
+alwaysApply: false
+---
+
+# UI Rule Router
+
+For UI, component, page, animation, or styling work, read:
+
+- `docs/ai/rules/ui-style.md`
+
+If the UI work consumes APIs, SSE, Route Handlers, or server state, also read:
+
+- `docs/ai/rules/frontend-backend.md`
