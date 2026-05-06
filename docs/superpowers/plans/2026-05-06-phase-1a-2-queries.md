@@ -21,7 +21,7 @@
 
 **Context:** 把高频 DB 查询封装成函数，route handler 里调函数而不是直接写 drizzle。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/db/queries/agents.test.ts`:
 
@@ -56,7 +56,7 @@ describe('lib/db/queries/agents', () => {
 
 **说明**：对每个测试都重新跑 migration 太重，这里用 smoke 占位。真正的集成测试在 Task 25（端到端 bot 对局）里覆盖。
 
-- [ ] **Step 2: 写 agents queries**
+- [x] **Step 2: 写 agents queries**
 
 Create `lib/db/queries/agents.ts`:
 
@@ -112,7 +112,7 @@ export async function listAgents(filter?: {
 }
 ```
 
-- [ ] **Step 3: 写 profiles queries**
+- [x] **Step 3: 写 profiles queries**
 
 Create `lib/db/queries/profiles.ts`:
 
@@ -159,12 +159,12 @@ export async function listProfiles(): Promise<ApiProfileRow[]> {
 }
 ```
 
-- [ ] **Step 4: 跑测试（smoke）**
+- [x] **Step 4: 跑测试（smoke）**
 
 Run: `npm test tests/lib/db/queries/agents.test.ts`
 Expected: 1 passed（占位 smoke）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/db/queries/ tests/lib/db/queries/
