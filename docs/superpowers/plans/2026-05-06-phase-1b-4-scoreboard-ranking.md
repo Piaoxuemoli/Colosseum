@@ -695,7 +695,7 @@ git commit -m "feat(p1b-4): RightPanel integrates scoreboard/logs/chart"
 
 **Context:** 当 store 的 `derived.status === 'settled'` 时自动弹出 Dialog，展示最终排名、每位的盈亏、总手数、可返回大厅。
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 'use client'
@@ -749,7 +749,7 @@ export function RankingPanel({ initialChips }: { initialChips: number }) {
 }
 ```
 
-- [ ] **Step 2: 接入 SpectatorView**
+- [x] **Step 2: 接入 SpectatorView**
 
 ```tsx
 import { RankingPanel } from '@/components/match/RankingPanel'
@@ -758,7 +758,7 @@ import { RankingPanel } from '@/components/match/RankingPanel'
 <RankingPanel initialChips={match.config.initialChips} />
 ```
 
-- [ ] **Step 3: 安装 shadcn dialog**
+- [x] **Step 3: 安装 shadcn dialog**
 
 ```bash
 npx shadcn@latest add dialog
@@ -770,7 +770,7 @@ npx shadcn@latest add dialog
 - 创建一个 6 座位 match，跑到结束
 - Expected: 结束瞬间弹 `RankingPanel`，显示 3 种奖牌 emoji + 盈亏着色
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/match/RankingPanel.tsx app/matches/\[matchId\]/SpectatorView.tsx components/ui/dialog.tsx

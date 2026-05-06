@@ -25,12 +25,13 @@ export default async function MatchPage({ params }: { params: Promise<{ matchId:
     .where(eq(matchParticipants.matchId, matchId))
     .orderBy(asc(matchParticipants.seatIndex))
 
+  const initialChips = 200
   const initialPlayers: PokerUiPlayer[] = participants.map((participant) => ({
     agentId: participant.agentId,
     displayName: participant.agentName ?? participant.agentId,
     avatarEmoji: participant.agentAvatar ?? '🃏',
     seatIndex: participant.seatIndex,
-    chips: 200,
+    chips: initialChips,
     currentBet: 0,
     status: 'active',
     holeCards: [],
@@ -44,6 +45,7 @@ export default async function MatchPage({ params }: { params: Promise<{ matchId:
       gameType={match.gameType as 'poker' | 'werewolf'}
       initialPlayers={initialPlayers}
       initialEvents={initialEvents}
+      initialChips={initialChips}
       status={match.status}
     />
   )
