@@ -723,7 +723,7 @@ git commit -m "feat(p1b): profiles management page (list + create dialog + actio
 - Create: `components/forms/AgentForm.tsx`
 - Create: `components/forms/AgentRowActions.tsx`
 
-- [ ] **Step 1: 写 AgentForm**
+- [x] **Step 1: 写 AgentForm**
 
 Create `components/forms/AgentForm.tsx`:
 
@@ -850,7 +850,7 @@ export function AgentForm({ gameType = 'poker' as 'poker' | 'werewolf' }: { game
 }
 ```
 
-- [ ] **Step 2: 写 AgentRowActions**
+- [x] **Step 2: 写 AgentRowActions**
 
 Create `components/forms/AgentRowActions.tsx`:
 
@@ -885,7 +885,7 @@ export function AgentRowActions({ agentId }: { agentId: string }) {
 }
 ```
 
-- [ ] **Step 3: 写 Agents 页**
+- [x] **Step 3: 写 Agents 页**
 
 Create `app/agents/page.tsx`:
 
@@ -958,14 +958,14 @@ export default async function AgentsPage() {
 }
 ```
 
-- [ ] **Step 4: 手工验证**
+- [x] **Step 4: 手工验证**
 
 Run: `npm run dev`，访问 `/agents`：
 - 列表能展示前面 API 测试创建的 agent
 - 点"新增 Agent" → 表单打开 → 选 profile → 填 prompt → 创建 → 列表刷新
 - 删除按钮能工作
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/agents/ components/forms/AgentForm.tsx components/forms/AgentRowActions.tsx
