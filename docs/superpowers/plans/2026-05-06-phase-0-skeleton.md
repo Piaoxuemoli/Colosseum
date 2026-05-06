@@ -2213,7 +2213,7 @@ git commit -m "feat(p0): toy A2A client (fetch + SSE decode)"
 
 **Windows 文件名注意**：路径里 `.well-known/agent-card.json` 是合法的（点开头的目录在 Windows 可行）。如 PowerShell 创建失败，改用 `bash` / `mkdir -p`。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/api/agent-card.test.ts`:
 
@@ -2245,7 +2245,7 @@ describe('GET /api/agents/:id/.well-known/agent-card.json', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run:
 ```bash
@@ -2254,7 +2254,7 @@ npm test tests/api/agent-card.test.ts
 
 Expected: 失败。
 
-- [ ] **Step 3: 建目录 + 写实现**
+- [x] **Step 3: 建目录 + 写实现**
 
 Run:
 ```bash
@@ -2337,7 +2337,7 @@ export async function GET(
 }
 ```
 
-- [ ] **Step 4: 跑测试验证通过**
+- [x] **Step 4: 跑测试验证通过**
 
 Run:
 ```bash
@@ -2346,7 +2346,7 @@ npm test tests/api/agent-card.test.ts
 
 Expected: 2 passed。
 
-- [ ] **Step 5: 手工验证**
+- [x] **Step 5: 手工验证**
 
 Run:
 ```bash
@@ -2362,7 +2362,7 @@ Expected: 看到 A2A Agent Card JSON。
 
 Ctrl+C 停 dev。
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/api/agents/ tests/api/agent-card.test.ts
@@ -2381,7 +2381,7 @@ git commit -m "feat(p0): toy agent card endpoint (toy-poker, toy-echo)"
 
 **Windows 路径说明**（plan 头 File Responsibility Notes 提到）：spec 用 `message:stream`（冒号），但 Next.js 路由里 `:` 有特殊含义。本 plan 实际用 `message/stream`（斜杠）。Phase 2 正规化时可用 `@a2a-js/sdk` 的 A2AExpressApp 直接挂载，届时 URL 会是 SDK 决定的。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/api/agent-message-stream.test.ts`:
 
@@ -2449,7 +2449,7 @@ describe('POST /api/agents/:id/message/stream', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run:
 ```bash
@@ -2458,7 +2458,7 @@ npm test tests/api/agent-message-stream.test.ts
 
 Expected: 失败。
 
-- [ ] **Step 3: 建目录 + 写实现**
+- [x] **Step 3: 建目录 + 写实现**
 
 Run:
 ```bash
@@ -2606,7 +2606,7 @@ export async function POST(
 }
 ```
 
-- [ ] **Step 4: 跑测试验证通过**
+- [x] **Step 4: 跑测试验证通过**
 
 Run:
 ```bash
@@ -2615,7 +2615,7 @@ npm test tests/api/agent-message-stream.test.ts
 
 Expected: 3 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/api/agents/[agentId]/message/ tests/api/agent-message-stream.test.ts
@@ -2632,7 +2632,7 @@ git commit -m "feat(p0): toy agent message/stream endpoint (toy-poker folds, toy
 
 **Context**: 用 Task 14 的 toy client 调 Task 16 的 toy endpoint，走完 HTTP → SSE → 流式解析 → 决策返回的完整链路。这是里程碑 M2 的硬证据。
 
-- [ ] **Step 1: 写 integration 测试**
+- [x] **Step 1: 写 integration 测试**
 
 Create `tests/api/agent-e2e.test.ts`:
 
@@ -2680,7 +2680,7 @@ describe('M2: A2A end-to-end (toy client → toy server)', () => {
 })
 ```
 
-- [ ] **Step 2: 运行测试验证通过**
+- [x] **Step 2: 运行测试验证通过**
 
 Run:
 ```bash
@@ -2689,7 +2689,7 @@ npm test tests/api/agent-e2e.test.ts
 
 Expected: 1 passed。
 
-- [ ] **Step 3: 手工端到端验证（里程碑 M2）**
+- [x] **Step 3: 手工端到端验证（里程碑 M2）**
 
 Run:
 ```bash
@@ -2712,7 +2712,7 @@ Expected: 一串 `data: {"kind":"status-update"...}` → 3 条 text 增量 → `
 
 Ctrl+C 停 dev。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add tests/api/agent-e2e.test.ts

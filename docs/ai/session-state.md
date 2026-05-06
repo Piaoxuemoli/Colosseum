@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan: `docs/superpowers/plans/2026-05-06-phase-0-skeleton.md`
 - Current phase: Phase 0 — skeleton
-- Current task: Task 14 complete; proceeding to Task 15
+- Current task: Task 17 complete; proceeding to Task 18
 
 ## Last Known Status
 
@@ -29,6 +29,7 @@
 - 独立开发模式：默认不创建或提示 PR / MR；任务分支只用于本地隔离、备份和跨设备同步，合入在本地处理。
 - Phase 0 Task 7-10 已创建 Redis client、结构化 logger、LLM provider catalog 和 provider factory。
 - Phase 0 Task 11-14 已创建 health route、mocked LLM ping route、toy A2A stream helper 和 toy A2A client。
+- Phase 0 Task 15-17 已创建 toy agent card、toy agent message stream endpoint，并完成 mocked M2 client-to-server integration。
 
 ## Validation Log
 
@@ -57,6 +58,8 @@
 | 2026-05-06 | `npm run typecheck` | Passed | Provider factory compiles with SDK type bridge |
 | 2026-05-06 | `npm test tests/api/health.test.ts tests/api/llm-ping.test.ts tests/lib/a2a-core/server-helpers.test.ts tests/lib/a2a-core/client.test.ts` | Passed | 4 files, 5 tests passed; health and LLM ping use mocks for external services |
 | 2026-05-06 | `npm run typecheck` | Passed | Route handlers and A2A toy core compile |
+| 2026-05-06 | `npm test tests/api/agent-card.test.ts tests/api/agent-message-stream.test.ts tests/api/agent-e2e.test.ts tests/lib/a2a-core/client.test.ts` | Passed | 4 files, 8 tests passed |
+| 2026-05-06 | `npm run typecheck` | Passed | Toy agent routes and M2 integration compile |
 
 ## Open Questions / Blockers
 
