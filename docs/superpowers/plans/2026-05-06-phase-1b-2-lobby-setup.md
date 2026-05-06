@@ -446,7 +446,7 @@ git commit -m "feat(p1b): lobby page (server component with match list)"
 - Create: `app/profiles/page.tsx`（Server Component 列表 + Client 表单）
 - Create: `components/forms/ProfileForm.tsx`（Client）
 
-- [ ] **Step 1: 写 ProfileForm（Client）**
+- [x] **Step 1: 写 ProfileForm（Client）**
 
 Create `components/forms/ProfileForm.tsx`:
 
@@ -585,7 +585,7 @@ export function ProfileForm({ onCreated }: { onCreated?: () => void }) {
 }
 ```
 
-- [ ] **Step 2: 写 Profiles 页**
+- [x] **Step 2: 写 Profiles 页**
 
 Create `app/profiles/page.tsx`（混合：Server 列表 + Client 表单 + Client 删除按钮）：
 
@@ -639,7 +639,7 @@ export default async function ProfilesPage() {
 }
 ```
 
-- [ ] **Step 3: 写 ProfileRowActions（Client）**
+- [x] **Step 3: 写 ProfileRowActions（Client）**
 
 Create `components/forms/ProfileRowActions.tsx`:
 
@@ -698,7 +698,7 @@ export function ProfileRowActions({ profileId }: { profileId: string }) {
 }
 ```
 
-- [ ] **Step 4: 手工验证**
+- [x] **Step 4: 手工验证**
 
 Run: `npm run dev`，访问 `/profiles`：
 - 点"新增 Profile" → 选 openai → 填名称 + key → 提交 → 列表出现新行
@@ -707,7 +707,7 @@ Run: `npm run dev`，访问 `/profiles`：
 - 点"修改 Key"应能更新
 - 点"删除"应从列表消失，key 也从 localStorage 清掉
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/profiles/ components/forms/ProfileForm.tsx components/forms/ProfileRowActions.tsx
