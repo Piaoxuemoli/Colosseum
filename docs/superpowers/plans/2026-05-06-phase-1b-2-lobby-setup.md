@@ -282,7 +282,7 @@ git commit -m "feat(p1b): client api wrapper + localStorage keyring"
 - Modify: `app/layout.tsx`（加 Sidebar）
 - Create: `components/layout/Sidebar.tsx`
 
-- [ ] **Step 1: 写 Sidebar**
+- [x] **Step 1: 写 Sidebar**
 
 Create `components/layout/Sidebar.tsx`:
 
@@ -317,7 +317,7 @@ export function Sidebar() {
 }
 ```
 
-- [ ] **Step 2: 改 layout.tsx**
+- [x] **Step 2: 改 layout.tsx**
 
 替换 `app/layout.tsx` 内容：
 
@@ -344,11 +344,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-- [ ] **Step 3: 验证 dev 环境**
+- [x] **Step 3: 验证 dev 环境**
 
 Run: `npm run dev`，访问 http://localhost:3000，应看到左侧 sidebar 4 个链接。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/layout.tsx components/layout/Sidebar.tsx
