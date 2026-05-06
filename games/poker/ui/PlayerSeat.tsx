@@ -42,7 +42,7 @@ export function PlayerSeat({
         </div>
         <div className="flex gap-1">
           {player.holeCards.length > 0
-            ? player.holeCards.slice(0, 2).map((card, index) => <PlayingCard key={`${card.rank}-${card.suit}`} card={card} size="sm" />)
+            ? player.holeCards.slice(0, 2).map((card) => <PlayingCard key={`${card.rank}-${card.suit}`} card={card} size="sm" />)
             : [0, 1].map((slot) => <PlayingCard key={slot} faceDown size="sm" />)}
         </div>
       </motion.div>
