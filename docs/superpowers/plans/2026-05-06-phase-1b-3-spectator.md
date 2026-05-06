@@ -464,7 +464,7 @@ git commit -m "feat(p1b): PlayingCard component with flip animation"
 **Files:**
 - Create: `games/poker/ui/ThinkingBubble.tsx`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/ui/ThinkingBubble.tsx`:
 
@@ -510,7 +510,7 @@ export function ThinkingBubble({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/ui/ThinkingBubble.tsx
