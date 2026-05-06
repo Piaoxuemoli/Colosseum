@@ -16,6 +16,12 @@ export type PokerUiPlayer = {
   holeCards: CardVisual[]
 }
 
+export type ChipSnapshot = {
+  handNumber: number
+  at: number
+  chips: Record<string, number>
+}
+
 export type MatchViewState = {
   matchId: string
   initialized: boolean
@@ -27,15 +33,22 @@ export type MatchViewState = {
   communityCards: CardVisual[]
   pot: number
   dealerIndex: number
+  status: 'waiting' | 'live' | 'settled'
   matchComplete: boolean
   winnerAgentId: string | null
   thinkingByAgent: Record<string, string>
   fallbackCount: number
+  chipHistory: ChipSnapshot[]
+  errorCount: number
+  reset(): void
   init(input: { matchId: string; players: PokerUiPlayer[] }): void
   ingestEvent(event: GameEvent): void
   appendThinking(agentId: string, delta: string): void
   clearThinking(agentId: string): void
   setMatchEnd(winnerAgentId: string | null): void
+  recordHandSnapshot(handNumber: number, chips: Record<string, number>): void
+  incrementError(): void
+  setErrorCount(count: number): void
 }
 
 const initialState = {
@@ -49,10 +62,13 @@ const initialState = {
   communityCards: [] as CardVisual[],
   pot: 0,
   dealerIndex: 0,
+  status: 'waiting' as const,
   matchComplete: false,
   winnerAgentId: null as string | null,
   thinkingByAgent: {} as Record<string, string>,
   fallbackCount: 0,
+  chipHistory: [] as ChipSnapshot[],
+  errorCount: 0,
 }
 
 function cardsFromPayload(payload: Record<string, unknown>): CardVisual[] {
@@ -68,6 +84,10 @@ function actionContribution(action: Record<string, unknown>, player: PokerUiPlay
 export const useMatchViewStore = create<MatchViewState>((set) => ({
   ...initialState,
 
+  reset() {
+    set({ ...initialState })
+  },
+
   init(input) {
     set({
       ...initialState,
@@ -76,6 +96,7 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
       players: input.players,
       phase: 'preflop',
       handNumber: 1,
+      status: 'live',
     })
   },
 
@@ -89,12 +110,19 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
       let matchComplete = state.matchComplete
       let winnerAgentId = state.winnerAgentId
       let thinkingByAgent = state.thinkingByAgent
+      let status = state.status
+      let chipHistory = state.chipHistory
+      let errorCount = state.errorCount
       const players = state.players.map((player) => ({ ...player }))
 
       switch (event.kind) {
+        case 'agent_error':
+          errorCount += 1
+          break
         case 'poker/match-start':
           handNumber = Math.max(handNumber, 1)
           phase = 'preflop'
+          status = 'live'
           break
         case 'poker/deal-flop':
           phase = 'flop'
@@ -149,10 +177,19 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           }
           for (const player of players) player.currentBet = 0
           pot = 0
+          chipHistory = [
+            ...chipHistory,
+            {
+              handNumber,
+              at: Date.now(),
+              chips: Object.fromEntries(players.map((player) => [player.agentId, player.chips])),
+            },
+          ]
           break
         }
         case 'poker/match-end':
           matchComplete = true
+          status = 'settled'
           winnerAgentId = typeof event.payload.winnerId === 'string' ? event.payload.winnerId : null
           currentActor = null
           break
@@ -166,9 +203,12 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
         players,
         communityCards,
         pot,
+        status,
         matchComplete,
         winnerAgentId,
         thinkingByAgent,
+        chipHistory,
+        errorCount,
       }
     })
   },
@@ -192,6 +232,20 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
   },
 
   setMatchEnd(winnerAgentId) {
-    set({ matchComplete: true, winnerAgentId, currentActor: null })
+    set({ matchComplete: true, winnerAgentId, currentActor: null, status: 'settled' })
+  },
+
+  recordHandSnapshot(handNumber, chips) {
+    set((state) => ({
+      chipHistory: [...state.chipHistory, { handNumber, at: Date.now(), chips: { ...chips } }],
+    }))
+  },
+
+  incrementError() {
+    set((state) => ({ errorCount: state.errorCount + 1 }))
+  },
+
+  setErrorCount(count) {
+    set({ errorCount: count })
   },
 }))
