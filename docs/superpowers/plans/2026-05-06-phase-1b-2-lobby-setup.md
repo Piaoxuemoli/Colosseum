@@ -134,7 +134,7 @@ git commit -m "feat(p1b): install shadcn/ui base components"
 - Create: `lib/client/keyring.ts`
 - Create: `tests/lib/client/keyring.test.ts`
 
-- [ ] **Step 1: 写 api fetch 封装**
+- [x] **Step 1: 写 api fetch 封装**
 
 Create `lib/client/api.ts`:
 
@@ -178,7 +178,7 @@ export const api = {
 }
 ```
 
-- [ ] **Step 2: 写 keyring store（localStorage）**
+- [x] **Step 2: 写 keyring store（localStorage）**
 
 Create `lib/client/keyring.ts`:
 
@@ -232,7 +232,7 @@ export const keyring = {
 }
 ```
 
-- [ ] **Step 3: 写 keyring 测试（jsdom 环境可访问 localStorage）**
+- [x] **Step 3: 写 keyring 测试（jsdom 环境可访问 localStorage）**
 
 Create `tests/lib/client/keyring.test.ts`:
 
@@ -264,7 +264,7 @@ describe('keyring', () => {
 })
 ```
 
-- [ ] **Step 4: 跑测试 + commit**
+- [x] **Step 4: 跑测试 + commit**
 
 Run: `npm test tests/lib/client/keyring.test.ts`
 Expected: 3 passed。
