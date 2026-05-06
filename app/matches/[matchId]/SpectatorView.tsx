@@ -3,6 +3,7 @@
 import { useCallback, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { RightPanel } from '@/components/match/RightPanel'
+import { RankingPanel } from '@/components/match/RankingPanel'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { useMatchStream } from '@/lib/client/sse'
 import type { GameEvent } from '@/lib/core/types'
@@ -19,12 +20,14 @@ export function SpectatorView({
   gameType,
   initialPlayers,
   initialEvents,
+  initialChips,
   status,
 }: {
   matchId: string
   gameType: 'poker' | 'werewolf'
   initialPlayers: PokerUiPlayer[]
   initialEvents: GameEvent[]
+  initialChips: number
   status: string
 }) {
   const init = useMatchViewStore((state) => state.init)
@@ -110,6 +113,7 @@ export function SpectatorView({
       </main>
 
       <RightPanel matchId={matchId} />
+      <RankingPanel initialChips={initialChips} />
     </div>
   )
 }
