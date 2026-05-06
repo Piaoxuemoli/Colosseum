@@ -515,7 +515,7 @@ git commit -m "feat(p1b-4): ChipChart with recharts"
 
 **Context:** 两个滚动列表，分别显示 `event.kind === 'action_taken'` 和 `event.kind === 'agent_thinking'`。共用同一容器通过 `Tabs`（shadcn/ui）切换。
 
-- [ ] **Step 1: ActionLog**
+- [x] **Step 1: ActionLog**
 
 ```tsx
 'use client'
@@ -562,7 +562,7 @@ export function ActionLog() {
 }
 ```
 
-- [ ] **Step 2: ThinkingLog**
+- [x] **Step 2: ThinkingLog**
 
 ```tsx
 'use client'
@@ -597,7 +597,7 @@ export function ThinkingLog() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/match/ActionLog.tsx components/match/ThinkingLog.tsx
