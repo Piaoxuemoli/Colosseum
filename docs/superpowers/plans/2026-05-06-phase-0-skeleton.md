@@ -986,7 +986,7 @@ git commit -m "feat(p0): drizzle + sqlite schema + integration-tested db client"
 - Create: `lib/redis/client.ts`
 - Create: `tests/lib/redis/client.test.ts`
 
-- [ ] **Step 1: 先确认 infra 在跑**
+- [x] **Step 1: 先确认 infra 在跑**
 
 Run:
 ```bash
@@ -995,7 +995,7 @@ docker compose ps
 
 Expected: `redis` 为 `healthy`。如未起，先 `npm run infra:up`。
 
-- [ ] **Step 2: 写失败的测试**
+- [x] **Step 2: 写失败的测试**
 
 Create `tests/lib/redis/client.test.ts`:
 
@@ -1031,7 +1031,7 @@ describe('lib/redis/client', () => {
 })
 ```
 
-- [ ] **Step 3: 写 Redis client**
+- [x] **Step 3: 写 Redis client**
 
 Create `lib/redis/client.ts`:
 
@@ -1057,7 +1057,7 @@ export const redis: Redis = new Redis(env.REDIS_URL, {
 export type { Redis } from 'ioredis'
 ```
 
-- [ ] **Step 4: 跑测试验证通过**
+- [x] **Step 4: 跑测试验证通过**
 
 Run:
 ```bash
@@ -1066,7 +1066,7 @@ npm test tests/lib/redis/client.test.ts
 
 Expected: 2 passed。**如果 Redis 没起会失败——先 `npm run infra:up`。**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/redis/ tests/lib/redis/
@@ -1081,7 +1081,7 @@ git commit -m "feat(p0): ioredis singleton client"
 - Create: `lib/telemetry/logger.ts`
 - Create: `tests/lib/telemetry/logger.test.ts`
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/telemetry/logger.test.ts`:
 
@@ -1119,7 +1119,7 @@ describe('lib/telemetry/logger', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run:
 ```bash
@@ -1128,7 +1128,7 @@ npm test tests/lib/telemetry/logger.test.ts
 
 Expected: 失败。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 Create `lib/telemetry/logger.ts`:
 
@@ -1157,7 +1157,7 @@ export const log = {
 }
 ```
 
-- [ ] **Step 4: 跑测试验证通过**
+- [x] **Step 4: 跑测试验证通过**
 
 Run:
 ```bash
@@ -1166,7 +1166,7 @@ npm test tests/lib/telemetry/logger.test.ts
 
 Expected: 2 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/telemetry/ tests/lib/telemetry/
@@ -1181,7 +1181,7 @@ git commit -m "feat(p0): structured JSON logger"
 - Create: `lib/llm/catalog.ts`
 - Create: `tests/lib/llm/catalog.test.ts`
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/llm/catalog.test.ts`:
 
@@ -1210,7 +1210,7 @@ describe('lib/llm/catalog', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run:
 ```bash
@@ -1219,7 +1219,7 @@ npm test tests/lib/llm/catalog.test.ts
 
 Expected: 失败。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 Create `lib/llm/catalog.ts`:
 
@@ -1293,7 +1293,7 @@ export function findProvider(id: string): ProviderEntry | undefined {
 }
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run:
 ```bash
@@ -1302,7 +1302,7 @@ npm test tests/lib/llm/catalog.test.ts
 
 Expected: 3 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/llm/catalog.ts tests/lib/llm/catalog.test.ts
@@ -1319,7 +1319,7 @@ git commit -m "feat(p0): static llm provider catalog"
 
 **Context**: 把 `{ providerKind, baseUrl, model, apiKey }` 转成一个 Vercel AI SDK 的 LanguageModel 实例。这层吸收 openai-compatible vs anthropic 的 SDK 差异。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/llm/provider-factory.test.ts`:
 
@@ -1367,7 +1367,7 @@ describe('lib/llm/provider-factory', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run:
 ```bash
@@ -1376,7 +1376,7 @@ npm test tests/lib/llm/provider-factory.test.ts
 
 Expected: 失败。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 Create `lib/llm/provider-factory.ts`:
 
@@ -1426,7 +1426,7 @@ export function createModel(input: CreateModelInput): LanguageModel {
 }
 ```
 
-- [ ] **Step 4: 运行测试验证通过**
+- [x] **Step 4: 运行测试验证通过**
 
 Run:
 ```bash
@@ -1435,7 +1435,7 @@ npm test tests/lib/llm/provider-factory.test.ts
 
 Expected: 3 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/llm/provider-factory.ts tests/lib/llm/provider-factory.test.ts
