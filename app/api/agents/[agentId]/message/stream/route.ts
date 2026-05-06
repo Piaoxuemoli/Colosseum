@@ -1,12 +1,19 @@
 import { streamText } from 'ai'
 import { z } from 'zod'
 import { createA2AStreamResponse } from '@/lib/a2a-core/server-helpers'
+import { getApiKey } from '@/lib/agent/key-cache'
+import { LlmError } from '@/lib/agent/llm-errors'
+import { runDecision } from '@/lib/agent/llm-runtime'
 import { getGame } from '@/lib/core/registry'
 import { gameTypeSchema } from '@/lib/core/types'
 import { findAgentById } from '@/lib/db/queries/agents'
+import { recordAgentError } from '@/lib/db/queries/errors'
+import { findProfileById } from '@/lib/db/queries/profiles'
 import { loadEnv } from '@/lib/env'
 import { ensureGamesRegistered } from '@/lib/instrument'
+import { findProvider } from '@/lib/llm/catalog'
 import { createModel } from '@/lib/llm/provider-factory'
+import { coerceToValidAction } from '@/lib/orchestrator/action-validator'
 import { validateMatchToken } from '@/lib/orchestrator/match-token'
 import { redis } from '@/lib/redis/client'
 import { keys } from '@/lib/redis/keys'
@@ -27,6 +34,12 @@ const messageSchema = z.object({
     ),
   }),
 })
+
+const emptyMemoryContext = {
+  workingSummary: '',
+  episodicSection: '',
+  semanticSection: '',
+}
 
 type ToyHandlerInput = {
   body: z.infer<typeof messageSchema>
@@ -146,27 +159,139 @@ export async function POST(
 
   const state = JSON.parse(stateRaw) as unknown
   const validActions = game.engine.availableActions(state, agentId)
+  const profile = await findProfileById(agent.profileId).catch(() => undefined)
+  const apiKey = profile ? await getApiKey(tokenContext.matchId, profile.id) : undefined
+  const provider = profile ? findProvider(profile.providerId) : undefined
 
   return createA2AStreamResponse({
     taskId: parsed.data.message.taskId,
     async execute(emit) {
       emit.statusUpdate('working')
       try {
-        const action = game.botStrategy.decide(state, validActions as unknown[])
-        emit.artifactUpdate({
-          parts: [{ kind: 'text', text: `[${agent.displayName}] 根据当前局面生成规则决策...` }],
-          delta: true,
+        if (!profile || !apiKey) {
+          const action = game.botStrategy.decide(state, validActions as unknown[])
+          await recordFallbackError({
+            matchId: tokenContext.matchId,
+            agentId,
+            errorCode: !profile ? 'llm-profile-missing' : 'llm-api-key-missing',
+            recoveryAction: action,
+          })
+          emit.artifactUpdate({
+            parts: [{ kind: 'text', text: `[${agent.displayName}] 缺少 LLM 配置，使用规则兜底。` }],
+            delta: true,
+          })
+          emit.artifactUpdate({
+            parts: [{ kind: 'data', data: { action, thinking: 'bot fallback', fallback: true } }],
+            delta: false,
+          })
+          emit.statusUpdate('completed')
+          return
+        }
+
+        const prompt = game.playerContextBuilder.build({
+          agent: { id: agentId, systemPrompt: agent.systemPrompt },
+          gameState: state,
+          validActions,
+          memoryContext: emptyMemoryContext,
         })
-        await new Promise((resolve) => setTimeout(resolve, 1))
+        const result = await runDecision({
+          profile: {
+            providerKind: provider?.kind ?? 'custom',
+            providerId: profile.providerId,
+            baseUrl: profile.baseUrl,
+            apiKey,
+            model: profile.model,
+          },
+          agent: { systemPrompt: prompt.systemMessage },
+          userPrompt: prompt.userMessage,
+          onThinkingDelta(delta) {
+            emit.artifactUpdate({ parts: [{ kind: 'text', text: delta }], delta: true })
+          },
+        })
+        const validated = coerceToValidAction(result.action, validActions, state, game.botStrategy, {
+          matchId: tokenContext.matchId,
+          agentId,
+          layerIfPassed: 'parse',
+        })
+        if (validated.layer === 'fallback') {
+          await recordFallbackError({
+            matchId: tokenContext.matchId,
+            agentId,
+            errorCode: 'llm-invalid-action',
+            rawResponse: result.rawResponse,
+            recoveryAction: validated.action,
+          })
+        }
         emit.artifactUpdate({
-          parts: [{ kind: 'data', data: { action, thinking: 'bot rule-based' } }],
+          parts: [{ kind: 'data', data: { action: validated.action, thinking: result.thinkingText, fallback: validated.layer === 'fallback' } }],
           delta: false,
         })
         emit.statusUpdate('completed')
       } catch (err) {
-        log.error('agent endpoint failed', { agentId, matchId: tokenContext.matchId, err: String(err) })
-        emit.statusUpdate('failed', String(err))
+        const errorKind = llmErrorKind(err) ?? 'api_error'
+        const action = game.botStrategy.decide(state, validActions as unknown[])
+        await recordFallbackError({
+          matchId: tokenContext.matchId,
+          agentId,
+          errorCode: `llm-${errorKind}`,
+          rawResponse: rawResponseFromError(err),
+          recoveryAction: action,
+        })
+        log.warn('agent endpoint used bot fallback after LLM failure', {
+          agentId,
+          matchId: tokenContext.matchId,
+          errorKind,
+          err: String(err),
+        })
+        emit.artifactUpdate({
+          parts: [{ kind: 'text', text: `[${agent.displayName}] LLM 失败，使用规则兜底。` }],
+          delta: true,
+        })
+        emit.artifactUpdate({
+          parts: [{ kind: 'data', data: { action, thinking: 'bot fallback', fallback: true, errorKind } }],
+          delta: false,
+        })
+        emit.statusUpdate('completed')
       }
     },
   })
+}
+
+async function recordFallbackError(input: {
+  matchId: string
+  agentId: string
+  errorCode: string
+  rawResponse?: string | null
+  recoveryAction: unknown
+}): Promise<void> {
+  await recordAgentError({
+    matchId: input.matchId,
+    agentId: input.agentId,
+    layer: 'fallback',
+    errorCode: input.errorCode,
+    rawResponse: input.rawResponse ?? null,
+    recoveryAction: toRecord(input.recoveryAction),
+  }).catch((err) => {
+    log.error('failed to record agent fallback error', { err: String(err), agentId: input.agentId, matchId: input.matchId })
+  })
+}
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null
+}
+
+function rawResponseFromError(err: unknown): string | null {
+  const cause = typeof err === 'object' && err !== null && 'cause' in err ? (err as { cause?: unknown }).cause : null
+  if (typeof cause === 'object' && cause !== null && 'rawResponse' in cause) {
+    const raw = (cause as { rawResponse?: unknown }).rawResponse
+    return typeof raw === 'string' ? raw : null
+  }
+  return null
+}
+
+function llmErrorKind(err: unknown): LlmError['kind'] | null {
+  if (err instanceof LlmError) return err.kind
+  if (typeof err !== 'object' || err === null || !('kind' in err)) return null
+  const kind = (err as { kind?: unknown }).kind
+  return kind === 'timeout' || kind === 'api_error' || kind === 'parse_fail' || kind === 'abort' ? kind : null
 }
