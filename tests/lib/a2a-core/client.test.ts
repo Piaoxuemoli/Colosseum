@@ -40,6 +40,7 @@ describe('requestAgentDecisionToy', () => {
       url: 'http://localhost/api/agents/x/message/stream',
       taskId: 't1',
       message: { role: 'user', parts: [{ kind: 'data', data: { kind: 'test' } }] },
+      matchId: 'match_1',
       matchToken: 'tok',
       onThinking: (delta) => thoughts.push(delta),
     })
@@ -49,6 +50,7 @@ describe('requestAgentDecisionToy', () => {
     expect(mockFetch).toHaveBeenCalledOnce()
     const init = mockFetch.mock.calls[0][1] as RequestInit
     expect((init.headers as Record<string, string>)['X-Match-Token']).toBe('tok')
+    expect((init.headers as Record<string, string>)['X-Match-Id']).toBe('match_1')
   })
 
   it('throws when no data artifact returned', async () => {
