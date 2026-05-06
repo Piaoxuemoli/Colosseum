@@ -78,7 +78,7 @@ git commit -m "chore(p1b): install @floating-ui/react + framer-motion"
 
 **简化**：本 plan 不做 event sourcing；直接在 store 里维护一个 `derived` 对象，用 reducer 随事件 mutate。
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 Create `tests/store/match-view-store.test.ts`:
 
@@ -127,7 +127,7 @@ describe('match-view-store', () => {
 })
 ```
 
-- [ ] **Step 2: 写 store**
+- [x] **Step 2: 写 store**
 
 Create `store/match-view-store.ts`:
 
@@ -319,7 +319,7 @@ export const useMatchViewStore = create<MatchViewState>((set, get) => ({
 
 **注意**：reducer 里 `currentActor` 的更新没完整做 —— `currentActor` 主要依赖 `thinking-delta` 事件推进，真实 current actor 的计算在服务端。本版本简化：thinking 到谁 → currentActor 就是谁。
 
-- [ ] **Step 3: 跑测试 + commit**
+- [x] **Step 3: 跑测试 + commit**
 
 Run: `npm test tests/store/match-view-store.test.ts`
 Expected: 3 passed。
