@@ -73,7 +73,7 @@ git switch -c feature/<scope>-<short-desc>
 npm run sync
 ```
 
-如果任务分支没有 upstream，首次推送时由用户明确决定是否执行：
+如果任务分支没有 upstream，首次推送时由用户明确决定是否执行。独立开发时推送只是为了备份和跨设备同步，不代表发起代码评审：
 
 ```bash
 git push -u origin HEAD
@@ -147,20 +147,35 @@ test(engine): cover showdown side pots
 
 ## 合入规范
 
+本项目默认是独立开发，所有合入在本地完成，不走 PR / MR 流程。不要在常规总结里提示 PR 链接。
+
 合入主线前至少满足：
 
 1. 分支基于当前 `main` 或已明确处理冲突。
-2. PR / MR 描述清楚：目的、主要改动、验证方式、已知风险。
+2. 本地确认目的、主要改动、验证方式、已知风险。
 3. 相关验证通过；如果不能运行，说明原因。
 4. 没有无关大改、无关格式化、无关旧项目改动。
 5. 涉及 spec/plan/规则变更时，同步更新对应 docs 和 `docs/ai/session-state.md`。
 
-推荐合入方式：
+推荐本地合入方式：
 
-- 小型线性分支：Squash merge，保持主线清爽。
+- 小型线性分支：在本地 `main` 上执行 squash merge，保持主线清爽。
 - 需要保留阶段过程的长分支：普通 merge，但提交历史必须可读。
 - 禁止 force push 到 `main`。
 - 禁止绕过 hooks 或验证，除非用户明确批准并记录原因。
+
+本地合入参考流程：
+
+```bash
+git switch main
+npm run sync
+git merge --squash feature/<scope>-<short-desc>
+npm run check
+npm run commit:step -- "<type>(<scope>): <summary>"
+git push https://github.com/Piaoxuemoli/Colosseum.git main
+```
+
+如果需要保留任务分支上的分步提交历史，把 `git merge --squash` 换成 `git merge --no-ff feature/<scope>-<short-desc>`。
 
 ## AI 执行 Git 的安全规则
 
@@ -169,5 +184,6 @@ test(engine): cover showdown side pots
 - 不 revert 用户已有改动，除非用户明确要求。
 - 不运行破坏性命令，如 `git reset --hard`、`git checkout -- <file>`、`git clean -fd`。
 - 不 push，除非用户明确要求。
+- 不创建 PR / MR，除非用户明确要求。
 - 如果发现密钥或敏感文件被要求提交，先提醒用户并拒绝直接提交。
 - 合入、rebase、amend、force push 属于高风险操作，必须有明确用户指令。
