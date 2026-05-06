@@ -256,7 +256,7 @@ git commit -m "feat(p1a): port hand evaluator from old/ with textbook tests"
 
 **Source:** `old/src/games/poker/engine/pot-manager.ts`（77 行）
 
-- [ ] **Step 1: 写实现（基于 old，就地定义 SidePot 去掉 game types 依赖）**
+- [x] **Step 1: 写实现（基于 old，就地定义 SidePot 去掉 game types 依赖）**
 
 Create `games/poker/engine/pot-manager.ts`:
 
@@ -316,7 +316,7 @@ export function mergePots(existing: SidePot[], newPots: SidePot[]): SidePot[] {
 }
 ```
 
-- [ ] **Step 2: 写测试**
+- [x] **Step 2: 写测试**
 
 Create `games/poker/engine/__tests__/pot-manager.test.ts`:
 
@@ -375,12 +375,12 @@ describe('calculateSidePots', () => {
 })
 ```
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/pot-manager.test.ts`
 Expected: 4 passed。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/pot-manager.ts games/poker/engine/__tests__/pot-manager.test.ts
