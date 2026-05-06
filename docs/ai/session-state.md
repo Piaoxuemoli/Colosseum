@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B-5 final validation
+- Current task: Phase 1B complete (automated); M4 real manual run blocked locally
 
 ## Last Known Status
 
@@ -104,6 +104,7 @@
 | 2026-05-06 | `npm test tests/lib/a2a-core/client.test.ts tests/lib/orchestrator tests/integration/bot-match.test.ts tests/api/matches-tick.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 5 GM requests agent endpoint through A2A and forwards thinking deltas |
 | 2026-05-06 | docs only | Passed | Phase 1B-5 Task 6 M4 manual checklist drafted; real run remains blocked locally by missing Docker / real keys |
 | 2026-05-06 | `npm test tests/e2e/m4-smoke.test.ts lib/agent/tests/llm-runtime.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 7 mock-LLM M4 smoke through route handler + GM |
+| 2026-05-06 | `npm run check` | Passed | Phase 1B-5 gate: lint, typecheck, 54 test files / 147 tests, Next production build |
 
 ## Open Questions / Blockers
 

@@ -64,6 +64,7 @@ describe('runDecision', () => {
   it('wraps stream failures as api_error', async () => {
     vi.mocked(streamText).mockReturnValue({
       textStream: (async function* () {
+        for (const chunk of [] as string[]) yield chunk
         throw new Error('upstream failed')
       })(),
     } as unknown as ReturnType<typeof streamText>)
