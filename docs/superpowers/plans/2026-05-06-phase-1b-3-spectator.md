@@ -524,7 +524,7 @@ git commit -m "feat(p1b): ThinkingBubble with floating-ui smart positioning"
 **Files:**
 - Create: `games/poker/ui/PlayerSeat.tsx`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/ui/PlayerSeat.tsx`:
 
@@ -592,7 +592,7 @@ export function PlayerSeat({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/ui/PlayerSeat.tsx
