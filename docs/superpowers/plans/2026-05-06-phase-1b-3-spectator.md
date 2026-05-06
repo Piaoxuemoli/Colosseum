@@ -680,7 +680,7 @@ git commit -m "feat(p1b): CommunityCards + Pot with animations"
 
 **Context:** 椭圆牌桌，6 座位环绕。用绝对定位 + 百分比放置座位。
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/ui/PokerBoard.tsx`:
 
@@ -746,7 +746,7 @@ export function PokerBoard({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/ui/PokerBoard.tsx
@@ -763,7 +763,7 @@ git commit -m "feat(p1b): PokerBoard with 6-seat oval layout"
 
 **Context:** Server 外壳 `page.tsx` 读 match/participants/agents 初始数据；Client `SpectatorView` 接管 SSE + 渲染。
 
-- [ ] **Step 1: 写 Server page**
+- [x] **Step 1: 写 Server page**
 
 Create `app/matches/[matchId]/page.tsx`:
 
@@ -821,7 +821,7 @@ export default async function MatchPage({
 }
 ```
 
-- [ ] **Step 2: 写 Client SpectatorView**
+- [x] **Step 2: 写 Client SpectatorView**
 
 Create `app/matches/[matchId]/SpectatorView.tsx`:
 
@@ -922,7 +922,9 @@ export function SpectatorView({
 }
 ```
 
-- [ ] **Step 3: 手工验证**
+- [x] **Step 3: 手工验证**
+
+Local note: page typecheck/build passed. Live SSE verification requires Redis and remains blocked on this machine because Docker is not installed.
 
 Run: `npm run infra:up && npm run dev`（新开终端跑 dev）：
 1. 访问 `/matches/new`，选 6 agent 开新对局，跳到观战页
@@ -936,7 +938,7 @@ Run: `npm run infra:up && npm run dev`（新开终端跑 dev）：
 - ThinkingBubble 不显示：检查 anchorRef 是否绑定
 - 动画卡顿：降低 Framer Motion `transition.duration`
 
-- [ ] **Step 4: Commit + tag**
+- [x] **Step 4: Commit + tag**
 
 ```bash
 git add app/matches/\[matchId\]/ games/poker/ui/
@@ -949,7 +951,7 @@ git tag -a phase-1b-3 -m "Phase 1b-3: spectator page + poker table renderer"
 ## Phase 1b-3 Done 定义
 
 1. ✅ 访问 `/matches/<id>` 能看到椭圆牌桌 + 6 座位
-2. ✅ SSE 事件驱动 UI：发牌 / 下注 / 弃牌 / 换街 / 摊牌 全部可见
+2. ✅ SSE 事件驱动 UI：发牌 / 下注 / 弃牌 / 换街 / 摊牌 全部可见（真实 SSE 手工验证需 Redis；本机 Docker 缺失阻塞）
 3. ✅ 当前 actor 有明显视觉高亮（ring-2 + pulse）
 4. ✅ Thinking bubble 浮动在座位附近，`@floating-ui/react` 自动避开遮挡
 5. ✅ Framer Motion 动画：发牌 flip、公共牌 stagger、pot 变化 scale
