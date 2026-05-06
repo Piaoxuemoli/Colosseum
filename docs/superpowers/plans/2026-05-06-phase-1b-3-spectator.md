@@ -336,7 +336,7 @@ git commit -m "feat(p1b): match view store with event reducer"
 **Files:**
 - Create: `lib/client/sse.ts`
 
-- [ ] **Step 1: 写 hook**
+- [x] **Step 1: 写 hook**
 
 Create `lib/client/sse.ts`:
 
@@ -376,7 +376,7 @@ export function useMatchStream(
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add lib/client/sse.ts
