@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { api } from '@/lib/client/api'
-import { keyring } from '@/lib/client/keyring'
+import { keyring, uploadKeysForMatch } from '@/lib/client/keyring'
 
 type Agent = {
   id: string
@@ -93,6 +93,10 @@ export function MatchSetupForm() {
         config: { agentTimeoutMs, minActionIntervalMs },
         keyring: keyringPayload,
       })
+      await uploadKeysForMatch(
+        result.matchId,
+        Object.entries(keyringPayload).map(([profileId, apiKey]) => ({ profileId, apiKey })),
+      )
       router.push(`/matches/${result.matchId}`)
     } catch (err) {
       setError(String(err))
