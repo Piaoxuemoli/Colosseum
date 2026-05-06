@@ -26,6 +26,7 @@
 - Phase 0 Task 4 已创建 `lib/env.ts` 和环境变量测试；`loadEnv()` 支持读取本地 `.env` 后再做 Zod 校验。
 - Phase 0 Task 5 已创建 `docker-compose.yml` 和 `ops/dev/README.md`；当前设备未安装 Docker，infra 运行验证暂未完成。
 - Phase 0 Task 6 已创建 Drizzle SQLite schema/client/config、首个 migration 和 DB 集成测试。
+- 独立开发模式：默认不创建或提示 PR / MR；任务分支只用于本地隔离、备份和跨设备同步，合入在本地处理。
 
 ## Validation Log
 
