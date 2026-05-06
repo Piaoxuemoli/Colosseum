@@ -127,13 +127,17 @@ export async function POST(
     return handler({ body: parsed.data, env: loadEnv() })
   }
 
+  if (!agentId.startsWith('agt_')) {
+    return Response.json({ error: `unknown agent: ${agentId}` }, { status: 404 })
+  }
+
+  const agent = await findAgentById(agentId).catch(() => undefined)
+  if (!agent) return Response.json({ error: `unknown agent: ${agentId}` }, { status: 404 })
+
   const matchId = req.headers.get('X-Match-Id')
   const token = req.headers.get('X-Match-Token')
   const tokenContext = await validateMatchToken(matchId, token, agentId)
   if (!tokenContext) return Response.json({ error: 'unauthorized' }, { status: 401 })
-
-  const agent = await findAgentById(agentId)
-  if (!agent) return Response.json({ error: `unknown agent: ${agentId}` }, { status: 404 })
 
   const gameType = gameTypeSchema.parse(agent.gameType)
   const game = getGame(gameType)
