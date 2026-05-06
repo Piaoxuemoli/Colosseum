@@ -55,7 +55,7 @@ Colosseum/
 
 **Context:** `chipHistory` 是每手结束（`hand_over` / `settlement` 事件）记录所有 agent 当时的筹码快照；`errors` 存本场累计的 agent_error 数量（从 SSE 或轮询得到）。
 
-- [ ] **Step 1: 更新 store 类型**
+- [x] **Step 1: 更新 store 类型**
 
 在 `store/match-view-store.ts` 的 `MatchViewState` interface 里追加：
 
@@ -76,7 +76,7 @@ export interface MatchViewState {
 }
 ```
 
-- [ ] **Step 2: 写失败测试**
+- [x] **Step 2: 写失败测试**
 
 在 `tests/store/match-view-store.test.ts` 追加：
 
@@ -114,12 +114,12 @@ describe('errorCount', () => {
 })
 ```
 
-- [ ] **Step 3: 运行（应失败）**
+- [x] **Step 3: 运行（应失败）**
 
 Run: `npx vitest run tests/store/match-view-store.test.ts`
 Expected: FAIL — `recordHandSnapshot is not a function`。
 
-- [ ] **Step 4: 实现**
+- [x] **Step 4: 实现**
 
 在 store 的 initial state 和 actions 里加入：
 
@@ -156,12 +156,12 @@ case 'agent_error':
   break
 ```
 
-- [ ] **Step 5: 运行（应通过）**
+- [x] **Step 5: 运行（应通过）**
 
 Run: `npx vitest run tests/store/match-view-store.test.ts`
 Expected: PASS。
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add store/match-view-store.ts tests/store/match-view-store.test.ts

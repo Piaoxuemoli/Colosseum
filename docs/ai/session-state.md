@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B-4 Task 1
+- Current task: Phase 1B-4 Task 2
 
 ## Last Known Status
 
@@ -87,6 +87,7 @@
 | 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-3 Task 8 PokerBoard six-seat oval layout |
 | 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-3 Task 9 spectator route and SSE-integrated client view |
 | 2026-05-06 | `npm run check` | Passed | Phase 1B-3 gate: lint, typecheck, 48 test files / 129 tests, Next production build |
+| 2026-05-06 | `npm test tests/store/match-view-store.test.ts` + `npm run typecheck` | Passed | Phase 1B-4 Task 1 chipHistory, errorCount, and settled state in match view store |
 
 ## Open Questions / Blockers
 
