@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan: `docs/superpowers/plans/2026-05-06-phase-0-skeleton.md`
 - Current phase: Phase 0 — skeleton
-- Current task: Task 2 Step 9 — commit pending; Next/Tailwind/ESLint setup steps 1-8 completed
+- Current task: Phase 0 complete in code; local merge pending
 
 ## Last Known Status
 
@@ -22,6 +22,16 @@
 - 已新增可复用开发环境脚本：`npm run bootstrap`、`npm run sync`、`npm run doctor`，用于多设备初始化、日常安全拉取和环境检查。
 - 已新增 task 边界分步提交脚本：`npm run commit:step -- "<message>"`，用于执行态下自动创建小粒度提交。
 - Phase 0 Task 2 已创建 Next App Router 占位页、Tailwind/PostCSS 配置和 ESLint flat config。`next lint` 与当前 ESLint 10 不兼容，已改用 `eslint .`。
+- Phase 0 Task 3 已创建 Vitest 配置、测试 setup 和 smoke test。
+- Phase 0 Task 4 已创建 `lib/env.ts` 和环境变量测试；`loadEnv()` 支持读取本地 `.env` 后再做 Zod 校验。
+- Phase 0 Task 5 已创建 `docker-compose.yml` 和 `ops/dev/README.md`；当前设备未安装 Docker，infra 运行验证暂未完成。
+- Phase 0 Task 6 已创建 Drizzle SQLite schema/client/config、首个 migration 和 DB 集成测试。
+- 独立开发模式：默认不创建或提示 PR / MR；任务分支只用于本地隔离、备份和跨设备同步，合入在本地处理。
+- Phase 0 Task 7-10 已创建 Redis client、结构化 logger、LLM provider catalog 和 provider factory。
+- Phase 0 Task 11-14 已创建 health route、mocked LLM ping route、toy A2A stream helper 和 toy A2A client。
+- Phase 0 Task 15-17 已创建 toy agent card、toy agent message stream endpoint，并完成 mocked M2 client-to-server integration。
+- Phase 0 Task 18-19 已创建 README 和完成报告；`npm run check` 通过，production mode toy A2A endpoint 已在 port 3001 验证。
+- Next build output changed to `.next-build` because an old `.next/trace` file on this Windows machine has an abnormal ACL/lock and cannot be removed by the current user.
 
 ## Validation Log
 
@@ -38,14 +48,36 @@
 | 2026-05-06 | `npm run dev` + HTTP check | Passed | Homepage served on `localhost:3000` and contained `Colosseum` |
 | 2026-05-06 | `npm run lint` | Passed | Migrated from deprecated `next lint` to ESLint CLI |
 | 2026-05-06 | `npm run typecheck` | Passed | `tsc --noEmit` passed |
+| 2026-05-06 | `npm test` | Passed | Smoke test: 1 file, 2 tests passed |
+| 2026-05-06 | `npm test tests/lib/env.test.ts` | Expected fail then passed | Failed before `lib/env.ts`, then 2 tests passed |
+| 2026-05-06 | `npm run infra:up` | Blocked | Docker command not found on current machine |
+| 2026-05-06 | `npm run db:generate` + `npm run db:migrate` | Passed | Generated and applied initial SQLite migration |
+| 2026-05-06 | `npm test tests/lib/db/client.test.ts` | Expected fail then passed | Failed before schema/client; then 3 tests passed |
+| 2026-05-06 | `npm run lint` | Passed | ESLint CLI passed after DB task |
+| 2026-05-06 | `npm run typecheck` | Passed | Fixed readonly `NODE_ENV` test assignments via `vi.stubEnv` |
+| 2026-05-06 | `npm test` | Passed | 3 files, 7 tests passed |
+| 2026-05-06 | `npm test tests/lib/redis/client.test.ts tests/lib/telemetry/logger.test.ts tests/lib/llm/catalog.test.ts tests/lib/llm/provider-factory.test.ts` | Passed | 4 files, 10 tests passed; Redis test uses lazy client because Docker/Redis is unavailable on this machine |
+| 2026-05-06 | `npm run typecheck` | Passed | Provider factory compiles with SDK type bridge |
+| 2026-05-06 | `npm test tests/api/health.test.ts tests/api/llm-ping.test.ts tests/lib/a2a-core/server-helpers.test.ts tests/lib/a2a-core/client.test.ts` | Passed | 4 files, 5 tests passed; health and LLM ping use mocks for external services |
+| 2026-05-06 | `npm run typecheck` | Passed | Route handlers and A2A toy core compile |
+| 2026-05-06 | `npm test tests/api/agent-card.test.ts tests/api/agent-message-stream.test.ts tests/api/agent-e2e.test.ts tests/lib/a2a-core/client.test.ts` | Passed | 4 files, 8 tests passed |
+| 2026-05-06 | `npm run typecheck` | Passed | Toy agent routes and M2 integration compile |
+| 2026-05-06 | `npm run infra:up` | Blocked | Docker command is unavailable on this machine |
+| 2026-05-06 | `npm run check` | Passed | lint, typecheck, 14 test files / 28 tests, and Next production build passed |
+| 2026-05-06 | `npx next start -p 3001` + toy agent HTTP checks | Passed | Agent card returned JSON; message stream returned fold data artifact and completed status |
 
 ## Open Questions / Blockers
 
 - None.
+- Docker is not installed on this machine, so Docker Compose runtime checks and real Redis connectivity must be completed on a Docker-capable device.
+- Real M1 LLM curl is not verified on this machine because no real `TEST_LLM_*` key was used during automated validation; mocked SSE path is verified.
+- Port 3000 was occupied by another local process during production smoke; production smoke used port 3001.
 
 ## SDK / Plan Drift Notes
 
 - `next lint` is deprecated and failed with ESLint 10 option errors. Project now uses `eslint .` with `eslint.config.mjs`.
+- Test code should use `vi.stubEnv('NODE_ENV', 'test')`; assigning `process.env.NODE_ENV` directly fails typecheck because it is readonly.
+- `@ai-sdk/openai-compatible` / `@ai-sdk/anthropic` currently return provider v3 model types while `ai@5` exposes a v2 `LanguageModel` type. `lib/llm/provider-factory.ts` centralizes the temporary `unknown` bridge until dependencies are aligned.
 
 ## Resume Checklist
 
