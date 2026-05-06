@@ -22,7 +22,7 @@ Small blind: ${state.smallBlind}; big blind: ${state.bigBlind}.
 
 Return exactly:
 <thinking>brief analysis</thinking>
-<action>fold|check|call|bet|raise|allIn</action>
+<action>{"type":"fold|check|call|bet|raise|allIn","amount":0}</action>
 
 ${input.memoryContext.semanticSection}
 ${input.memoryContext.episodicSection}`
