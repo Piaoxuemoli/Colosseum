@@ -1,4 +1,5 @@
 import { loadEnv } from '@/lib/env'
+import { findAgentById } from '@/lib/db/queries/agents'
 
 export const runtime = 'nodejs'
 
@@ -83,9 +84,43 @@ export async function GET(
   const { agentId } = await context.params
   const buildCard = TOY_AGENTS[agentId]
 
-  if (!buildCard) {
-    return Response.json({ error: `unknown agent: ${agentId}` }, { status: 404 })
+  if (buildCard) {
+    return Response.json(buildCard())
   }
 
-  return Response.json(buildCard())
+  const agent = await findAgentById(agentId)
+  if (!agent) {
+    return Response.json({ error: `agent not found: ${agentId}` }, { status: 404 })
+  }
+
+  const env = loadEnv()
+  return Response.json({
+    protocolVersion: '0.3.0',
+    name: agent.displayName,
+    description: agent.systemPrompt.slice(0, 200),
+    version: '1.0.0',
+    url: `${env.BASE_URL}/api/agents/${agent.id}`,
+    capabilities: {
+      streaming: true,
+      pushNotifications: false,
+      stateTransitionHistory: false,
+    },
+    skills: [
+      {
+        id: `${agent.gameType}-${agent.kind}`,
+        name: `${agent.gameType} ${agent.kind}`,
+        description: `Plays ${agent.gameType} as ${agent.kind}`,
+        tags: [agent.gameType, agent.kind],
+        inputModes: ['application/json'],
+        outputModes: ['application/json'],
+      },
+    ],
+    defaultInputModes: ['application/json'],
+    defaultOutputModes: ['application/json'],
+    securitySchemes: {
+      apiKey: {
+        apiKeySecurityScheme: { location: 'header', name: 'X-Match-Token' },
+      },
+    },
+  })
 }
