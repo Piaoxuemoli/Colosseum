@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1a-*.md`
 - Current phase: Phase 1A — poker engine and GM foundation
-- Current task: Phase 1A-5 Task 22 complete; next Task 23
+- Current task: Phase 1A-5 complete; next Phase 1A-6 Task 24
 
 ## Last Known Status
 
@@ -51,6 +51,7 @@
 | 2026-05-06 | `npm run typecheck` | Passed | Task 20 minimal PokerPlayerContextBuilder compiles |
 | 2026-05-06 | `npm test games/poker/memory/__tests__` | Passed | Task 21 EMA + working memory, 5 tests |
 | 2026-05-06 | `npm test games/poker/memory` | Passed | Task 22 PokerMemoryModule assembly, 7 tests |
+| 2026-05-06 | `npm test tests/lib/core/register-games.test.ts` | Passed | Task 23 poker plugin registration, 1 test |
 
 ## Open Questions / Blockers
 
