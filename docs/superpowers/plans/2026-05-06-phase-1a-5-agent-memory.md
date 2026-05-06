@@ -169,7 +169,7 @@ git commit -m "feat(p1a): poker BotStrategy (rule-based fallback)"
 
 **Context:** 解析 LLM/Bot 返回的文本，提取 `<thinking>` + `<action>`；fallback 到 BotStrategy。本 Phase Bot-only，所以 Parser 主要被将来 LLM 版本用，但接口要先建好。
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 Create `games/poker/agent/__tests__/response-parser.test.ts`:
 
@@ -216,7 +216,7 @@ describe('PokerResponseParser', () => {
 })
 ```
 
-- [ ] **Step 2: 写实现**
+- [x] **Step 2: 写实现**
 
 Create `games/poker/agent/response-parser.ts`:
 
@@ -286,7 +286,7 @@ export class PokerResponseParser implements ResponseParser {
 }
 ```
 
-- [ ] **Step 3: 跑测试 + commit**
+- [x] **Step 3: 跑测试 + commit**
 
 Run: `npm test games/poker/agent/__tests__/response-parser.test.ts`
 Expected: 4 passed。
