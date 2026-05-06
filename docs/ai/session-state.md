@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan: `docs/superpowers/plans/2026-05-06-phase-0-skeleton.md`
 - Current phase: Phase 0 — skeleton
-- Current task: Task 5 Step 3 — Docker runtime verification blocked on local Docker install
+- Current task: Task 6 Step 10 — commit pending; Drizzle SQLite client and migrations verified
 
 ## Last Known Status
 
@@ -25,6 +25,7 @@
 - Phase 0 Task 3 已创建 Vitest 配置、测试 setup 和 smoke test。
 - Phase 0 Task 4 已创建 `lib/env.ts` 和环境变量测试；`loadEnv()` 支持读取本地 `.env` 后再做 Zod 校验。
 - Phase 0 Task 5 已创建 `docker-compose.yml` 和 `ops/dev/README.md`；当前设备未安装 Docker，infra 运行验证暂未完成。
+- Phase 0 Task 6 已创建 Drizzle SQLite schema/client/config、首个 migration 和 DB 集成测试。
 
 ## Validation Log
 
@@ -44,6 +45,11 @@
 | 2026-05-06 | `npm test` | Passed | Smoke test: 1 file, 2 tests passed |
 | 2026-05-06 | `npm test tests/lib/env.test.ts` | Expected fail then passed | Failed before `lib/env.ts`, then 2 tests passed |
 | 2026-05-06 | `npm run infra:up` | Blocked | Docker command not found on current machine |
+| 2026-05-06 | `npm run db:generate` + `npm run db:migrate` | Passed | Generated and applied initial SQLite migration |
+| 2026-05-06 | `npm test tests/lib/db/client.test.ts` | Expected fail then passed | Failed before schema/client; then 3 tests passed |
+| 2026-05-06 | `npm run lint` | Passed | ESLint CLI passed after DB task |
+| 2026-05-06 | `npm run typecheck` | Passed | Fixed readonly `NODE_ENV` test assignments via `vi.stubEnv` |
+| 2026-05-06 | `npm test` | Passed | 3 files, 7 tests passed |
 
 ## Open Questions / Blockers
 
@@ -53,6 +59,7 @@
 ## SDK / Plan Drift Notes
 
 - `next lint` is deprecated and failed with ESLint 10 option errors. Project now uses `eslint .` with `eslint.config.mjs`.
+- Test code should use `vi.stubEnv('NODE_ENV', 'test')`; assigning `process.env.NODE_ENV` directly fails typecheck because it is readonly.
 
 ## Resume Checklist
 

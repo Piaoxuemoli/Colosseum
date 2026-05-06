@@ -790,7 +790,7 @@ git commit -m "feat(p0): docker compose for dev postgres + redis"
 - Create: `lib/db/client.ts`
 - Create: `tests/lib/db/client.test.ts`
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/db/client.test.ts`:
 
@@ -821,7 +821,7 @@ describe('lib/db/client (sqlite)', () => {
 })
 ```
 
-- [ ] **Step 2: 运行测试验证失败**
+- [x] **Step 2: 运行测试验证失败**
 
 Run:
 ```bash
@@ -830,7 +830,7 @@ npm test tests/lib/db/client.test.ts
 
 Expected: 失败，提示 `Cannot find module`。
 
-- [ ] **Step 3: 写 SQLite schema（Phase 0 最小子集）**
+- [x] **Step 3: 写 SQLite schema（Phase 0 最小子集）**
 
 Create `lib/db/schema.sqlite.ts`:
 
@@ -855,7 +855,7 @@ export const apiProfiles = sqliteTable('api_profiles', {
 })
 ```
 
-- [ ] **Step 4: 写 DB client**
+- [x] **Step 4: 写 DB client**
 
 Create `lib/db/client.ts`:
 
@@ -882,7 +882,7 @@ export const db = (() => {
 export type DB = typeof db
 ```
 
-- [ ] **Step 5: 写 drizzle.config.ts**
+- [x] **Step 5: 写 drizzle.config.ts**
 
 ```typescript
 import type { Config } from 'drizzle-kit'
@@ -902,7 +902,7 @@ export default {
 } satisfies Config
 ```
 
-- [ ] **Step 6: 生成 + 应用首个 migration**
+- [x] **Step 6: 生成 + 应用首个 migration**
 
 Run:
 ```bash
@@ -917,7 +917,7 @@ Expected:
 
 **注意**：如果 `.env` 已存在不覆盖，则用 `cat .env.example >> .env` 或手动确保上述 env 变量已设置。
 
-- [ ] **Step 7: 跑 db client 测试**
+- [x] **Step 7: 跑 db client 测试**
 
 Run:
 ```bash
@@ -926,7 +926,7 @@ npm test tests/lib/db/client.test.ts
 
 Expected: 2 passed。
 
-- [ ] **Step 8: 写一个 integration test 验真的能 insert/select**
+- [x] **Step 8: 写一个 integration test 验真的能 insert/select**
 
 在 `tests/lib/db/client.test.ts` 末尾追加（`describe` 同一个块内）：
 
@@ -958,7 +958,7 @@ npm test tests/lib/db/client.test.ts
 
 Expected: 3 passed。
 
-- [ ] **Step 9: 将 tmp-test.db 加入 .gitignore**
+- [x] **Step 9: 将 tmp-test.db 加入 .gitignore**
 
 编辑仓库根 `.gitignore`（已存在），追加到末尾：
 
