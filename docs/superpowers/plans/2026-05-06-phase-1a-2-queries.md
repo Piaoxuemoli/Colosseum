@@ -178,7 +178,7 @@ git commit -m "feat(p1a): db queries for agents + profiles"
 **Files:**
 - Create: `lib/db/queries/matches.ts`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `lib/db/queries/matches.ts`:
 
@@ -290,7 +290,7 @@ export async function isAgentParticipant(
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add lib/db/queries/matches.ts
