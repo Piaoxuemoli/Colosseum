@@ -667,7 +667,7 @@ git commit -m "feat(p0): lib/env with zod-validated env loader"
 - Create: `docker-compose.yml`
 - Create: `ops/dev/README.md`
 
-- [ ] **Step 1: 写 docker-compose.yml**
+- [x] **Step 1: 写 docker-compose.yml**
 
 **此文件只起 Postgres + Redis；Next.js 在宿主机 `npm run dev` 运行以保证热更新。**
 
@@ -708,7 +708,7 @@ volumes:
   redisdata: {}
 ```
 
-- [ ] **Step 2: 写 ops/dev/README.md**
+- [x] **Step 2: 写 ops/dev/README.md**
 
 ```markdown
 # 开发环境
