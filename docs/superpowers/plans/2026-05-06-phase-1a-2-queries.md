@@ -306,7 +306,7 @@ git commit -m "feat(p1a): db queries for matches + participants"
 - Create: `lib/db/queries/errors.ts`
 - Create: `lib/db/queries/memory.ts`
 
-- [ ] **Step 1: 写 events queries**
+- [x] **Step 1: 写 events queries**
 
 Create `lib/db/queries/events.ts`:
 
@@ -395,7 +395,7 @@ export async function nextSeq(matchId: string): Promise<number> {
 }
 ```
 
-- [ ] **Step 2: 写 errors queries**
+- [x] **Step 2: 写 errors queries**
 
 Create `lib/db/queries/errors.ts`:
 
@@ -427,7 +427,7 @@ export async function recordAgentError(input: {
 }
 ```
 
-- [ ] **Step 3: 写 memory queries**
+- [x] **Step 3: 写 memory queries**
 
 Create `lib/db/queries/memory.ts`:
 
@@ -653,7 +653,7 @@ export async function loadAllSemanticForObserver(input: {
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add lib/db/queries/events.ts lib/db/queries/errors.ts lib/db/queries/memory.ts

@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1a-*.md`
 - Current phase: Phase 1A — poker engine and GM foundation
-- Current task: Phase 1A-2 Task 6 complete; next Task 7
+- Current task: Phase 1A-2 Task 7 complete; next Task 8
 
 ## Last Known Status
 
@@ -35,6 +35,7 @@
 | 2026-05-06 | `npm run typecheck` | Passed | Task 4 schema expansion typecheck |
 | 2026-05-06 | `npm test tests/lib/db/queries/agents.test.ts` | Passed | Task 5 agents/profiles queries round trip on migrated temp SQLite DB |
 | 2026-05-06 | `npm test tests/lib/db/queries/matches.test.ts` | Passed | Task 6 matches/participants query round trip |
+| 2026-05-06 | `npm test tests/lib/db/queries/events-memory.test.ts` | Passed | Task 7 events/errors/memory query round trips |
 
 ## Open Questions / Blockers
 
