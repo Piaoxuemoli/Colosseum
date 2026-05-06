@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.git/
+docs/
+*.md
+.vscode/
+.idea/
+.claude/
+ops/private/
+*.log
+.env
+.env.*
+**/__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx

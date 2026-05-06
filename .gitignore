@@ -1,0 +1,48 @@
+# ==========================================
+# Colosseum 新仓库 .gitignore
+# ==========================================
+
+# === 来自老项目的敏感文件（old/ 目录下） ===
+# SSH 私钥 / 部署凭证 / 本地 LLM key 等
+old/ops/private/*
+!old/ops/private/README.md
+old/.deploy.env
+old/**/*.local
+old/docs/poker-debug-*.json
+
+# === 构建产物 / 依赖（将来新项目会有） ===
+node_modules/
+dist/
+dist-ssr/
+.next/
+out/
+build/
+
+# === 日志 ===
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# === 环境变量 ===
+.env
+.env.local
+.env.*.local
+
+# === 编辑器 / 系统 ===
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# === 私有 / 本地 ===
+*.local
+temp-init/
+.codebuddy/
+
+# === 打包产物 ===
+*.tar
+*.tar.gz
+*.zip

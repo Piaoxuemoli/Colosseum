@@ -1,0 +1,32 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.tar
+
+node_modules
+dist
+dist-ssr
+*.local
+.deploy.env
+.superpowers/
+docs/poker-debug-*.json
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+temp-init/
+.codebuddy/
+ops/private/*
+!ops/private/README.md

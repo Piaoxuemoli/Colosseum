@@ -1,0 +1,11 @@
+services:
+  poker-arena:
+    build:
+      context: ../..
+      dockerfile: ops/deploy/Dockerfile
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      - PORT=3000
