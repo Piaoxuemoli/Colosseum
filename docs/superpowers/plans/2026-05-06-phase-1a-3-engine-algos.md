@@ -165,7 +165,7 @@ git commit -m "feat(p1a): poker card + deck (ported from old/ with seed-aware sh
 
 **Source:** `old/src/games/poker/engine/evaluator.ts`（243 行算法）
 
-- [ ] **Step 1: 原样复制 + 适配 import**
+- [x] **Step 1: 原样复制 + 适配 import**
 
 Run:
 ```bash
@@ -178,7 +178,7 @@ cp old/src/games/poker/engine/evaluator.ts games/poker/engine/evaluator.ts
 
 **验证方式：** `grep -n "^import" games/poker/engine/evaluator.ts` 确认所有 import 指向 `./card`。
 
-- [ ] **Step 2: 写教科书测试**
+- [x] **Step 2: 写教科书测试**
 
 Create `games/poker/engine/__tests__/evaluator.test.ts`:
 
@@ -234,12 +234,12 @@ describe('evaluateHand', () => {
 
 **注意：** 若 evaluator 导出名/签名不同，先 `grep -n "^export" games/poker/engine/evaluator.ts` 看真实 API，按实际改测试。
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/evaluator.test.ts`
 Expected: 5 passed。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/evaluator.ts games/poker/engine/__tests__/evaluator.test.ts
