@@ -20,7 +20,7 @@
 
 **Context:** 所有表主键是 UUID。为了人类可读（面试演示时），给 matchId/agentId/taskId 加短前缀。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/core/ids.test.ts`:
 
@@ -52,7 +52,7 @@ describe('lib/core/ids', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run:
 ```bash
@@ -61,7 +61,7 @@ npm test tests/lib/core/ids.test.ts
 
 Expected: 失败 `Cannot find module '@/lib/core/ids'`。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 Create `lib/core/ids.ts`:
 
@@ -117,7 +117,7 @@ export function parsePrefix(id: string): string | null {
 }
 ```
 
-- [ ] **Step 4: 跑测试验证通过**
+- [x] **Step 4: 跑测试验证通过**
 
 Run:
 ```bash
@@ -126,7 +126,7 @@ npm test tests/lib/core/ids.test.ts
 
 Expected: 4 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/core/ids.ts tests/lib/core/

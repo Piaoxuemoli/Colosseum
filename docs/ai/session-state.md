@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1a-*.md`
 - Current phase: Phase 1A — poker engine and GM foundation
-- Current task: Starting Plan 1A from `2026-05-06-phase-1a-1-schema.md`
+- Current task: Phase 1A-1 Task 1 complete; next Task 2
 
 ## Last Known Status
 
@@ -27,6 +27,7 @@
 | 2026-05-06 | `npm run doctor` | Passed | Node v24.12.0; Docker/Compose warnings only |
 | 2026-05-06 | `npm run check` | Passed | Phase 0 final gate passed |
 | 2026-05-06 | `npx next start -p 3001` + toy agent HTTP checks | Passed | Phase 0 prod smoke passed |
+| 2026-05-06 | `npm test tests/lib/core/ids.test.ts` | Passed | Task 1 core ID helpers, 5 tests |
 
 ## Open Questions / Blockers
 
