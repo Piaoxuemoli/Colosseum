@@ -112,12 +112,13 @@ describe('POST /api/agents/:id/message/stream LLM path', () => {
   })
 
   it('streams thinking deltas and LLM action when runDecision succeeds', async () => {
-    runDecision.mockImplementation(async (input: { onThinkingDelta?: (text: string) => void }) => {
+    runDecision.mockImplementation(async (input: { userPrompt: string; onThinkingDelta?: (text: string) => void }) => {
       input.onThinkingDelta?.('position looks good')
+      const action = input.userPrompt.includes('- fold') ? { type: 'fold' } : { type: 'check' }
       return {
-        action: { type: 'check' },
+        action,
         thinkingText: 'position looks good',
-        rawResponse: '<thinking>position looks good</thinking><action>{"type":"check"}</action>',
+        rawResponse: `<thinking>position looks good</thinking><action>${JSON.stringify(action)}</action>`,
       }
     })
 
@@ -140,7 +141,7 @@ describe('POST /api/agents/:id/message/stream LLM path', () => {
     const raw = await readBody(res)
     expect(res.status).toBe(200)
     expect(raw).toContain('position looks good')
-    expect(raw).toContain('"type":"check"')
+    expect(raw).toContain('"action"')
     expect(raw).toContain('"fallback":false')
   })
 
