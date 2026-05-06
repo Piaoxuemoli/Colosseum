@@ -27,7 +27,7 @@
 
 **Source:** `old/src/types/card.ts` + `old/src/games/poker/engine/deck.ts`
 
-- [ ] **Step 1: 抄 Card 类型**
+- [x] **Step 1: 抄 Card 类型**
 
 Create `games/poker/engine/card.ts`（基于 `old/src/types/card.ts`，增加可选 `rng` 参数便于种子化测试）：
 
@@ -74,7 +74,7 @@ export function cardToString(card: Card): string {
 }
 ```
 
-- [ ] **Step 2: 抄 deck 工具**
+- [x] **Step 2: 抄 deck 工具**
 
 Create `games/poker/engine/deck.ts`:
 
@@ -94,7 +94,7 @@ export function dealCards(deck: Card[], count: number): DealResult {
 }
 ```
 
-- [ ] **Step 3: 写测试**
+- [x] **Step 3: 写测试**
 
 Create `games/poker/engine/__tests__/deck.test.ts`:
 
@@ -143,12 +143,12 @@ describe('poker/engine/deck', () => {
 })
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/deck.test.ts`
 Expected: 6 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add games/poker/engine/card.ts games/poker/engine/deck.ts games/poker/engine/__tests__/deck.test.ts
@@ -165,7 +165,7 @@ git commit -m "feat(p1a): poker card + deck (ported from old/ with seed-aware sh
 
 **Source:** `old/src/games/poker/engine/evaluator.ts`（243 行算法）
 
-- [ ] **Step 1: 原样复制 + 适配 import**
+- [x] **Step 1: 原样复制 + 适配 import**
 
 Run:
 ```bash
@@ -178,7 +178,7 @@ cp old/src/games/poker/engine/evaluator.ts games/poker/engine/evaluator.ts
 
 **验证方式：** `grep -n "^import" games/poker/engine/evaluator.ts` 确认所有 import 指向 `./card`。
 
-- [ ] **Step 2: 写教科书测试**
+- [x] **Step 2: 写教科书测试**
 
 Create `games/poker/engine/__tests__/evaluator.test.ts`:
 
@@ -234,12 +234,12 @@ describe('evaluateHand', () => {
 
 **注意：** 若 evaluator 导出名/签名不同，先 `grep -n "^export" games/poker/engine/evaluator.ts` 看真实 API，按实际改测试。
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/evaluator.test.ts`
 Expected: 5 passed。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/evaluator.ts games/poker/engine/__tests__/evaluator.test.ts
@@ -256,7 +256,7 @@ git commit -m "feat(p1a): port hand evaluator from old/ with textbook tests"
 
 **Source:** `old/src/games/poker/engine/pot-manager.ts`（77 行）
 
-- [ ] **Step 1: 写实现（基于 old，就地定义 SidePot 去掉 game types 依赖）**
+- [x] **Step 1: 写实现（基于 old，就地定义 SidePot 去掉 game types 依赖）**
 
 Create `games/poker/engine/pot-manager.ts`:
 
@@ -316,7 +316,7 @@ export function mergePots(existing: SidePot[], newPots: SidePot[]): SidePot[] {
 }
 ```
 
-- [ ] **Step 2: 写测试**
+- [x] **Step 2: 写测试**
 
 Create `games/poker/engine/__tests__/pot-manager.test.ts`:
 
@@ -375,12 +375,12 @@ describe('calculateSidePots', () => {
 })
 ```
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/pot-manager.test.ts`
 Expected: 4 passed。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/pot-manager.ts games/poker/engine/__tests__/pot-manager.test.ts
@@ -397,7 +397,7 @@ git commit -m "feat(p1a): port pot-manager with side-pot textbook tests"
 
 **Source:** `old/src/games/poker/engine/equity.ts`
 
-- [ ] **Step 1: 复制并适配 import**
+- [x] **Step 1: 复制并适配 import**
 
 ```bash
 cp old/src/games/poker/engine/equity.ts games/poker/engine/equity.ts
@@ -405,7 +405,7 @@ cp old/src/games/poker/engine/equity.ts games/poker/engine/equity.ts
 
 编辑 `games/poker/engine/equity.ts` 把 import 路径改成 `./card` 和 `./evaluator`。
 
-- [ ] **Step 2: 写收敛性测试**
+- [x] **Step 2: 写收敛性测试**
 
 Create `games/poker/engine/__tests__/equity.test.ts`:
 
@@ -447,12 +447,12 @@ describe('computeEquity', () => {
 
 **签名按 `grep -n "^export" games/poker/engine/equity.ts` 实际调整。**
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/equity.test.ts`
 Expected: 2 passed（蒙特卡洛有随机性，偶尔失败可提高 iterations 到 2000）。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/equity.ts games/poker/engine/__tests__/equity.test.ts
@@ -467,7 +467,7 @@ git commit -m "feat(p1a): port equity Monte Carlo from old/"
 - Create: `games/poker/engine/poker-types.ts`
 - Create: `games/poker/engine/__tests__/poker-types.test.ts`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/engine/poker-types.ts`:
 
@@ -539,7 +539,7 @@ export interface PokerState {
 }
 ```
 
-- [ ] **Step 2: 写测试**
+- [x] **Step 2: 写测试**
 
 Create `games/poker/engine/__tests__/poker-types.test.ts`:
 
@@ -566,7 +566,7 @@ describe('pokerActionSchema', () => {
 })
 ```
 
-- [ ] **Step 3: 跑测试 + commit**
+- [x] **Step 3: 跑测试 + commit**
 
 Run: `npm test games/poker/engine/__tests__/poker-types.test.ts`
 Expected: 5 passed。

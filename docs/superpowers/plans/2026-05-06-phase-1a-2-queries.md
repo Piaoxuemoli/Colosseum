@@ -21,7 +21,7 @@
 
 **Context:** 把高频 DB 查询封装成函数，route handler 里调函数而不是直接写 drizzle。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/db/queries/agents.test.ts`:
 
@@ -56,7 +56,7 @@ describe('lib/db/queries/agents', () => {
 
 **说明**：对每个测试都重新跑 migration 太重，这里用 smoke 占位。真正的集成测试在 Task 25（端到端 bot 对局）里覆盖。
 
-- [ ] **Step 2: 写 agents queries**
+- [x] **Step 2: 写 agents queries**
 
 Create `lib/db/queries/agents.ts`:
 
@@ -112,7 +112,7 @@ export async function listAgents(filter?: {
 }
 ```
 
-- [ ] **Step 3: 写 profiles queries**
+- [x] **Step 3: 写 profiles queries**
 
 Create `lib/db/queries/profiles.ts`:
 
@@ -159,12 +159,12 @@ export async function listProfiles(): Promise<ApiProfileRow[]> {
 }
 ```
 
-- [ ] **Step 4: 跑测试（smoke）**
+- [x] **Step 4: 跑测试（smoke）**
 
 Run: `npm test tests/lib/db/queries/agents.test.ts`
 Expected: 1 passed（占位 smoke）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/db/queries/ tests/lib/db/queries/
@@ -178,7 +178,7 @@ git commit -m "feat(p1a): db queries for agents + profiles"
 **Files:**
 - Create: `lib/db/queries/matches.ts`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `lib/db/queries/matches.ts`:
 
@@ -290,7 +290,7 @@ export async function isAgentParticipant(
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add lib/db/queries/matches.ts
@@ -306,7 +306,7 @@ git commit -m "feat(p1a): db queries for matches + participants"
 - Create: `lib/db/queries/errors.ts`
 - Create: `lib/db/queries/memory.ts`
 
-- [ ] **Step 1: 写 events queries**
+- [x] **Step 1: 写 events queries**
 
 Create `lib/db/queries/events.ts`:
 
@@ -395,7 +395,7 @@ export async function nextSeq(matchId: string): Promise<number> {
 }
 ```
 
-- [ ] **Step 2: 写 errors queries**
+- [x] **Step 2: 写 errors queries**
 
 Create `lib/db/queries/errors.ts`:
 
@@ -427,7 +427,7 @@ export async function recordAgentError(input: {
 }
 ```
 
-- [ ] **Step 3: 写 memory queries**
+- [x] **Step 3: 写 memory queries**
 
 Create `lib/db/queries/memory.ts`:
 
@@ -653,7 +653,7 @@ export async function loadAllSemanticForObserver(input: {
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add lib/db/queries/events.ts lib/db/queries/errors.ts lib/db/queries/memory.ts
@@ -671,7 +671,7 @@ git commit -m "feat(p1a): db queries for events + errors + memory(3 layers)"
 
 **Context:** spec 第 5.1 / 6.2 节定义的接口。这是游戏自治原则的粘合层。
 
-- [ ] **Step 1: 写 engine contracts**
+- [x] **Step 1: 写 engine contracts**
 
 Create `lib/engine/contracts.ts`:
 
@@ -717,7 +717,7 @@ export interface GameEngine<TState, TAction, TConfig> {
 }
 ```
 
-- [ ] **Step 2: 写 memory contracts**
+- [x] **Step 2: 写 memory contracts**
 
 Create `lib/memory/contracts.ts`:
 
@@ -773,7 +773,7 @@ export interface MemoryModule<TWorking, TEpisodic, TSemantic> {
 }
 ```
 
-- [ ] **Step 3: 写 game registry**
+- [x] **Step 3: 写 game registry**
 
 Create `lib/core/registry.ts`:
 
@@ -846,7 +846,7 @@ export function clearRegistry(): void {
 }
 ```
 
-- [ ] **Step 4: 写契约级别的 smoke 测试**
+- [x] **Step 4: 写契约级别的 smoke 测试**
 
 Create `tests/lib/core/registry.test.ts`:
 
@@ -877,7 +877,7 @@ describe('lib/core/registry', () => {
 })
 ```
 
-- [ ] **Step 5: 跑测试 + type check**
+- [x] **Step 5: 跑测试 + type check**
 
 Run:
 ```bash
@@ -887,7 +887,7 @@ npx tsc --noEmit
 
 Expected: 2 passed，tsc 无错。
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/engine/contracts.ts lib/memory/contracts.ts lib/core/registry.ts tests/lib/core/registry.test.ts

@@ -22,7 +22,7 @@
 - Create: `games/poker/engine/poker-engine.ts`（骨架 + `createInitialState` + `currentActor`）
 - Create: `games/poker/engine/__tests__/poker-engine.test.ts`
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 Create `games/poker/engine/__tests__/poker-engine.test.ts`:
 
@@ -67,12 +67,12 @@ describe('PokerEngine.createInitialState', () => {
 })
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 失败（engine 不存在）。
 
-- [ ] **Step 3: 写实现（骨架）**
+- [x] **Step 3: 写实现（骨架）**
 
 Create `games/poker/engine/poker-engine.ts`:
 
@@ -182,12 +182,12 @@ export class PokerEngine
 }
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 3 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
@@ -202,7 +202,7 @@ git commit -m "feat(p1a): poker engine skeleton + initialState + blinds"
 - Modify: `games/poker/engine/poker-engine.ts`
 - Modify: `games/poker/engine/__tests__/poker-engine.test.ts`
 
-- [ ] **Step 1: 追加测试**
+- [x] **Step 1: 追加测试**
 
 在 `__tests__/poker-engine.test.ts` 末尾追加：
 
@@ -270,12 +270,12 @@ describe('PokerEngine.applyAction', () => {
 })
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 上面 5 个失败。
 
-- [ ] **Step 3: 实现 availableActions + applyAction**
+- [x] **Step 3: 实现 availableActions + applyAction**
 
 替换 `poker-engine.ts` 中的 `availableActions` + `applyAction` 方法体（保留其他）：
 
@@ -437,12 +437,12 @@ Expected: 上面 5 个失败。
   }
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 8 passed（初始化 3 + availableActions 2 + applyAction 4）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
@@ -457,7 +457,7 @@ git commit -m "feat(p1a): poker engine availableActions + applyAction (single st
 - Modify: `games/poker/engine/poker-engine.ts`
 - Modify: `games/poker/engine/__tests__/poker-engine.test.ts`
 
-- [ ] **Step 1: 追加测试**
+- [x] **Step 1: 追加测试**
 
 ```typescript
 describe('PokerEngine street transitions', () => {
@@ -501,7 +501,7 @@ describe('PokerEngine street transitions', () => {
 
 文件顶部加 `import type { PokerAction } from '../poker-types'`。
 
-- [ ] **Step 2: 实现 applyAction 末尾的街切换 + boundary**
+- [x] **Step 2: 实现 applyAction 末尾的街切换 + boundary**
 
 替换 `applyAction` 末尾：
 
@@ -610,12 +610,12 @@ describe('PokerEngine street transitions', () => {
   }
 ```
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 10 passed。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
@@ -630,7 +630,7 @@ git commit -m "feat(p1a): poker engine street transitions + boundary detection"
 - Modify: `games/poker/engine/poker-engine.ts`
 - Modify: `games/poker/engine/__tests__/poker-engine.test.ts`
 
-- [ ] **Step 1: 追加测试**
+- [x] **Step 1: 追加测试**
 
 ```typescript
 describe('PokerEngine.finalize', () => {
@@ -675,7 +675,7 @@ describe('PokerEngine settlement', () => {
 
 文件顶部加 `import type { PokerPlayerStatus } from '../poker-types'`（如还没）。
 
-- [ ] **Step 2: 替换 `settleHand` 占位实现**
+- [x] **Step 2: 替换 `settleHand` 占位实现**
 
 在 `poker-engine.ts` 顶部加：
 
@@ -751,7 +751,7 @@ import { evaluateHand } from './evaluator'
   }
 ```
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 12 passed。
@@ -759,7 +759,7 @@ Expected: 12 passed。
 Run: `npx tsc --noEmit`
 Expected: 0 errors。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
