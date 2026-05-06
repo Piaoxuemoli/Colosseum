@@ -15,6 +15,7 @@
 | `docs/ai/session-state.md` | 长任务状态，给上下文压缩、换 Agent、暂停恢复使用 |
 
 规则正文索引见 `docs/ai/rules/README.md`。Git 分支、提交、合入规范见 `docs/ai/rules/git-workflow.md`。
+新设备初始化和日常环境检查见 `docs/ai/rules/development-environment.md`。
 
 ## 推荐工作流
 

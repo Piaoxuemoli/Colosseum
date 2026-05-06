@@ -14,6 +14,7 @@ Keep this rule thin. Do not duplicate detailed project conventions here; route t
 ## Read On Demand
 
 - Project context / architecture constraints: `docs/ai/rules/project-context.md`
+- Development environment / bootstrap / sync: `docs/ai/rules/development-environment.md`
 - Lint / formatting / typecheck / tests: `docs/ai/rules/linting-and-quality.md`
 - UI design / visual style / components: `docs/ai/rules/ui-style.md`
 - Frontend / backend / API / data / security: `docs/ai/rules/frontend-backend.md`

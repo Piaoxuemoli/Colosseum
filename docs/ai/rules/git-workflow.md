@@ -35,6 +35,78 @@ test/poker-engine-cases
 hotfix/prod-healthcheck
 ```
 
+## 日常同步
+
+开发前把拉取远端更新视为本能动作，但必须安全执行：
+
+```bash
+npm run sync
+```
+
+该命令封装了：
+
+- 工作区干净才拉取
+- 有 upstream 才拉取
+- 先 `git fetch --all --prune`
+- 再 `git pull --ff-only`
+- 不修改 git remote / git config
+
+如果 `npm run sync` 提示工作区不干净，先处理本地改动；不要强行 pull、reset 或覆盖用户文件。
+
+## 本地分支拉取策略
+
+本地开发默认流程：
+
+1. 确认当前分支：`git status --short --branch`
+2. 安全同步：`npm run sync`
+3. 如果要开始新任务，从最新主线切任务分支：
+
+```bash
+git switch main
+npm run sync
+git switch -c feature/<scope>-<short-desc>
+```
+
+已有任务分支继续开发时：
+
+```bash
+npm run sync
+```
+
+如果任务分支没有 upstream，首次推送时由用户明确决定是否执行：
+
+```bash
+git push -u origin HEAD
+```
+
+不要在本地有未提交改动时强行 rebase、merge、pull 或切分支。
+
+## 自动分步提交
+
+执行 plan 时按 task 边界提交，避免把多个任务堆进一个大提交。推荐命令：
+
+```bash
+npm run commit:step -- "feat(p0): add env loader"
+```
+
+该命令会：
+
+- 检查工作区是否有改动
+- 阻止明显敏感文件提交
+- 执行 `git add -A`
+- 执行 `git diff --cached --check`
+- 打印 staged 文件列表
+- 创建一个 Conventional Commit
+
+分步提交的默认粒度：
+
+- 一个 plan task 一个提交
+- 依赖安装单独提交
+- 规则/文档变更单独提交
+- 修复验证失败的补丁可以跟随同一 task 提交
+
+AI 只有在用户明确进入“执行态并允许分步提交”或明确要求提交时，才执行 `npm run commit:step`。
+
 ## 提交规范
 
 使用 Conventional Commits 的轻量版：
@@ -71,7 +143,7 @@ test(engine): cover showdown side pots
 - 不把格式化、重构、功能、文档混成一个大提交。
 - 不提交无关文件、临时文件、生成缓存、调试输出。
 - 不提交 `.env*`、API key、token、cookie、私钥、`old/ops/private/*`。
-- AI 只有在用户明确要求时才创建 commit；不要擅自 commit。
+- AI 只有在用户明确要求，或当前会话已明确进入允许自动分步提交的执行态时才创建 commit；不要在普通问答中擅自 commit。
 
 ## 合入规范
 
@@ -93,6 +165,7 @@ test(engine): cover showdown side pots
 ## AI 执行 Git 的安全规则
 
 - 执行 commit 前必须先看 `git status`、`git diff`、最近提交风格。
+- 执行 plan 时优先用 `npm run commit:step -- "<message>"` 做 task 边界提交。
 - 不 revert 用户已有改动，除非用户明确要求。
 - 不运行破坏性命令，如 `git reset --hard`、`git checkout -- <file>`、`git clean -fd`。
 - 不 push，除非用户明确要求。

@@ -96,7 +96,7 @@ Colosseum/
 - Create: `.nvmrc`
 - Create: `.env.example`
 
-- [ ] **Step 1: 在仓库根目录初始化 package.json**
+- [x] **Step 1: 在仓库根目录初始化 package.json**
 
 当前目录确认：`C:/Users/qoobeewang/Desktop/Colosseum`（root 已有 `.gitignore`/`docs/`/`old/`）。
 
@@ -108,7 +108,7 @@ npm init -y
 
 Expected: 生成一个默认 `package.json`。
 
-- [ ] **Step 2: 替换为项目实际的 package.json**
+- [x] **Step 2: 替换为项目实际的 package.json**
 
 写入以下内容（完整替换）：
 
@@ -119,10 +119,15 @@ Expected: 生成一个默认 `package.json`。
   "private": true,
   "type": "module",
   "scripts": {
+    "bootstrap": "node scripts/dev-bootstrap.mjs",
+    "sync": "node scripts/dev-sync.mjs",
+    "doctor": "node scripts/dev-doctor.mjs",
+    "commit:step": "node scripts/git-step-commit.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
@@ -130,14 +135,15 @@ Expected: 生成一个默认 `package.json`。
     "db:studio": "drizzle-kit studio",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
-    "infra:logs": "docker compose logs -f"
+    "infra:logs": "docker compose logs -f",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {},
   "devDependencies": {}
 }
 ```
 
-- [ ] **Step 3: 写 tsconfig.json**
+- [x] **Step 3: 写 tsconfig.json**
 
 ```json
 {
@@ -168,13 +174,13 @@ Expected: 生成一个默认 `package.json`。
 
 **注意：`exclude` 里必须包含 `old`，否则 TypeScript 会把归档的老代码也编译报错。**
 
-- [ ] **Step 4: 写 .nvmrc**
+- [x] **Step 4: 写 .nvmrc**
 
 ```
 22
 ```
 
-- [ ] **Step 5: 写 .env.example**
+- [x] **Step 5: 写 .env.example**
 
 ```bash
 # === Node environment ===
@@ -200,7 +206,7 @@ TEST_LLM_API_KEY=sk-replace-me
 TEST_LLM_MODEL=deepseek-chat
 ```
 
-- [ ] **Step 6: 验证 TypeScript 可以编译空项目**
+- [x] **Step 6: 验证 TypeScript 可以编译空项目**
 
 Run:
 ```bash
@@ -223,7 +229,7 @@ git commit -m "chore(p0): init npm package + tsconfig + env template"
 **Files:**
 - Modify: `package.json` (via npm install)
 
-- [ ] **Step 1: 安装 Next.js + React + TypeScript**
+- [x] **Step 1: 安装 Next.js + React + TypeScript**
 
 Run:
 ```bash
@@ -233,7 +239,7 @@ npm install -D typescript@^5.9 @types/node @types/react @types/react-dom
 
 Expected: 无错误退出。
 
-- [ ] **Step 2: 安装 Tailwind 4 + PostCSS**
+- [x] **Step 2: 安装 Tailwind 4 + PostCSS**
 
 Run:
 ```bash
@@ -242,7 +248,7 @@ npm install -D tailwindcss@^4 @tailwindcss/postcss postcss
 
 Expected: 无错误。
 
-- [ ] **Step 3: 安装 Drizzle + 两种 DB 驱动**
+- [x] **Step 3: 安装 Drizzle + 两种 DB 驱动**
 
 Run:
 ```bash
@@ -255,7 +261,7 @@ npm install postgres
 
 Expected: 无错误。`postgres` 是 postgres.js 驱动（Drizzle 推荐）。
 
-- [ ] **Step 4: 安装 Redis client + Vercel AI SDK + A2A SDK**
+- [x] **Step 4: 安装 Redis client + Vercel AI SDK + A2A SDK**
 
 Run:
 ```bash
@@ -267,7 +273,7 @@ npm install zod
 
 Expected: 无错误。如 `@a2a-js/sdk` 找不到（NPM 上包名或有变），stop 执行，向用户求助——**不要自己造轮子**。
 
-- [ ] **Step 5: 安装测试工具**
+- [x] **Step 5: 安装测试工具**
 
 Run:
 ```bash
@@ -276,7 +282,7 @@ npm install -D vitest @vitest/ui jsdom @testing-library/react @testing-library/j
 
 Expected: 无错误。
 
-- [ ] **Step 6: 安装 ESLint（Next.js 标配）**
+- [x] **Step 6: 安装 ESLint（Next.js 标配）**
 
 Run:
 ```bash
@@ -285,7 +291,7 @@ npm install -D eslint eslint-config-next @eslint/js typescript-eslint
 
 Expected: 无错误。
 
-- [ ] **Step 7: 验证依赖都装上**
+- [x] **Step 7: 验证依赖都装上**
 
 Run:
 ```bash

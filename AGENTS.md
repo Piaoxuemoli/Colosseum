@@ -21,6 +21,7 @@ Colosseum 是一个纯 AI 博弈竞技平台：用户在浏览器里配置多个
 `.cursor/rules` 和 `.claude/rules` 只做路由，不承载完整规范。详细规则放在 `docs/ai/rules/`：
 
 - 项目上下文与架构红线：`docs/ai/rules/project-context.md`
+- 开发环境与设备复用：`docs/ai/rules/development-environment.md`
 - lint / typecheck / test / build：`docs/ai/rules/linting-and-quality.md`
 - UI 风格：`docs/ai/rules/ui-style.md`
 - 前后端边界：`docs/ai/rules/frontend-backend.md`
@@ -28,6 +29,8 @@ Colosseum 是一个纯 AI 博弈竞技平台：用户在浏览器里配置多个
 - Git 分支、提交、合入：`docs/ai/rules/git-workflow.md`
 
 按任务类型读取相关文档，不要默认把所有规则都加载进上下文。
+
+开发前默认先执行安全同步和环境检查：`npm run sync`、`npm run doctor`。新设备初始化使用 `npm run bootstrap`。
 
 ## 实施方式
 

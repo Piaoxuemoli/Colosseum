@@ -7,6 +7,7 @@
 | 场景 | 读取文档 |
 |---|---|
 | 项目整体上下文、架构红线 | `docs/ai/rules/project-context.md` |
+| 新设备初始化、环境检测、开发前同步 | `docs/ai/rules/development-environment.md` |
 | lint、格式化、类型检查、测试与质量门禁 | `docs/ai/rules/linting-and-quality.md` |
 | UI 视觉风格、交互、组件约定 | `docs/ai/rules/ui-style.md` |
 | 前后端边界、API、数据、安全注意事项 | `docs/ai/rules/frontend-backend.md` |

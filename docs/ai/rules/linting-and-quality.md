@@ -9,6 +9,10 @@
 ```json
 {
   "scripts": {
+    "bootstrap": "node scripts/dev-bootstrap.mjs",
+    "sync": "node scripts/dev-sync.mjs",
+    "doctor": "node scripts/dev-doctor.mjs",
+    "commit:step": "node scripts/git-step-commit.mjs",
     "dev": "next dev",
     "build": "next build",
     "lint": "next lint",
@@ -23,6 +27,8 @@
 ```
 
 如果某个阶段工具尚未安装，不要伪造通过结果；记录为“当前 Phase 尚未具备运行条件”。
+
+新设备或部署环境优先运行 `npm run bootstrap`；日常开发前运行 `npm run sync` 和 `npm run doctor`。
 
 ## ESLint 基线
 
