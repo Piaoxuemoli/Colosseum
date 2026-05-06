@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan: `docs/superpowers/plans/2026-05-06-phase-0-skeleton.md`
 - Current phase: Phase 0 — skeleton
-- Current task: Task 3 Step 5 — commit pending; Vitest smoke test passed
+- Current task: Task 4 Step 5 — commit pending; env loader tests passed
 
 ## Last Known Status
 
@@ -23,6 +23,7 @@
 - 已新增 task 边界分步提交脚本：`npm run commit:step -- "<message>"`，用于执行态下自动创建小粒度提交。
 - Phase 0 Task 2 已创建 Next App Router 占位页、Tailwind/PostCSS 配置和 ESLint flat config。`next lint` 与当前 ESLint 10 不兼容，已改用 `eslint .`。
 - Phase 0 Task 3 已创建 Vitest 配置、测试 setup 和 smoke test。
+- Phase 0 Task 4 已创建 `lib/env.ts` 和环境变量测试；`loadEnv()` 支持读取本地 `.env` 后再做 Zod 校验。
 
 ## Validation Log
 
@@ -40,6 +41,7 @@
 | 2026-05-06 | `npm run lint` | Passed | Migrated from deprecated `next lint` to ESLint CLI |
 | 2026-05-06 | `npm run typecheck` | Passed | `tsc --noEmit` passed |
 | 2026-05-06 | `npm test` | Passed | Smoke test: 1 file, 2 tests passed |
+| 2026-05-06 | `npm test tests/lib/env.test.ts` | Expected fail then passed | Failed before `lib/env.ts`, then 2 tests passed |
 
 ## Open Questions / Blockers
 

@@ -556,7 +556,7 @@ git commit -m "test(p0): vitest config + smoke test (jsdom env)"
 - Create: `lib/env.ts`
 - Create: `tests/lib/env.test.ts`
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/env.test.ts`:
 
@@ -588,7 +588,7 @@ describe('lib/env', () => {
 })
 ```
 
-- [ ] **Step 2: 运行测试验证失败**
+- [x] **Step 2: 运行测试验证失败**
 
 Run:
 ```bash
@@ -597,7 +597,7 @@ npm test tests/lib/env.test.ts
 
 Expected: 失败，提示 `Cannot find module '@/lib/env'` 或类似。
 
-- [ ] **Step 3: 写 lib/env.ts 最小实现**
+- [x] **Step 3: 写 lib/env.ts 最小实现**
 
 ```typescript
 import { z } from 'zod'
@@ -643,7 +643,7 @@ export const env: Env = (() => {
 
 **注意：** `env` 作为模块级常量会在 `import` 时执行，这在测试 import 阶段可能报错。测试用 `loadEnv()` 函数；应用运行时用 `env` 常量。
 
-- [ ] **Step 4: 运行测试验证通过**
+- [x] **Step 4: 运行测试验证通过**
 
 Run:
 ```bash
