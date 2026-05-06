@@ -581,7 +581,7 @@ git commit -m "feat(p1a): poker memory (EMA + working layer) with tests"
 
 **Context:** Phase 1a Bot-only，不会真的调 LLM 生成 episodic/semantic。本 Task 写接口 + 空实现（返回 null / 空画像），保证契约完整，Bot 对局可以跑通。真实 LLM 版本在 P1b 或后续 Phase 填。
 
-- [ ] **Step 1: 写 Episodic（骨架）**
+- [x] **Step 1: 写 Episodic（骨架）**
 
 Create `games/poker/memory/episodic.ts`:
 
@@ -621,7 +621,7 @@ export function formatEpisodicSection(entries: PokerEpisodicEntry[]): string {
 }
 ```
 
-- [ ] **Step 2: 写 Semantic（骨架）**
+- [x] **Step 2: 写 Semantic（骨架）**
 
 Create `games/poker/memory/semantic.ts`:
 
@@ -675,7 +675,7 @@ export function formatSemanticSection(
 }
 ```
 
-- [ ] **Step 3: 组装 MemoryModule**
+- [x] **Step 3: 组装 MemoryModule**
 
 Create `games/poker/memory/poker-memory.ts`:
 
@@ -754,7 +754,7 @@ export class PokerMemoryModule
 }
 ```
 
-- [ ] **Step 4: 写 MemoryModule 组合测试**
+- [x] **Step 4: 写 MemoryModule 组合测试**
 
 Create `games/poker/memory/__tests__/poker-memory.test.ts`:
 
@@ -782,7 +782,7 @@ describe('PokerMemoryModule', () => {
 })
 ```
 
-- [ ] **Step 5: 跑测试 + commit**
+- [x] **Step 5: 跑测试 + commit**
 
 Run: `npm test games/poker/memory/`
 Expected: 7 passed（前面 5 + 新 2）。
