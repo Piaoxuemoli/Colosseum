@@ -32,6 +32,8 @@ export type LlmRuntimeResult = {
 }
 
 export async function runDecision(input: LlmRuntimeInput): Promise<LlmRuntimeResult> {
+  if (process.env.M4_MOCK_LLM === '1') return runMockDecision(input)
+
   const { profile, agent, userPrompt, timeoutMs = 60_000, abortSignal, onThinkingDelta } = input
   const parser = new LlmStreamParser()
   const timeoutController = new AbortController()
@@ -115,4 +117,23 @@ function mergeSignals(first: AbortSignal, second: AbortSignal): AbortSignal {
   first.addEventListener('abort', abort, { once: true })
   second.addEventListener('abort', abort, { once: true })
   return controller.signal
+}
+
+async function runMockDecision(input: LlmRuntimeInput): Promise<LlmRuntimeResult> {
+  const action = mockActionFromPrompt(input.userPrompt)
+  const thinkingText = `M4 mock LLM selects ${action.type}.`
+  input.onThinkingDelta?.(thinkingText)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  return {
+    action,
+    thinkingText,
+    rawResponse: `<thinking>${thinkingText}</thinking><action>${JSON.stringify(action)}</action>`,
+  }
+}
+
+function mockActionFromPrompt(prompt: string): Record<string, unknown> {
+  if (prompt.includes('- fold')) return { type: 'fold' }
+  if (prompt.includes('- check')) return { type: 'check' }
+  if (prompt.includes('- call')) return { type: 'call' }
+  return { type: 'check' }
 }
