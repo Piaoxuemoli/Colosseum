@@ -9,13 +9,14 @@ export type RequestAgentInput = {
     role: 'user' | 'system'
     parts: Part[]
   }
+  matchId?: string
   matchToken: string
   onThinking?: (delta: string) => void
   timeoutMs?: number
 }
 
 export async function requestAgentDecisionToy<T = Record<string, unknown>>(input: RequestAgentInput): Promise<T> {
-  const { taskId, message, matchToken, onThinking, timeoutMs = 60_000 } = input
+  const { taskId, message, matchId, matchToken, onThinking, timeoutMs = 60_000 } = input
   const url = resolveAgentStreamUrl(input)
   const abort = new AbortController()
   const timer = timeoutMs > 0 ? setTimeout(() => abort.abort(), timeoutMs) : null
@@ -25,6 +26,7 @@ export async function requestAgentDecisionToy<T = Record<string, unknown>>(input
       method: 'POST',
       headers: {
         'content-type': 'application/json',
+        ...(matchId ? { 'X-Match-Id': matchId } : {}),
         'X-Match-Token': matchToken,
       },
       body: JSON.stringify({
