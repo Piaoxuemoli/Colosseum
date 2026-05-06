@@ -1,7 +1,9 @@
 import type { Part } from './types'
 
 export type RequestAgentInput = {
-  url: string
+  url?: string
+  baseUrl?: string
+  agentId?: string
   taskId: string
   message: {
     role: 'user' | 'system'
@@ -13,7 +15,8 @@ export type RequestAgentInput = {
 }
 
 export async function requestAgentDecisionToy<T = Record<string, unknown>>(input: RequestAgentInput): Promise<T> {
-  const { url, taskId, message, matchToken, onThinking, timeoutMs = 60_000 } = input
+  const { taskId, message, matchToken, onThinking, timeoutMs = 60_000 } = input
+  const url = resolveAgentStreamUrl(input)
   const abort = new AbortController()
   const timer = timeoutMs > 0 ? setTimeout(() => abort.abort(), timeoutMs) : null
 
@@ -68,6 +71,14 @@ export async function requestAgentDecisionToy<T = Record<string, unknown>>(input
   } finally {
     if (timer) clearTimeout(timer)
   }
+}
+
+function resolveAgentStreamUrl(input: RequestAgentInput): string {
+  if (input.url) return input.url
+  if (!input.baseUrl || !input.agentId) {
+    throw new Error('requestAgentDecisionToy requires either url or baseUrl + agentId')
+  }
+  return `${input.baseUrl.replace(/\/$/, '')}/api/agents/${input.agentId}/message/stream`
 }
 
 function consumeSseBlock(
