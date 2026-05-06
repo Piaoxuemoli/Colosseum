@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B-4 Task 10
+- Current task: Phase 1B-5 Task 1
 
 ## Last Known Status
 
@@ -96,10 +96,12 @@
 | 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 7 RightPanel with Tabs integrated into SpectatorView |
 | 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 8 RankingPanel on match settlement |
 | 2026-05-06 | `npm test tests/store/match-view-store.test.ts` + `npm run typecheck` | Passed | Phase 1B-4 Task 9 settled status for legacy settlement events |
+| 2026-05-06 | `npm run lint` + `npm test` + `npm run build` + `npm run doctor` | Passed | Phase 1B-4 automated gate; Docker/Compose are warnings because docker is unavailable locally |
 
 ## Open Questions / Blockers
 
 - Docker is not installed on this machine, so container-backed Postgres/Redis checks remain blocked locally.
+- Phase 1B-4 manual 6-bot Redis/Docker E2E remains blocked locally by missing Docker; automated lint/test/build passed.
 - Real M1 LLM curl was not run because no real `TEST_LLM_*` key was used; mocked SSE path is verified.
 
 ## SDK / Plan Drift Notes
