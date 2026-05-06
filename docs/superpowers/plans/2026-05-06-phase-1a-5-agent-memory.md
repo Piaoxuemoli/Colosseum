@@ -801,7 +801,7 @@ git commit -m "feat(p1a): poker memory module (episodic/semantic placeholders + 
 - Create: `lib/core/register-games.ts`（统一注册入口）
 - Create: `tests/lib/core/register-games.test.ts`
 
-- [ ] **Step 1: 写 plugin**
+- [x] **Step 1: 写 plugin**
 
 Create `games/poker/poker-plugin.ts`:
 
@@ -823,7 +823,7 @@ export const pokerPlugin: GameModule = {
 }
 ```
 
-- [ ] **Step 2: 写统一注册**
+- [x] **Step 2: 写统一注册**
 
 Create `lib/core/register-games.ts`:
 
@@ -840,7 +840,7 @@ export function registerAllGames(): void {
 }
 ```
 
-- [ ] **Step 3: 写测试**
+- [x] **Step 3: 写测试**
 
 Create `tests/lib/core/register-games.test.ts`:
 
@@ -864,7 +864,7 @@ describe('registerAllGames', () => {
 })
 ```
 
-- [ ] **Step 4: 跑测试 + commit**
+- [x] **Step 4: 跑测试 + commit**
 
 Run: `npm test tests/lib/core/register-games.test.ts`
 Expected: 1 passed。
