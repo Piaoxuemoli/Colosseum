@@ -17,6 +17,7 @@ dist-ssr/
 .next/
 out/
 build/
+tsconfig.tsbuildinfo
 
 # === 日志 ===
 *.log
