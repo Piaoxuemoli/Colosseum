@@ -29,7 +29,7 @@
 Colosseum/
 ├── .env.example                         # 环境变量模板
 ├── .gitignore                           # 已存在
-├── .eslintrc.json                       # ESLint 配置（含 import 分层规则）
+├── eslint.config.mjs                    # ESLint flat config（含 import 分层规则）
 ├── next.config.ts                       # Next.js 配置
 ├── next-env.d.ts                        # Next.js 自动生成
 ├── package.json
@@ -126,7 +126,7 @@ Expected: 生成一个默认 `package.json`。
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -317,9 +317,9 @@ git commit -m "chore(p0): install core deps (next 15 + drizzle + ai sdk + a2a sd
 - Create: `tailwind.config.ts`
 - Create: `postcss.config.mjs`
 - Create: `app/globals.css`
-- Create: `.eslintrc.json`
+- Create: `eslint.config.mjs`
 
-- [ ] **Step 1: 创建 next.config.ts**
+- [x] **Step 1: 创建 next.config.ts**
 
 ```typescript
 import type { NextConfig } from 'next'
@@ -334,7 +334,7 @@ const nextConfig: NextConfig = {
 export default nextConfig
 ```
 
-- [ ] **Step 2: 创建 postcss.config.mjs**
+- [x] **Step 2: 创建 postcss.config.mjs**
 
 ```javascript
 export default {
@@ -344,7 +344,7 @@ export default {
 }
 ```
 
-- [ ] **Step 3: 创建 tailwind.config.ts**
+- [x] **Step 3: 创建 tailwind.config.ts**
 
 ```typescript
 import type { Config } from 'tailwindcss'
@@ -364,7 +364,7 @@ const config: Config = {
 export default config
 ```
 
-- [ ] **Step 4: 创建 app/globals.css**
+- [x] **Step 4: 创建 app/globals.css**
 
 ```css
 @import "tailwindcss";
@@ -388,22 +388,31 @@ body {
 }
 ```
 
-- [ ] **Step 5: 创建 .eslintrc.json**
+- [x] **Step 5: 创建 eslint.config.mjs**
 
-```json
-{
-  "extends": ["next/core-web-vitals", "next/typescript"],
-  "ignorePatterns": ["old/**", "node_modules/**", ".next/**", "dist/**"],
-  "rules": {
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-    "@typescript-eslint/consistent-type-imports": "error"
-  }
-}
+```javascript
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+
+export default [
+  {
+    ignores: ['old/**', 'node_modules/**', '.next/**', 'dist/**', 'build/**', 'next-env.d.ts'],
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['**/*.{js,mjs,cjs,ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/consistent-type-imports': 'error',
+    },
+  },
+]
 ```
 
-**关键：`ignorePatterns` 含 `old/**`，否则 ESLint 会扫老代码报一堆错。**
+**关键：`ignores` 含 `old/**`，否则 ESLint 会扫老代码报一堆错。`next lint` 已废弃，项目使用 `eslint .`。**
 
-- [ ] **Step 6: 建 app/ 占位文件**
+- [x] **Step 6: 建 app/ 占位文件**
 
 Create `app/layout.tsx`:
 
@@ -441,7 +450,7 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 7: 跑 dev 服务器验证**
+- [x] **Step 7: 跑 dev 服务器验证**
 
 Run:
 ```bash
@@ -453,7 +462,7 @@ Expected: 输出类似 `▲ Next.js 15.x.x` 并 listen 在 `http://localhost:300
 
 **确认后 Ctrl+C 停掉 dev server。**
 
-- [ ] **Step 8: 跑 lint 验证**
+- [x] **Step 8: 跑 lint 验证**
 
 Run:
 ```bash
@@ -465,7 +474,7 @@ Expected: 无错误，或仅 Next.js 标准警告。
 - [ ] **Step 9: Commit**
 
 ```bash
-git add next.config.ts next-env.d.ts tailwind.config.ts postcss.config.mjs app/ .eslintrc.json
+git add next.config.ts next-env.d.ts tailwind.config.ts postcss.config.mjs app/ eslint.config.mjs
 git commit -m "feat(p0): next.js app router + tailwind 4 + eslint + hello world home"
 ```
 

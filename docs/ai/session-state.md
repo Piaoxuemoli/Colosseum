@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan: `docs/superpowers/plans/2026-05-06-phase-0-skeleton.md`
 - Current phase: Phase 0 — skeleton
-- Current task: Task 1 Step 8 — commit pending user approval; dependency install steps 1-7 completed
+- Current task: Task 2 Step 9 — commit pending; Next/Tailwind/ESLint setup steps 1-8 completed
 
 ## Last Known Status
 
@@ -21,6 +21,7 @@
 - Phase 0 Task 1 已安装核心依赖并生成 `package-lock.json`；npm audit 当前报告 6 个 moderate vulnerabilities，未自动执行 `npm audit fix --force`。
 - 已新增可复用开发环境脚本：`npm run bootstrap`、`npm run sync`、`npm run doctor`，用于多设备初始化、日常安全拉取和环境检查。
 - 已新增 task 边界分步提交脚本：`npm run commit:step -- "<message>"`，用于执行态下自动创建小粒度提交。
+- Phase 0 Task 2 已创建 Next App Router 占位页、Tailwind/PostCSS 配置和 ESLint flat config。`next lint` 与当前 ESLint 10 不兼容，已改用 `eslint .`。
 
 ## Validation Log
 
@@ -34,6 +35,9 @@
 | 2026-05-06 | `npm run sync` | Passed | Skipped pull because working tree is dirty, as designed |
 | 2026-05-06 | `npm run doctor` | Failed | Node is v20.19.5 but project expects >=22; Docker/Compose warn only |
 | 2026-05-06 | Node script syntax checks | Passed | `dev-sync`, `dev-doctor`, `dev-bootstrap`, `git-step-commit` |
+| 2026-05-06 | `npm run dev` + HTTP check | Passed | Homepage served on `localhost:3000` and contained `Colosseum` |
+| 2026-05-06 | `npm run lint` | Passed | Migrated from deprecated `next lint` to ESLint CLI |
+| 2026-05-06 | `npm run typecheck` | Passed | `tsc --noEmit` passed |
 
 ## Open Questions / Blockers
 
@@ -41,7 +45,7 @@
 
 ## SDK / Plan Drift Notes
 
-- None yet.
+- `next lint` is deprecated and failed with ESLint 10 option errors. Project now uses `eslint .` with `eslint.config.mjs`.
 
 ## Resume Checklist
 
