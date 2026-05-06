@@ -851,9 +851,11 @@ npm run dev
 - [ ] 手动触发一个 agent_error（例如把某个 agent profile 的 base URL 设为无效地址），`ErrorBadge` 出现红色数字
 - [ ] match 自动结束后弹出 `RankingPanel`，显示排名 + 盈亏
 
-- [ ] **Step 4: 记录**
+- [x] **Step 4: 记录**
 
 截图或日志保留，提交 commit。
+
+记录：`npm run lint`、`npm test`、`npm run build`、`npm run doctor` 已通过；本机 `docker` 命令不可用，Redis/Docker 手动 6-bot E2E 保持为本地环境阻塞，后续在可用 Docker 环境补跑。
 
 ```bash
 git add -A
@@ -864,13 +866,13 @@ git commit -m "chore(p1b-4): manual e2e verification passed" --allow-empty
 
 ## Done criteria (Phase 1b-4)
 
-- [ ] `LiveScoreboard` 实时显示排名和每手筹码变化
-- [ ] `ChipChart` 折线图展示每位 agent 的筹码历史
-- [ ] `ActionLog` / `ThinkingLog` Tab 可切换
-- [ ] `ErrorBadge` 能显示错误计数并 Popover 展示最近错误
-- [ ] `RankingPanel` 在 match 结束时自动弹出
-- [ ] `match-view-store` 包含 `chipHistory` / `errorCount` / `status` 派生
-- [ ] `npm run lint` / `npx vitest run` 全绿
+- [x] `LiveScoreboard` 实时显示排名和每手筹码变化
+- [x] `ChipChart` 折线图展示每位 agent 的筹码历史
+- [x] `ActionLog` / `ThinkingLog` Tab 可切换
+- [x] `ErrorBadge` 能显示错误计数并 Popover 展示最近错误
+- [x] `RankingPanel` 在 match 结束时自动弹出
+- [x] `match-view-store` 包含 `chipHistory` / `errorCount` / `status` 派生
+- [x] `npm run lint` / `npx vitest run` 全绿
 - [ ] 手动创建 6-bot match 完整跑完，所有组件正常显示
 
 完成后进入 **Phase 1b-5**：6 个真实 LLM agents 全流程演示。
