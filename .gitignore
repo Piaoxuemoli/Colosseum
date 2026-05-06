@@ -18,6 +18,10 @@ dist-ssr/
 out/
 build/
 tsconfig.tsbuildinfo
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 
 # === 日志 ===
 *.log

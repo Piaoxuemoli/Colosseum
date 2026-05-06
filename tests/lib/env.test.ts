@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('lib/env', () => {
   beforeEach(() => {
-    process.env.NODE_ENV = 'test'
+    vi.stubEnv('NODE_ENV', 'test')
     process.env.BASE_URL = 'http://localhost:3000'
     process.env.DB_DRIVER = 'sqlite'
     process.env.SQLITE_PATH = './test.db'
