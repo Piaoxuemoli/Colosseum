@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B-5 Task 2
+- Current task: Phase 1B-5 Task 3
 
 ## Last Known Status
 
@@ -98,6 +98,7 @@
 | 2026-05-06 | `npm test tests/store/match-view-store.test.ts` + `npm run typecheck` | Passed | Phase 1B-4 Task 9 settled status for legacy settlement events |
 | 2026-05-06 | `npm run lint` + `npm test` + `npm run build` + `npm run doctor` | Passed | Phase 1B-4 automated gate; Docker/Compose are warnings because docker is unavailable locally |
 | 2026-05-06 | `npm test lib/agent/tests/llm-stream-parser.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 1 streaming parser for thinking/action tags |
+| 2026-05-06 | `npm test lib/agent/tests/llm-runtime.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 2 LLM runtime with mocked AI SDK streamText |
 
 ## Open Questions / Blockers
 
