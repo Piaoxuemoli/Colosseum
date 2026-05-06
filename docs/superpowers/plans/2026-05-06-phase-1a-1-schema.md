@@ -143,7 +143,7 @@ git commit -m "feat(p1a): core ID utilities with prefixes + match token"
 
 **Context:** spec 第 5.5 节定义 `GameEvent`，第 7.4 节定义 `MatchConfig`。这些是跨游戏共享的。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/core/types.test.ts`:
 
@@ -194,7 +194,7 @@ describe('lib/core/types', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run:
 ```bash
@@ -203,7 +203,7 @@ npm test tests/lib/core/types.test.ts
 
 Expected: 失败。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 Create `lib/core/types.ts`:
 
@@ -265,7 +265,7 @@ export const providerKindSchema = z.enum(['openai-compatible', 'anthropic', 'cus
 export type ProviderKind = z.infer<typeof providerKindSchema>
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run:
 ```bash
@@ -274,7 +274,7 @@ npm test tests/lib/core/types.test.ts
 
 Expected: 4 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/core/types.ts tests/lib/core/types.test.ts
