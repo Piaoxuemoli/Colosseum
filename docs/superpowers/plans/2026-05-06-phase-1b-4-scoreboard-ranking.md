@@ -336,7 +336,7 @@ git commit -m "feat(p1b-4): ErrorBadge with 5s polling"
 
 **Context:** 右侧栏顶部的实时计分板。按当前筹码降序显示所有 agents，显示每位的：头像（首字母圆形）+ 名字 + 当前筹码 + 本手变化（`+20` 绿色 / `-15` 红色）。第 1 名旁边加个 👑。
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 'use client'
@@ -388,7 +388,7 @@ export function LiveScoreboard() {
 }
 ```
 
-- [ ] **Step 2: 写渲染测试**
+- [x] **Step 2: 写渲染测试**
 
 ```tsx
 import { render, screen } from '@testing-library/react'
@@ -417,7 +417,7 @@ describe('LiveScoreboard', () => {
 Run: `npx vitest run tests/components/LiveScoreboard.test.tsx`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/match/LiveScoreboard.tsx tests/components/LiveScoreboard.test.tsx
@@ -434,13 +434,13 @@ git commit -m "feat(p1b-4): LiveScoreboard with live diff + crown"
 
 **Context:** 用 Recharts 折线图画每位 agent 的筹码曲线。X 轴=手牌编号，Y 轴=筹码。数据源是 `chipHistory`。
 
-- [ ] **Step 1: 安装 recharts**
+- [x] **Step 1: 安装 recharts**
 
 ```bash
 npm install recharts
 ```
 
-- [ ] **Step 2: 组件**
+- [x] **Step 2: 组件**
 
 ```tsx
 'use client'
@@ -498,7 +498,7 @@ export function ChipChart() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/match/ChipChart.tsx package.json package-lock.json
