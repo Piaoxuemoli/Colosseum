@@ -291,7 +291,7 @@ git commit -m "feat(p1a): core types (GameEvent / MatchConfig / MatchResult)"
 
 **Context:** spec 第 8.3 节定义了 Redis 键约定。封成函数防止 typo。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/redis/keys.test.ts`:
 
@@ -311,12 +311,12 @@ describe('lib/redis/keys', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run: `npm test tests/lib/redis/keys.test.ts`
 Expected: 失败。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 Create `lib/redis/keys.ts`:
 
@@ -336,12 +336,12 @@ export const keys = {
 } as const
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run: `npm test tests/lib/redis/keys.test.ts`
 Expected: 1 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/redis/keys.ts tests/lib/redis/keys.test.ts
