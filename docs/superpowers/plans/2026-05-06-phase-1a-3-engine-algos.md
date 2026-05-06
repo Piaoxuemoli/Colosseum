@@ -27,7 +27,7 @@
 
 **Source:** `old/src/types/card.ts` + `old/src/games/poker/engine/deck.ts`
 
-- [ ] **Step 1: 抄 Card 类型**
+- [x] **Step 1: 抄 Card 类型**
 
 Create `games/poker/engine/card.ts`（基于 `old/src/types/card.ts`，增加可选 `rng` 参数便于种子化测试）：
 
@@ -74,7 +74,7 @@ export function cardToString(card: Card): string {
 }
 ```
 
-- [ ] **Step 2: 抄 deck 工具**
+- [x] **Step 2: 抄 deck 工具**
 
 Create `games/poker/engine/deck.ts`:
 
@@ -94,7 +94,7 @@ export function dealCards(deck: Card[], count: number): DealResult {
 }
 ```
 
-- [ ] **Step 3: 写测试**
+- [x] **Step 3: 写测试**
 
 Create `games/poker/engine/__tests__/deck.test.ts`:
 
@@ -143,12 +143,12 @@ describe('poker/engine/deck', () => {
 })
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/deck.test.ts`
 Expected: 6 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add games/poker/engine/card.ts games/poker/engine/deck.ts games/poker/engine/__tests__/deck.test.ts
