@@ -202,7 +202,7 @@ git commit -m "feat(p1a): poker engine skeleton + initialState + blinds"
 - Modify: `games/poker/engine/poker-engine.ts`
 - Modify: `games/poker/engine/__tests__/poker-engine.test.ts`
 
-- [ ] **Step 1: 追加测试**
+- [x] **Step 1: 追加测试**
 
 在 `__tests__/poker-engine.test.ts` 末尾追加：
 
@@ -270,12 +270,12 @@ describe('PokerEngine.applyAction', () => {
 })
 ```
 
-- [ ] **Step 2: 确认失败**
+- [x] **Step 2: 确认失败**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 上面 5 个失败。
 
-- [ ] **Step 3: 实现 availableActions + applyAction**
+- [x] **Step 3: 实现 availableActions + applyAction**
 
 替换 `poker-engine.ts` 中的 `availableActions` + `applyAction` 方法体（保留其他）：
 
@@ -437,12 +437,12 @@ Expected: 上面 5 个失败。
   }
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 8 passed（初始化 3 + availableActions 2 + applyAction 4）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
