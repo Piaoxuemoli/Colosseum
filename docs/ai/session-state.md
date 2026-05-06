@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B-5 Task 6
+- Current task: Phase 1B-5 Task 7
 
 ## Last Known Status
 
@@ -102,6 +102,7 @@
 | 2026-05-06 | `npm test tests/api/agent-stream.test.ts tests/api/agent-endpoint-real.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 3 real LLM agent endpoint path, Redis key cache, and bot fallback |
 | 2026-05-06 | `npm test tests/lib/client/keyring.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 4 client uploadKeysForMatch and match start integration |
 | 2026-05-06 | `npm test tests/lib/a2a-core/client.test.ts tests/lib/orchestrator tests/integration/bot-match.test.ts tests/api/matches-tick.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 5 GM requests agent endpoint through A2A and forwards thinking deltas |
+| 2026-05-06 | docs only | Passed | Phase 1B-5 Task 6 M4 manual checklist drafted; real run remains blocked locally by missing Docker / real keys |
 
 ## Open Questions / Blockers
 
