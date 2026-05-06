@@ -3,6 +3,8 @@ import type { GameEvent, MatchResult } from '@/lib/core/types'
 import type { ActionSpec, ApplyActionResult, BoundaryKind, GameEngine } from '@/lib/engine/contracts'
 import { createDeck, shuffleDeck } from './card'
 import { dealCards } from './deck'
+import { evaluateHand } from './evaluator'
+import { calculateSidePots } from './pot-manager'
 import type { PokerAction, PokerConfig, PokerPlayerState, PokerState } from './poker-types'
 
 export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerConfig> {
@@ -196,8 +198,16 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     return null
   }
 
-  finalize(_state: PokerState): MatchResult {
-    throw new Error('not implemented yet (Task 17)')
+  finalize(state: PokerState): MatchResult {
+    const sorted = [...state.players].sort((a, b) => b.chips - a.chips)
+    return {
+      winnerFaction: null,
+      ranking: sorted.map((player, index) => ({
+        agentId: player.id,
+        rank: index + 1,
+        score: player.chips,
+      })),
+    }
   }
 
   private postBlind(player: PokerPlayerState, amount: number): void {
@@ -337,8 +347,66 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     }
   }
 
-  private settleHand(_state: PokerState): GameEvent[] {
-    return []
+  private settleHand(state: PokerState): GameEvent[] {
+    const events: GameEvent[] = []
+    const pots = calculateSidePots(
+      state.players.map((player) => ({
+        playerId: player.id,
+        amount: player.totalCommitted,
+        isAllIn: player.status === 'allIn',
+        isFolded: player.status === 'folded',
+      })),
+    )
+
+    for (const pot of pots) {
+      const eligible = state.players.filter((player) => pot.eligiblePlayerIds.includes(player.id))
+      const winners =
+        eligible.length === 1
+          ? eligible
+          : this.showdownWinners(eligible, state.communityCards)
+      const baseShare = Math.floor(pot.amount / winners.length)
+      let remainder = pot.amount - baseShare * winners.length
+
+      for (const winner of winners) {
+        winner.chips += baseShare + (remainder > 0 ? 1 : 0)
+        if (remainder > 0) remainder -= 1
+      }
+
+      events.push(
+        this.makeEvent({
+          kind: 'poker/pot-award',
+          actorAgentId: null,
+          payload: { potAmount: pot.amount, winnerIds: winners.map((winner) => winner.id) },
+        }),
+      )
+    }
+
+    const playersWithChips = state.players.filter((player) => player.chips > 0)
+    if (playersWithChips.length <= 1) {
+      state.matchComplete = true
+      events.push(
+        this.makeEvent({
+          kind: 'poker/match-end',
+          actorAgentId: null,
+          payload: { winnerId: playersWithChips[0]?.id ?? null },
+        }),
+      )
+    } else {
+      for (const player of state.players) {
+        if (player.chips === 0 && player.status !== 'sittingOut') player.status = 'eliminated'
+      }
+    }
+
+    return events
+  }
+
+  private showdownWinners(players: PokerPlayerState[], communityCards: PokerState['communityCards']): PokerPlayerState[] {
+    const hands = players.map((player) => ({
+      player,
+      hand: evaluateHand([...player.holeCards, ...communityCards]),
+    }))
+    const bestValue = Math.max(...hands.map((entry) => entry.hand.value))
+    return hands.filter((entry) => entry.hand.value === bestValue).map((entry) => entry.player)
   }
 
   protected makeEvent(input: {

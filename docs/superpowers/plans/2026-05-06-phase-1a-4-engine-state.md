@@ -630,7 +630,7 @@ git commit -m "feat(p1a): poker engine street transitions + boundary detection"
 - Modify: `games/poker/engine/poker-engine.ts`
 - Modify: `games/poker/engine/__tests__/poker-engine.test.ts`
 
-- [ ] **Step 1: 追加测试**
+- [x] **Step 1: 追加测试**
 
 ```typescript
 describe('PokerEngine.finalize', () => {
@@ -675,7 +675,7 @@ describe('PokerEngine settlement', () => {
 
 文件顶部加 `import type { PokerPlayerStatus } from '../poker-types'`（如还没）。
 
-- [ ] **Step 2: 替换 `settleHand` 占位实现**
+- [x] **Step 2: 替换 `settleHand` 占位实现**
 
 在 `poker-engine.ts` 顶部加：
 
@@ -751,7 +751,7 @@ import { evaluateHand } from './evaluator'
   }
 ```
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 12 passed。
@@ -759,7 +759,7 @@ Expected: 12 passed。
 Run: `npx tsc --noEmit`
 Expected: 0 errors。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PokerEngine } from '../poker-engine'
-import type { PokerAction, PokerConfig } from '../poker-types'
+import type { PokerAction, PokerConfig, PokerPlayerStatus } from '../poker-types'
 
 const defaultConfig: PokerConfig = {
   smallBlind: 2,
@@ -148,5 +148,47 @@ describe('PokerEngine street transitions', () => {
         expect(engine.boundary(previous, state)).toBe('hand-end')
       }
     }
+  })
+})
+
+describe('PokerEngine.finalize', () => {
+  it('returns ranking sorted by chips desc', () => {
+    const engine = new PokerEngine()
+    const state = {
+      ...engine.createInitialState(defaultConfig, ['a', 'b', 'c', 'd', 'e', 'f']),
+      matchComplete: true,
+    }
+    state.players = state.players.map((player, index) => ({
+      ...player,
+      chips: index === 0 ? 500 : index === 1 ? 300 : 0,
+      status: (index > 1 ? 'eliminated' : 'active') as PokerPlayerStatus,
+    }))
+
+    const result = engine.finalize(state)
+
+    expect(result.ranking.length).toBe(6)
+    expect(result.ranking[0].rank).toBe(1)
+    expect(result.ranking[0].score).toBeGreaterThanOrEqual(result.ranking[5].score)
+  })
+})
+
+describe('PokerEngine settlement', () => {
+  it('pot awarded when 5 fold to heads-up winner', () => {
+    const engine = new PokerEngine()
+    let state = engine.createInitialState(defaultConfig, ['a', 'b', 'c', 'd', 'e', 'f'])
+
+    for (let i = 0; i < 5; i++) {
+      const actor = engine.currentActor(state)
+      if (!actor) break
+      state = engine.applyAction(state, actor, { type: 'fold' }).nextState
+    }
+
+    const survivor = state.players.find((player) => player.status !== 'folded')
+    const totalInitial = defaultConfig.startingChips * 6
+    const totalNow = state.players.reduce((sum, player) => sum + player.chips, 0)
+
+    expect(survivor).toBeDefined()
+    expect(totalNow).toBe(totalInitial)
+    expect(survivor!.chips).toBeGreaterThan(defaultConfig.startingChips)
   })
 })
