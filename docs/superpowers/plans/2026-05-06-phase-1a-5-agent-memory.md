@@ -305,7 +305,7 @@ git commit -m "feat(p1a): poker ResponseParser (tag extract + fuzzy + fallback)"
 
 **Context:** 本 Phase Bot-only，ContextBuilder 不会被调用（Agent Endpoint 直接调 BotStrategy）。但为了接口契约完整，仍然写一份最小实现，供后续 LLM Phase 使用。**测试先省略，P1b/后续 LLM 接入时补。**
 
-- [ ] **Step 1: 写最小实现**
+- [x] **Step 1: 写最小实现**
 
 Create `games/poker/agent/context-builder.ts`:
 
@@ -360,7 +360,7 @@ ${input.memoryContext.workingSummary}
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/agent/context-builder.ts
