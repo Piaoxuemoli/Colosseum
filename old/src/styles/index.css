@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+@theme {
+  /* ===== Material Design Color Tokens (from Stitch) ===== */
+  --color-background: #111125;
+  --color-surface: #111125;
+  --color-surface-dim: #111125;
+  --color-surface-bright: #37374d;
+  --color-surface-variant: #333348;
+  --color-surface-tint: #a1d494;
+  --color-surface-container-lowest: #0c0c1f;
+  --color-surface-container-low: #1a1a2e;
+  --color-surface-container: #1e1e32;
+  --color-surface-container-high: #28283d;
+  --color-surface-container-highest: #333348;
+
+  --color-primary: #a1d494;
+  --color-primary-container: #2d5a27;
+  --color-primary-fixed: #bcf0ae;
+  --color-primary-fixed-dim: #a1d494;
+  --color-on-primary: #0a3909;
+  --color-on-primary-container: #9dd090;
+  --color-on-primary-fixed: #002201;
+  --color-on-primary-fixed-variant: #23501e;
+
+  --color-secondary: #e9c349;
+  --color-secondary-container: #af8d11;
+  --color-secondary-fixed: #ffe088;
+  --color-secondary-fixed-dim: #e9c349;
+  --color-on-secondary: #3c2f00;
+  --color-on-secondary-container: #342800;
+  --color-on-secondary-fixed: #241a00;
+  --color-on-secondary-fixed-variant: #574500;
+
+  --color-tertiary: #a4c9ff;
+  --color-tertiary-container: #005193;
+  --color-tertiary-fixed: #d4e3ff;
+  --color-tertiary-fixed-dim: #a4c9ff;
+  --color-on-tertiary: #00315d;
+  --color-on-tertiary-container: #9cc5ff;
+  --color-on-tertiary-fixed: #001c39;
+  --color-on-tertiary-fixed-variant: #004883;
+
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+  --color-on-error: #690005;
+  --color-on-error-container: #ffdad6;
+
+  --color-on-surface: #e2e0fc;
+  --color-on-surface-variant: #c2c9bb;
+  --color-on-background: #e2e0fc;
+  --color-outline: #8c9387;
+  --color-outline-variant: #42493e;
+
+  --color-inverse-surface: #e2e0fc;
+  --color-inverse-on-surface: #2f2e43;
+  --color-inverse-primary: #3b6934;
+
+  /* ===== Font Families ===== */
+  --font-headline: "Manrope", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+
+  /* ===== Border Radius ===== */
+  --radius: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+}
+
+/* ===== Material Icons ===== */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+/* ===== Glass Panel ===== */
+.glass-panel {
+  background: rgba(51, 51, 72, 0.6);
+  backdrop-filter: blur(24px);
+}
+
+/* ===== Poker Table Gradients ===== */
+.poker-table-gradient {
+  background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.03) 0%, transparent 70%),
+              radial-gradient(circle at center, #3d7a35 0%, #2d5a27 60%, #1a3d18 100%);
+  box-shadow: inset 0 2px 20px rgba(0,0,0,0.25),
+              0 0 0 4px #1a3d18,
+              0 0 0 7px rgba(233,195,73,0.12),
+              0 8px 32px rgba(0,0,0,0.4);
+}
+
+.poker-table-gradient-spectator {
+  background: radial-gradient(circle at center, #2d5a27 0%, #111125 80%);
+}
+
+/* ===== Thinking Bubble Arrow ===== */
+.thinking-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 20px;
+  border-width: 8px 8px 0;
+  border-style: solid;
+  border-color: #28283d transparent;
+}
+
+/* ===== Custom Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111125;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2d5a27;
+  border-radius: 10px;
+}
+
+/* ===== Selection ===== */
+::selection {
+  background: rgba(161, 212, 148, 0.3);
+}
+
+/* ===== Impression Drawer Slide-in ===== */
+@keyframes slide-in-left {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.animate-slide-in {
+  animation: slide-in-left 0.2s ease-out;
+}
+
+/* ===== Custom Keyframe Animations ===== */
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(250, 204, 21, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(250, 204, 21, 0.6), 0 0 40px rgba(250, 204, 21, 0.2); }
+}
+
+@keyframes actionBubbleIn {
+  0% { opacity: 0; transform: scale(0.3) translateY(8px); }
+  60% { transform: scale(1.1) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+  0% { opacity: 0; transform: translateX(-12px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInUp {
+  0% { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes activePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(161,212,148,0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(161,212,148,0); }
+}
