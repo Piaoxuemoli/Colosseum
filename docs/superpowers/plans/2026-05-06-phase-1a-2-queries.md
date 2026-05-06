@@ -671,7 +671,7 @@ git commit -m "feat(p1a): db queries for events + errors + memory(3 layers)"
 
 **Context:** spec 第 5.1 / 6.2 节定义的接口。这是游戏自治原则的粘合层。
 
-- [ ] **Step 1: 写 engine contracts**
+- [x] **Step 1: 写 engine contracts**
 
 Create `lib/engine/contracts.ts`:
 
@@ -717,7 +717,7 @@ export interface GameEngine<TState, TAction, TConfig> {
 }
 ```
 
-- [ ] **Step 2: 写 memory contracts**
+- [x] **Step 2: 写 memory contracts**
 
 Create `lib/memory/contracts.ts`:
 
@@ -773,7 +773,7 @@ export interface MemoryModule<TWorking, TEpisodic, TSemantic> {
 }
 ```
 
-- [ ] **Step 3: 写 game registry**
+- [x] **Step 3: 写 game registry**
 
 Create `lib/core/registry.ts`:
 
@@ -846,7 +846,7 @@ export function clearRegistry(): void {
 }
 ```
 
-- [ ] **Step 4: 写契约级别的 smoke 测试**
+- [x] **Step 4: 写契约级别的 smoke 测试**
 
 Create `tests/lib/core/registry.test.ts`:
 
@@ -877,7 +877,7 @@ describe('lib/core/registry', () => {
 })
 ```
 
-- [ ] **Step 5: 跑测试 + type check**
+- [x] **Step 5: 跑测试 + type check**
 
 Run:
 ```bash
@@ -887,7 +887,7 @@ npx tsc --noEmit
 
 Expected: 2 passed，tsc 无错。
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/engine/contracts.ts lib/memory/contracts.ts lib/core/registry.ts tests/lib/core/registry.test.ts
