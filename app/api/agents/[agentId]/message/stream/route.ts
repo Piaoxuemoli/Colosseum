@@ -1,9 +1,15 @@
 import { streamText } from 'ai'
 import { z } from 'zod'
 import { createA2AStreamResponse } from '@/lib/a2a-core/server-helpers'
+import { getGame } from '@/lib/core/registry'
+import { gameTypeSchema } from '@/lib/core/types'
+import { findAgentById } from '@/lib/db/queries/agents'
 import { loadEnv } from '@/lib/env'
 import { ensureGamesRegistered } from '@/lib/instrument'
 import { createModel } from '@/lib/llm/provider-factory'
+import { validateMatchToken } from '@/lib/orchestrator/match-token'
+import { redis } from '@/lib/redis/client'
+import { keys } from '@/lib/redis/keys'
 import { log } from '@/lib/telemetry/logger'
 
 export const runtime = 'nodejs'
@@ -111,15 +117,52 @@ export async function POST(
   const { agentId } = await context.params
   const handler = toyAgents[agentId]
 
-  if (!handler) {
-    return Response.json({ error: `unknown agent: ${agentId}` }, { status: 404 })
-  }
-
   const json = await req.json().catch(() => null)
   const parsed = messageSchema.safeParse(json)
   if (!parsed.success) {
     return Response.json({ error: 'invalid body', details: parsed.error.flatten() }, { status: 400 })
   }
 
-  return handler({ body: parsed.data, env: loadEnv() })
+  if (handler) {
+    return handler({ body: parsed.data, env: loadEnv() })
+  }
+
+  const matchId = req.headers.get('X-Match-Id')
+  const token = req.headers.get('X-Match-Token')
+  const tokenContext = await validateMatchToken(matchId, token, agentId)
+  if (!tokenContext) return Response.json({ error: 'unauthorized' }, { status: 401 })
+
+  const agent = await findAgentById(agentId)
+  if (!agent) return Response.json({ error: `unknown agent: ${agentId}` }, { status: 404 })
+
+  const gameType = gameTypeSchema.parse(agent.gameType)
+  const game = getGame(gameType)
+  const stateRaw = await redis.get(keys.matchState(tokenContext.matchId))
+  if (!stateRaw) return Response.json({ error: 'match state missing' }, { status: 410 })
+
+  const state = JSON.parse(stateRaw) as unknown
+  const validActions = game.engine.availableActions(state, agentId)
+
+  return createA2AStreamResponse({
+    taskId: parsed.data.message.taskId,
+    async execute(emit) {
+      emit.statusUpdate('working')
+      try {
+        const action = game.botStrategy.decide(state, validActions as unknown[])
+        emit.artifactUpdate({
+          parts: [{ kind: 'text', text: `[${agent.displayName}] 根据当前局面生成规则决策...` }],
+          delta: true,
+        })
+        await new Promise((resolve) => setTimeout(resolve, 1))
+        emit.artifactUpdate({
+          parts: [{ kind: 'data', data: { action, thinking: 'bot rule-based' } }],
+          delta: false,
+        })
+        emit.statusUpdate('completed')
+      } catch (err) {
+        log.error('agent endpoint failed', { agentId, matchId: tokenContext.matchId, err: String(err) })
+        emit.statusUpdate('failed', String(err))
+      }
+    },
+  })
 }
