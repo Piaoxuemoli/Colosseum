@@ -358,7 +358,7 @@ git commit -m "feat(p1a): redis key namespace helpers"
 
 **Context:** 把 P0 只有 `api_profiles` 的 schema 扩到 spec 第 8.1 节定义的 9 张表。SQLite 差异：`jsonb → text({mode: 'json'})`，`timestamp → integer({mode: 'timestamp'})`，`uuid → text`。
 
-- [ ] **Step 1: 写失败的测试（验证每张表可被 import）**
+- [x] **Step 1: 写失败的测试（验证每张表可被 import）**
 
 Create `tests/lib/db/schema.test.ts`:
 
@@ -387,12 +387,12 @@ describe('lib/db/schema.sqlite', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run: `npm test tests/lib/db/schema.test.ts`
 Expected: 失败（仅 apiProfiles 存在）。
 
-- [ ] **Step 3: 写完整 schema**
+- [x] **Step 3: 写完整 schema**
 
 覆盖 `lib/db/schema.sqlite.ts` 为以下内容：
 
@@ -577,7 +577,7 @@ export const semanticMemory = sqliteTable(
 )
 ```
 
-- [ ] **Step 4: 生成并应用 migration**
+- [x] **Step 4: 生成并应用 migration**
 
 Run:
 ```bash
@@ -589,17 +589,17 @@ npm run db:migrate
 
 Expected: 生成 `lib/db/migrations/0001_*.sql`（P0 的 0000 还在），应用成功。
 
-- [ ] **Step 5: 跑测试**
+- [x] **Step 5: 跑测试**
 
 Run: `npm test tests/lib/db/schema.test.ts`
 Expected: 1 passed。
 
-- [ ] **Step 6: 全量测试回归**
+- [x] **Step 6: 全量测试回归**
 
 Run: `npm test`
 Expected: 之前所有测试仍通过（包括 P0 的 client.test.ts）。
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add lib/db/schema.sqlite.ts lib/db/migrations/ tests/lib/db/schema.test.ts
