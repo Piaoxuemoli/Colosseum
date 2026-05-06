@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B-2 Task 4
+- Current task: Phase 1B-2 Task 5
 
 ## Last Known Status
 
@@ -72,6 +72,7 @@
 | 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-2 Task 1 local shadcn-style UI primitives and dependencies |
 | 2026-05-06 | `npm test tests/lib/client/keyring.test.ts` + `npm run typecheck` | Passed | Phase 1B-2 Task 2 client API wrapper and localStorage keyring |
 | 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-2 Task 3 arena sidebar and global layout |
+| 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 4 Lobby server page with match list |
 
 ## Open Questions / Blockers
 

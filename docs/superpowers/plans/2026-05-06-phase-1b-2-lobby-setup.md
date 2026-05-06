@@ -362,7 +362,7 @@ git commit -m "feat(p1b): sidebar + global layout"
 **Files:**
 - Modify: `app/page.tsx`（Server Component，直接查 DB）
 
-- [ ] **Step 1: 写 Lobby**
+- [x] **Step 1: 写 Lobby**
 
 覆盖 `app/page.tsx`:
 
@@ -427,11 +427,11 @@ export default async function Lobby() {
 }
 ```
 
-- [ ] **Step 2: 跑 dev 验证**
+- [x] **Step 2: 跑 dev 验证**
 
 Run: `npm run dev`。如果 DB 有 match，应能看到卡片；点击卡片会 404（观战页在 P1b-3 做）。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add app/page.tsx
