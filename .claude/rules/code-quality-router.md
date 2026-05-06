@@ -2,6 +2,7 @@
 
 For code, config, package, lint, typecheck, test, or build changes, read:
 
+- `docs/ai/rules/development-environment.md`
 - `docs/ai/rules/linting-and-quality.md`
 
 For API, Route Handler, DB, Redis, LLM, A2A, or browser/server boundary changes, also read:

@@ -14,14 +14,16 @@
 
 1. 读取 `AGENTS.md`。
 2. 按任务类型读取 `docs/ai/rules/` 中对应规则，不要默认读取全部规则。
-3. 读取当前 plan，以及 plan 引用的 spec 章节。
-4. 读取 `docs/ai/session-state.md`，确认当前任务、已知阻塞和上次验证结果。
-5. 找到 plan 中第一个未完成 checkbox。一次只处理一个 task，除非用户明确要求连续推进。
-6. 复述本次要改的文件和验证命令，必要时先用 todo 拆分。
-7. 先写或确认失败测试，再做最小实现。
-8. 运行该 task 指定的验证命令；如果可行，再运行局部 lint/typecheck/test。
-9. 验证通过后，更新 plan checkbox 和 `docs/ai/session-state.md`。
-10. 最后报告：完成内容、验证命令与结果、下一步未完成 task。
+3. 运行开发前置检查：`npm run sync`，然后按当前阶段判断是否运行 `npm run doctor`。如果工作区不干净导致 sync 跳过，记录并继续。
+4. 读取当前 plan，以及 plan 引用的 spec 章节。
+5. 读取 `docs/ai/session-state.md`，确认当前任务、已知阻塞和上次验证结果。
+6. 找到 plan 中第一个未完成 checkbox。一次只处理一个 task，除非用户明确要求连续推进。
+7. 复述本次要改的文件和验证命令，必要时先用 todo 拆分。
+8. 先写或确认失败测试，再做最小实现。
+9. 运行该 task 指定的验证命令；如果可行，再运行局部 lint/typecheck/test。
+10. 验证通过后，更新 plan checkbox 和 `docs/ai/session-state.md`。
+11. 如果当前会话已允许自动分步提交，用 `npm run commit:step -- "<type>(<scope>): <summary>"` 创建 task 边界提交。
+12. 最后报告：完成内容、验证命令与结果、提交哈希（如已提交）、下一步未完成 task。
 
 ## Guardrails
 
