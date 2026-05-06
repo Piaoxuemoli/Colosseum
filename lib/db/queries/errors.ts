@@ -1,3 +1,4 @@
+import { desc, eq } from 'drizzle-orm'
 import { newId } from '@/lib/core/ids'
 import { db } from '@/lib/db/client'
 import { agentErrors } from '@/lib/db/schema.sqlite'
@@ -22,4 +23,13 @@ export async function recordAgentError(input: {
     rawResponse: input.rawResponse?.slice(0, 2000) ?? null,
     recoveryAction: input.recoveryAction ?? null,
   })
+}
+
+export async function listErrorsByMatch(matchId: string, limit = 20): Promise<(typeof agentErrors.$inferSelect)[]> {
+  return db
+    .select()
+    .from(agentErrors)
+    .where(eq(agentErrors.matchId, matchId))
+    .orderBy(desc(agentErrors.occurredAt))
+    .limit(limit)
 }
