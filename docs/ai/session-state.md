@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B-2 Task 6
+- Current task: Phase 1B-2 Task 7
 
 ## Last Known Status
 
@@ -74,6 +74,7 @@
 | 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-2 Task 3 arena sidebar and global layout |
 | 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 4 Lobby server page with match list |
 | 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 5 profiles management page with local key actions |
+| 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 6 agents management page |
 
 ## Open Questions / Blockers
 
