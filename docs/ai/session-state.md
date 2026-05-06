@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Starting Phase 1B-1 Task 1
+- Current task: Phase 1B-1 Task 2
 
 ## Last Known Status
 
@@ -57,6 +57,7 @@
 | 2026-05-06 | `npm run infra:up` | Blocked | Docker is not installed on this machine; M3 uses test-local Redis mock instead |
 | 2026-05-06 | `npm test tests/integration/bot-match.test.ts` | Passed | Task 25 M3: 6 Bot match completed with mocked Redis, persisted final ranking/events |
 | 2026-05-06 | `npm run check` | Passed | Phase 1A gate: lint, typecheck, 36 test files / 98 tests, Next production build |
+| 2026-05-06 | `npm test tests/lib/instrument.test.ts` + `npm run typecheck` | Passed | Phase 1B-1 Task 1 game registration instrumentation |
 
 ## Open Questions / Blockers
 
