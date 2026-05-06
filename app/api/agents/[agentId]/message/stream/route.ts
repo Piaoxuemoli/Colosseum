@@ -2,6 +2,7 @@ import { streamText } from 'ai'
 import { z } from 'zod'
 import { createA2AStreamResponse } from '@/lib/a2a-core/server-helpers'
 import { loadEnv } from '@/lib/env'
+import { ensureGamesRegistered } from '@/lib/instrument'
 import { createModel } from '@/lib/llm/provider-factory'
 import { log } from '@/lib/telemetry/logger'
 
@@ -106,6 +107,7 @@ export async function POST(
   req: Request,
   context: { params: Promise<{ agentId: string }> },
 ): Promise<Response> {
+  ensureGamesRegistered()
   const { agentId } = await context.params
   const handler = toyAgents[agentId]
 
