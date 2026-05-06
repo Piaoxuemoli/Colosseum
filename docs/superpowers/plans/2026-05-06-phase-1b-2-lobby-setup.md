@@ -69,7 +69,7 @@ Colosseum/
 
 **Context:** shadcn/ui 不是 npm 包，而是 CLI 把组件源码复制到 `components/ui/`。每个组件独立，可直接修改。
 
-- [ ] **Step 1: 初始化 shadcn（首次）**
+- [x] **Step 1: 初始化 shadcn（首次）**
 
 Run:
 ```bash
@@ -87,7 +87,7 @@ npx shadcn@latest init
 
 Expected: 在 `components/ui/` 下生成基础文件，`lib/utils.ts` 出现 `cn()` helper。
 
-- [ ] **Step 2: 按需安装组件**
+- [x] **Step 2: 按需安装组件**
 
 Run:
 ```bash
@@ -96,7 +96,7 @@ npx shadcn@latest add button input label select dialog card badge textarea avata
 
 Expected: 每个组件对应 `components/ui/<name>.tsx` 出现。
 
-- [ ] **Step 3: 验证可 import**
+- [x] **Step 3: 验证可 import**
 
 Create `app/_probe/page.tsx`（临时用，验证后删）：
 
@@ -118,7 +118,7 @@ Run `npm run dev`，访问 http://localhost:3000/_probe，应看到 Button 和 B
 
 **删除 probe 文件**：`rm -rf app/_probe`。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/ui/ lib/utils.ts components.json
