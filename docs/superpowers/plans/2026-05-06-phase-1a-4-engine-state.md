@@ -457,7 +457,7 @@ git commit -m "feat(p1a): poker engine availableActions + applyAction (single st
 - Modify: `games/poker/engine/poker-engine.ts`
 - Modify: `games/poker/engine/__tests__/poker-engine.test.ts`
 
-- [ ] **Step 1: 追加测试**
+- [x] **Step 1: 追加测试**
 
 ```typescript
 describe('PokerEngine street transitions', () => {
@@ -501,7 +501,7 @@ describe('PokerEngine street transitions', () => {
 
 文件顶部加 `import type { PokerAction } from '../poker-types'`。
 
-- [ ] **Step 2: 实现 applyAction 末尾的街切换 + boundary**
+- [x] **Step 2: 实现 applyAction 末尾的街切换 + boundary**
 
 替换 `applyAction` 末尾：
 
@@ -610,12 +610,12 @@ describe('PokerEngine street transitions', () => {
   }
 ```
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 10 passed。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
