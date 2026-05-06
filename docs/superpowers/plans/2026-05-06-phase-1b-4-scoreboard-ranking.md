@@ -262,7 +262,7 @@ git commit -m "feat(p1b-4): GET /api/matches/:id/errors"
 
 **Context:** 显示一个带红点的小徽标，hover 时列最近 5 条 kind+message。使用 `Popover`（shadcn/ui 已装）。
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 'use client'
@@ -319,7 +319,7 @@ export function ErrorBadge({ matchId }: { matchId: string }) {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add components/match/ErrorBadge.tsx
