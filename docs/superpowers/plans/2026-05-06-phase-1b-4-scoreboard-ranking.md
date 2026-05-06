@@ -787,7 +787,7 @@ git commit -m "feat(p1b-4): RankingPanel on match settlement"
 
 **Context:** 目前 store 的 `derived.status` 可能没有在 `match_end` / `settlement` 事件里更新为 `'settled'`。补上。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```typescript
 it('sets status to settled on match_end event', () => {
@@ -801,7 +801,7 @@ it('sets status to settled on match_end event', () => {
 Run: `npx vitest run tests/store/match-view-store.test.ts -t "match_end"`
 Expected: FAIL。
 
-- [ ] **Step 2: 实现**
+- [x] **Step 2: 实现**
 
 在 `ingestEvent` 里追加：
 
@@ -817,7 +817,7 @@ case 'settlement':
 Run: `npx vitest run tests/store/match-view-store.test.ts -t "match_end"`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add store/match-view-store.ts tests/store/match-view-store.test.ts

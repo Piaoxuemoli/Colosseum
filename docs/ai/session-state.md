@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B-4 Task 9
+- Current task: Phase 1B-4 Task 10
 
 ## Last Known Status
 
@@ -95,6 +95,7 @@
 | 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 6 ActionLog and ThinkingLog |
 | 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 7 RightPanel with Tabs integrated into SpectatorView |
 | 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 8 RankingPanel on match settlement |
+| 2026-05-06 | `npm test tests/store/match-view-store.test.ts` + `npm run typecheck` | Passed | Phase 1B-4 Task 9 settled status for legacy settlement events |
 
 ## Open Questions / Blockers
 

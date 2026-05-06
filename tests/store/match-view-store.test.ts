@@ -92,4 +92,11 @@ describe('match-view-store', () => {
     expect(useMatchViewStore.getState().status).toBe('settled')
     expect(useMatchViewStore.getState().matchComplete).toBe(true)
   })
+
+  it('sets status to settled on legacy settlement events', () => {
+    useMatchViewStore.getState().ingestEvent(event({ kind: 'match_end' }))
+
+    expect(useMatchViewStore.getState().status).toBe('settled')
+    expect(useMatchViewStore.getState().matchComplete).toBe(true)
+  })
 })

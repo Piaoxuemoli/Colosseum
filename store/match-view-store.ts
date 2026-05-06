@@ -188,6 +188,8 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           break
         }
         case 'poker/match-end':
+        case 'match_end':
+        case 'settlement':
           matchComplete = true
           status = 'settled'
           winnerAgentId = typeof event.payload.winnerId === 'string' ? event.payload.winnerId : null
