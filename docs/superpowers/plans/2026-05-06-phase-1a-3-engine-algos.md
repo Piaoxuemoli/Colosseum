@@ -467,7 +467,7 @@ git commit -m "feat(p1a): port equity Monte Carlo from old/"
 - Create: `games/poker/engine/poker-types.ts`
 - Create: `games/poker/engine/__tests__/poker-types.test.ts`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/engine/poker-types.ts`:
 
@@ -539,7 +539,7 @@ export interface PokerState {
 }
 ```
 
-- [ ] **Step 2: 写测试**
+- [x] **Step 2: 写测试**
 
 Create `games/poker/engine/__tests__/poker-types.test.ts`:
 
@@ -566,7 +566,7 @@ describe('pokerActionSchema', () => {
 })
 ```
 
-- [ ] **Step 3: 跑测试 + commit**
+- [x] **Step 3: 跑测试 + commit**
 
 Run: `npm test games/poker/engine/__tests__/poker-types.test.ts`
 Expected: 5 passed。
