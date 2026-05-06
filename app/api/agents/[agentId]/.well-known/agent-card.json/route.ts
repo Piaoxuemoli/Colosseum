@@ -88,7 +88,11 @@ export async function GET(
     return Response.json(buildCard())
   }
 
-  const agent = await findAgentById(agentId)
+  if (!agentId.startsWith('agt_')) {
+    return Response.json({ error: `agent not found: ${agentId}` }, { status: 404 })
+  }
+
+  const agent = await findAgentById(agentId).catch(() => undefined)
   if (!agent) {
     return Response.json({ error: `agent not found: ${agentId}` }, { status: 404 })
   }
