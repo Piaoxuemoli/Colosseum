@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan: `docs/superpowers/plans/2026-05-06-phase-0-skeleton.md`
 - Current phase: Phase 0 — skeleton
-- Current task: Task 6 Step 10 — commit pending; Drizzle SQLite client and migrations verified
+- Current task: Task 10 complete; proceeding to Task 11
 
 ## Last Known Status
 
@@ -27,6 +27,7 @@
 - Phase 0 Task 5 已创建 `docker-compose.yml` 和 `ops/dev/README.md`；当前设备未安装 Docker，infra 运行验证暂未完成。
 - Phase 0 Task 6 已创建 Drizzle SQLite schema/client/config、首个 migration 和 DB 集成测试。
 - 独立开发模式：默认不创建或提示 PR / MR；任务分支只用于本地隔离、备份和跨设备同步，合入在本地处理。
+- Phase 0 Task 7-10 已创建 Redis client、结构化 logger、LLM provider catalog 和 provider factory。
 
 ## Validation Log
 
@@ -51,16 +52,19 @@
 | 2026-05-06 | `npm run lint` | Passed | ESLint CLI passed after DB task |
 | 2026-05-06 | `npm run typecheck` | Passed | Fixed readonly `NODE_ENV` test assignments via `vi.stubEnv` |
 | 2026-05-06 | `npm test` | Passed | 3 files, 7 tests passed |
+| 2026-05-06 | `npm test tests/lib/redis/client.test.ts tests/lib/telemetry/logger.test.ts tests/lib/llm/catalog.test.ts tests/lib/llm/provider-factory.test.ts` | Passed | 4 files, 10 tests passed; Redis test uses lazy client because Docker/Redis is unavailable on this machine |
+| 2026-05-06 | `npm run typecheck` | Passed | Provider factory compiles with SDK type bridge |
 
 ## Open Questions / Blockers
 
 - None.
-- Docker is not installed on this machine, so Task 5 runtime checks must be completed on a Docker-capable device.
+- Docker is not installed on this machine, so Docker Compose runtime checks and real Redis connectivity must be completed on a Docker-capable device.
 
 ## SDK / Plan Drift Notes
 
 - `next lint` is deprecated and failed with ESLint 10 option errors. Project now uses `eslint .` with `eslint.config.mjs`.
 - Test code should use `vi.stubEnv('NODE_ENV', 'test')`; assigning `process.env.NODE_ENV` directly fails typecheck because it is readonly.
+- `@ai-sdk/openai-compatible` / `@ai-sdk/anthropic` currently return provider v3 model types while `ai@5` exposes a v2 `LanguageModel` type. `lib/llm/provider-factory.ts` centralizes the temporary `unknown` bridge until dependencies are aligned.
 
 ## Resume Checklist
 
