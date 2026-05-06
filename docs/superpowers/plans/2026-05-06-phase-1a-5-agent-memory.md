@@ -23,7 +23,7 @@
 
 **Context:** 简单规则 Bot：preflop 按手牌强度；postflop 按已下注比例 + 随机噪声。核心职责是"永远返回合法动作"，作为三层校验的最终 fallback。
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 Create `games/poker/agent/__tests__/bot-strategy.test.ts`:
 
@@ -63,7 +63,7 @@ describe('PokerBotStrategy', () => {
 })
 ```
 
-- [ ] **Step 2: 写实现**
+- [x] **Step 2: 写实现**
 
 Create `games/poker/agent/bot-strategy.ts`:
 
@@ -147,12 +147,12 @@ export class PokerBotStrategy implements BotStrategy {
 }
 ```
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 Run: `npm test games/poker/agent/__tests__/bot-strategy.test.ts`
 Expected: 2 passed。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add games/poker/agent/bot-strategy.ts games/poker/agent/__tests__/bot-strategy.test.ts
@@ -169,7 +169,7 @@ git commit -m "feat(p1a): poker BotStrategy (rule-based fallback)"
 
 **Context:** 解析 LLM/Bot 返回的文本，提取 `<thinking>` + `<action>`；fallback 到 BotStrategy。本 Phase Bot-only，所以 Parser 主要被将来 LLM 版本用，但接口要先建好。
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 Create `games/poker/agent/__tests__/response-parser.test.ts`:
 
@@ -216,7 +216,7 @@ describe('PokerResponseParser', () => {
 })
 ```
 
-- [ ] **Step 2: 写实现**
+- [x] **Step 2: 写实现**
 
 Create `games/poker/agent/response-parser.ts`:
 
@@ -286,7 +286,7 @@ export class PokerResponseParser implements ResponseParser {
 }
 ```
 
-- [ ] **Step 3: 跑测试 + commit**
+- [x] **Step 3: 跑测试 + commit**
 
 Run: `npm test games/poker/agent/__tests__/response-parser.test.ts`
 Expected: 4 passed。
@@ -305,7 +305,7 @@ git commit -m "feat(p1a): poker ResponseParser (tag extract + fuzzy + fallback)"
 
 **Context:** 本 Phase Bot-only，ContextBuilder 不会被调用（Agent Endpoint 直接调 BotStrategy）。但为了接口契约完整，仍然写一份最小实现，供后续 LLM Phase 使用。**测试先省略，P1b/后续 LLM 接入时补。**
 
-- [ ] **Step 1: 写最小实现**
+- [x] **Step 1: 写最小实现**
 
 Create `games/poker/agent/context-builder.ts`:
 
@@ -360,7 +360,7 @@ ${input.memoryContext.workingSummary}
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/agent/context-builder.ts
@@ -379,7 +379,7 @@ git commit -m "feat(p1a): poker ContextBuilder (minimal; LLM Phase will flesh ou
 
 **Source:** `old/src/games/poker/agent/poker-ema.ts`
 
-- [ ] **Step 1: 抄 EMA**
+- [x] **Step 1: 抄 EMA**
 
 ```bash
 cp old/src/games/poker/agent/poker-ema.ts games/poker/memory/ema.ts
@@ -444,7 +444,7 @@ function roundScore(v: number): number {
 }
 ```
 
-- [ ] **Step 2: 写 EMA 测试**
+- [x] **Step 2: 写 EMA 测试**
 
 Create `games/poker/memory/__tests__/ema.test.ts`:
 
@@ -477,7 +477,7 @@ describe('applyEMA', () => {
 })
 ```
 
-- [ ] **Step 3: 写 Working memory**
+- [x] **Step 3: 写 Working memory**
 
 Create `games/poker/memory/working.ts`:
 
@@ -531,7 +531,7 @@ export function formatWorkingForPrompt(w: PokerWorkingMemory): string {
 }
 ```
 
-- [ ] **Step 4: 写 working memory 测试**
+- [x] **Step 4: 写 working memory 测试**
 
 Create `games/poker/memory/__tests__/working.test.ts`:
 
@@ -560,7 +560,7 @@ describe('poker working memory', () => {
 })
 ```
 
-- [ ] **Step 5: 跑测试 + commit**
+- [x] **Step 5: 跑测试 + commit**
 
 Run: `npm test games/poker/memory/__tests__/`
 Expected: 5 passed。
@@ -581,7 +581,7 @@ git commit -m "feat(p1a): poker memory (EMA + working layer) with tests"
 
 **Context:** Phase 1a Bot-only，不会真的调 LLM 生成 episodic/semantic。本 Task 写接口 + 空实现（返回 null / 空画像），保证契约完整，Bot 对局可以跑通。真实 LLM 版本在 P1b 或后续 Phase 填。
 
-- [ ] **Step 1: 写 Episodic（骨架）**
+- [x] **Step 1: 写 Episodic（骨架）**
 
 Create `games/poker/memory/episodic.ts`:
 
@@ -621,7 +621,7 @@ export function formatEpisodicSection(entries: PokerEpisodicEntry[]): string {
 }
 ```
 
-- [ ] **Step 2: 写 Semantic（骨架）**
+- [x] **Step 2: 写 Semantic（骨架）**
 
 Create `games/poker/memory/semantic.ts`:
 
@@ -675,7 +675,7 @@ export function formatSemanticSection(
 }
 ```
 
-- [ ] **Step 3: 组装 MemoryModule**
+- [x] **Step 3: 组装 MemoryModule**
 
 Create `games/poker/memory/poker-memory.ts`:
 
@@ -754,7 +754,7 @@ export class PokerMemoryModule
 }
 ```
 
-- [ ] **Step 4: 写 MemoryModule 组合测试**
+- [x] **Step 4: 写 MemoryModule 组合测试**
 
 Create `games/poker/memory/__tests__/poker-memory.test.ts`:
 
@@ -782,7 +782,7 @@ describe('PokerMemoryModule', () => {
 })
 ```
 
-- [ ] **Step 5: 跑测试 + commit**
+- [x] **Step 5: 跑测试 + commit**
 
 Run: `npm test games/poker/memory/`
 Expected: 7 passed（前面 5 + 新 2）。
@@ -801,7 +801,7 @@ git commit -m "feat(p1a): poker memory module (episodic/semantic placeholders + 
 - Create: `lib/core/register-games.ts`（统一注册入口）
 - Create: `tests/lib/core/register-games.test.ts`
 
-- [ ] **Step 1: 写 plugin**
+- [x] **Step 1: 写 plugin**
 
 Create `games/poker/poker-plugin.ts`:
 
@@ -823,7 +823,7 @@ export const pokerPlugin: GameModule = {
 }
 ```
 
-- [ ] **Step 2: 写统一注册**
+- [x] **Step 2: 写统一注册**
 
 Create `lib/core/register-games.ts`:
 
@@ -840,7 +840,7 @@ export function registerAllGames(): void {
 }
 ```
 
-- [ ] **Step 3: 写测试**
+- [x] **Step 3: 写测试**
 
 Create `tests/lib/core/register-games.test.ts`:
 
@@ -864,7 +864,7 @@ describe('registerAllGames', () => {
 })
 ```
 
-- [ ] **Step 4: 跑测试 + commit**
+- [x] **Step 4: 跑测试 + commit**
 
 Run: `npm test tests/lib/core/register-games.test.ts`
 Expected: 1 passed。

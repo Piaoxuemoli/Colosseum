@@ -20,7 +20,7 @@
 
 **Context:** 所有表主键是 UUID。为了人类可读（面试演示时），给 matchId/agentId/taskId 加短前缀。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/core/ids.test.ts`:
 
@@ -52,7 +52,7 @@ describe('lib/core/ids', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run:
 ```bash
@@ -61,7 +61,7 @@ npm test tests/lib/core/ids.test.ts
 
 Expected: 失败 `Cannot find module '@/lib/core/ids'`。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 Create `lib/core/ids.ts`:
 
@@ -117,7 +117,7 @@ export function parsePrefix(id: string): string | null {
 }
 ```
 
-- [ ] **Step 4: 跑测试验证通过**
+- [x] **Step 4: 跑测试验证通过**
 
 Run:
 ```bash
@@ -126,7 +126,7 @@ npm test tests/lib/core/ids.test.ts
 
 Expected: 4 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/core/ids.ts tests/lib/core/
@@ -143,7 +143,7 @@ git commit -m "feat(p1a): core ID utilities with prefixes + match token"
 
 **Context:** spec 第 5.5 节定义 `GameEvent`，第 7.4 节定义 `MatchConfig`。这些是跨游戏共享的。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/core/types.test.ts`:
 
@@ -194,7 +194,7 @@ describe('lib/core/types', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run:
 ```bash
@@ -203,7 +203,7 @@ npm test tests/lib/core/types.test.ts
 
 Expected: 失败。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 Create `lib/core/types.ts`:
 
@@ -265,7 +265,7 @@ export const providerKindSchema = z.enum(['openai-compatible', 'anthropic', 'cus
 export type ProviderKind = z.infer<typeof providerKindSchema>
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run:
 ```bash
@@ -274,7 +274,7 @@ npm test tests/lib/core/types.test.ts
 
 Expected: 4 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/core/types.ts tests/lib/core/types.test.ts
@@ -291,7 +291,7 @@ git commit -m "feat(p1a): core types (GameEvent / MatchConfig / MatchResult)"
 
 **Context:** spec 第 8.3 节定义了 Redis 键约定。封成函数防止 typo。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 Create `tests/lib/redis/keys.test.ts`:
 
@@ -311,12 +311,12 @@ describe('lib/redis/keys', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run: `npm test tests/lib/redis/keys.test.ts`
 Expected: 失败。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 Create `lib/redis/keys.ts`:
 
@@ -336,12 +336,12 @@ export const keys = {
 } as const
 ```
 
-- [ ] **Step 4: 跑测试**
+- [x] **Step 4: 跑测试**
 
 Run: `npm test tests/lib/redis/keys.test.ts`
 Expected: 1 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/redis/keys.ts tests/lib/redis/keys.test.ts
@@ -358,7 +358,7 @@ git commit -m "feat(p1a): redis key namespace helpers"
 
 **Context:** 把 P0 只有 `api_profiles` 的 schema 扩到 spec 第 8.1 节定义的 9 张表。SQLite 差异：`jsonb → text({mode: 'json'})`，`timestamp → integer({mode: 'timestamp'})`，`uuid → text`。
 
-- [ ] **Step 1: 写失败的测试（验证每张表可被 import）**
+- [x] **Step 1: 写失败的测试（验证每张表可被 import）**
 
 Create `tests/lib/db/schema.test.ts`:
 
@@ -387,12 +387,12 @@ describe('lib/db/schema.sqlite', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run: `npm test tests/lib/db/schema.test.ts`
 Expected: 失败（仅 apiProfiles 存在）。
 
-- [ ] **Step 3: 写完整 schema**
+- [x] **Step 3: 写完整 schema**
 
 覆盖 `lib/db/schema.sqlite.ts` 为以下内容：
 
@@ -577,7 +577,7 @@ export const semanticMemory = sqliteTable(
 )
 ```
 
-- [ ] **Step 4: 生成并应用 migration**
+- [x] **Step 4: 生成并应用 migration**
 
 Run:
 ```bash
@@ -589,17 +589,17 @@ npm run db:migrate
 
 Expected: 生成 `lib/db/migrations/0001_*.sql`（P0 的 0000 还在），应用成功。
 
-- [ ] **Step 5: 跑测试**
+- [x] **Step 5: 跑测试**
 
 Run: `npm test tests/lib/db/schema.test.ts`
 Expected: 1 passed。
 
-- [ ] **Step 6: 全量测试回归**
+- [x] **Step 6: 全量测试回归**
 
 Run: `npm test`
 Expected: 之前所有测试仍通过（包括 P0 的 client.test.ts）。
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add lib/db/schema.sqlite.ts lib/db/migrations/ tests/lib/db/schema.test.ts
