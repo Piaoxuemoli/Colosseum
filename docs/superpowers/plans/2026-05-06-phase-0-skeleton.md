@@ -487,7 +487,7 @@ git commit -m "feat(p0): next.js app router + tailwind 4 + eslint + hello world 
 - Create: `tests/setup.ts`
 - Create: `tests/smoke.test.ts`
 
-- [ ] **Step 1: 创建 vitest.config.ts**
+- [x] **Step 1: 创建 vitest.config.ts**
 
 ```typescript
 import { defineConfig } from 'vitest/config'
@@ -508,13 +508,13 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 2: 创建 tests/setup.ts**
+- [x] **Step 2: 创建 tests/setup.ts**
 
 ```typescript
 import '@testing-library/jest-dom/vitest'
 ```
 
-- [ ] **Step 3: 写 smoke test（先失败）**
+- [x] **Step 3: 写 smoke test（先失败）**
 
 Create `tests/smoke.test.ts`:
 
@@ -532,7 +532,7 @@ describe('smoke', () => {
 })
 ```
 
-- [ ] **Step 4: 运行并确认通过**
+- [x] **Step 4: 运行并确认通过**
 
 Run:
 ```bash
