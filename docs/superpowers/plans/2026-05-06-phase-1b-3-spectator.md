@@ -607,7 +607,7 @@ git commit -m "feat(p1b): PlayerSeat with current-actor highlight + thinking bub
 - Create: `games/poker/ui/CommunityCards.tsx`
 - Create: `games/poker/ui/Pot.tsx`
 
-- [ ] **Step 1: 写 CommunityCards**
+- [x] **Step 1: 写 CommunityCards**
 
 Create `games/poker/ui/CommunityCards.tsx`:
 
@@ -637,7 +637,7 @@ export function CommunityCards({ cards }: { cards: CardVisual[] }) {
 }
 ```
 
-- [ ] **Step 2: 写 Pot**
+- [x] **Step 2: 写 Pot**
 
 Create `games/poker/ui/Pot.tsx`:
 
@@ -664,7 +664,7 @@ export function Pot({ amount, phase }: { amount: number; phase: string }) {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add games/poker/ui/CommunityCards.tsx games/poker/ui/Pot.tsx
