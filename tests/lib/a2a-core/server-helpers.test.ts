@@ -5,7 +5,7 @@ describe('createA2AStreamResponse', () => {
   it('emits status and artifact events in order', async () => {
     const res = createA2AStreamResponse({
       taskId: 'task_test_1',
-      async *execute(emit) {
+      async execute(emit) {
         emit.statusUpdate('working')
         emit.artifactUpdate({ parts: [{ kind: 'text', text: 'hello ' }], delta: true })
         emit.artifactUpdate({ parts: [{ kind: 'text', text: 'world' }], delta: true })

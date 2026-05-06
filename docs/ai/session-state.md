@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan: `docs/superpowers/plans/2026-05-06-phase-0-skeleton.md`
 - Current phase: Phase 0 — skeleton
-- Current task: Task 17 complete; proceeding to Task 18
+- Current task: Phase 0 complete in code; local merge pending
 
 ## Last Known Status
 
@@ -30,6 +30,8 @@
 - Phase 0 Task 7-10 已创建 Redis client、结构化 logger、LLM provider catalog 和 provider factory。
 - Phase 0 Task 11-14 已创建 health route、mocked LLM ping route、toy A2A stream helper 和 toy A2A client。
 - Phase 0 Task 15-17 已创建 toy agent card、toy agent message stream endpoint，并完成 mocked M2 client-to-server integration。
+- Phase 0 Task 18-19 已创建 README 和完成报告；`npm run check` 通过，production mode toy A2A endpoint 已在 port 3001 验证。
+- Next build output changed to `.next-build` because an old `.next/trace` file on this Windows machine has an abnormal ACL/lock and cannot be removed by the current user.
 
 ## Validation Log
 
@@ -60,12 +62,16 @@
 | 2026-05-06 | `npm run typecheck` | Passed | Route handlers and A2A toy core compile |
 | 2026-05-06 | `npm test tests/api/agent-card.test.ts tests/api/agent-message-stream.test.ts tests/api/agent-e2e.test.ts tests/lib/a2a-core/client.test.ts` | Passed | 4 files, 8 tests passed |
 | 2026-05-06 | `npm run typecheck` | Passed | Toy agent routes and M2 integration compile |
+| 2026-05-06 | `npm run infra:up` | Blocked | Docker command is unavailable on this machine |
+| 2026-05-06 | `npm run check` | Passed | lint, typecheck, 14 test files / 28 tests, and Next production build passed |
+| 2026-05-06 | `npx next start -p 3001` + toy agent HTTP checks | Passed | Agent card returned JSON; message stream returned fold data artifact and completed status |
 
 ## Open Questions / Blockers
 
 - None.
 - Docker is not installed on this machine, so Docker Compose runtime checks and real Redis connectivity must be completed on a Docker-capable device.
 - Real M1 LLM curl is not verified on this machine because no real `TEST_LLM_*` key was used during automated validation; mocked SSE path is verified.
+- Port 3000 was occupied by another local process during production smoke; production smoke used port 3001.
 
 ## SDK / Plan Drift Notes
 

@@ -19,7 +19,7 @@ export function createRedisClient(options: RedisClientOptions = {}): Redis {
   const env = loadEnv()
   return new Redis(options.url ?? env.REDIS_URL, {
     maxRetriesPerRequest: 3,
-    lazyConnect: options.lazyConnect ?? false,
+    lazyConnect: options.lazyConnect ?? true,
   })
 }
 

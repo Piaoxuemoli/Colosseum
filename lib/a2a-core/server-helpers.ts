@@ -38,7 +38,8 @@ export function createA2AStreamResponse(options: CreateA2AStreamOptions): Respon
         emit.statusUpdate('submitted')
         const result = execute(emit)
         if (result && typeof (result as AsyncGenerator<void, void, unknown>).next === 'function') {
-          for await (const _item of result as AsyncGenerator<void, void, unknown>) {
+          for await (const item of result as AsyncGenerator<void, void, unknown>) {
+            void item
             // The generator communicates by calling emit.
           }
         } else {

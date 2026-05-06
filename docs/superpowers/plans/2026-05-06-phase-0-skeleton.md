@@ -215,7 +215,7 @@ npx tsc --version
 
 Expected: 打印版本号（TypeScript 还没装，该命令会 fail）。这个 step **不要期望通过**，它只是确认 npm 可用。
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add package.json tsconfig.json .nvmrc .env.example
@@ -300,7 +300,7 @@ cat package.json | grep -E '(next|react|drizzle|ai|a2a|vitest)' | head -20
 
 Expected: 至少看到 next、react、drizzle-orm、ai、@a2a-js/sdk、vitest。
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add package.json package-lock.json
@@ -471,7 +471,7 @@ npm run lint
 
 Expected: 无错误，或仅 Next.js 标准警告。
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add next.config.ts next-env.d.ts tailwind.config.ts postcss.config.mjs app/ eslint.config.mjs
@@ -541,7 +541,7 @@ npm test
 
 Expected: 2 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add vitest.config.ts tests/
@@ -652,7 +652,7 @@ npm test tests/lib/env.test.ts
 
 Expected: 2 passed。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/env.ts tests/lib/env.test.ts
@@ -738,7 +738,7 @@ npm run db:studio      # 打开 Drizzle Studio（可视化）
 ```
 ```
 
-- [ ] **Step 3: 启动基础设施验证**
+- [x] **Step 3: 启动基础设施验证**
 
 Run:
 ```bash
@@ -748,7 +748,7 @@ docker compose ps
 
 Expected: postgres 和 redis 都 `healthy`。
 
-- [ ] **Step 4: 验证 Postgres 可连**
+- [x] **Step 4: 验证 Postgres 可连**
 
 Run:
 ```bash
@@ -757,7 +757,7 @@ docker compose exec postgres psql -U arena -d arena -c "SELECT version();"
 
 Expected: 输出 PostgreSQL 版本信息。
 
-- [ ] **Step 5: 验证 Redis 可连**
+- [x] **Step 5: 验证 Redis 可连**
 
 Run:
 ```bash
@@ -766,14 +766,14 @@ docker compose exec redis redis-cli ping
 
 Expected: `PONG`。
 
-- [ ] **Step 6: 停止容器（保留数据）**
+- [x] **Step 6: 停止容器（保留数据）**
 
 Run:
 ```bash
 npm run infra:down
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add docker-compose.yml ops/
@@ -971,7 +971,7 @@ Expected: 3 passed。
 .next/
 ```
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add drizzle.config.ts lib/db/ tests/lib/db/ .gitignore
@@ -2727,7 +2727,7 @@ git commit -m "test(p0): M2 — A2A end-to-end integration test (client → serv
 - Create: `README.md`
 - Create: `docs/superpowers/notes/phase-0-complete.md`
 
-- [ ] **Step 1: 写项目 README**
+- [x] **Step 1: 写项目 README**
 
 Create `README.md`:
 
@@ -2812,7 +2812,7 @@ curl -N -X POST http://localhost:3000/api/agents/toy-poker/message/stream \
 ```
 ```
 
-- [ ] **Step 2: 写 phase-0-complete.md**
+- [x] **Step 2: 写 phase-0-complete.md**
 
 ```bash
 mkdir -p docs/superpowers/notes
@@ -2876,7 +2876,7 @@ Create `docs/superpowers/notes/phase-0-complete.md`:
 入口：`docs/superpowers/plans/2026-05-06-phase-1-poker-mvp.md`
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add README.md docs/superpowers/notes/
@@ -2890,7 +2890,7 @@ git commit -m "docs(p0): README + phase-0-complete report"
 **Files:**
 - 无需改动
 
-- [ ] **Step 1: 全量测试通过**
+- [x] **Step 1: 全量测试通过**
 
 Run:
 ```bash
@@ -2900,7 +2900,7 @@ npm test
 
 Expected: 所有测试通过，没有 fail 或 skip。
 
-- [ ] **Step 2: Lint 通过**
+- [x] **Step 2: Lint 通过**
 
 Run:
 ```bash
@@ -2909,7 +2909,7 @@ npm run lint
 
 Expected: 0 errors, 0 warnings（或仅 Next.js 推荐级别警告）。
 
-- [ ] **Step 3: Type check**
+- [x] **Step 3: Type check**
 
 Run:
 ```bash
@@ -2918,7 +2918,7 @@ npx tsc --noEmit
 
 Expected: 0 errors。
 
-- [ ] **Step 4: Build 成功**
+- [x] **Step 4: Build 成功**
 
 Run:
 ```bash
@@ -2927,7 +2927,7 @@ npm run build
 
 Expected: 成功编译。可能看到 "compiled successfully" 和路由表。
 
-- [ ] **Step 5: 启动 prod 模式验证 M1 + M2 真实环境**
+- [x] **Step 5: 启动 prod 模式验证 M1 + M2 真实环境**
 
 Run:
 ```bash
@@ -2938,7 +2938,7 @@ npm start
 
 Ctrl+C 停。
 
-- [ ] **Step 6: git log 审阅**
+- [x] **Step 6: git log 审阅**
 
 Run:
 ```bash
@@ -2947,7 +2947,7 @@ git log --oneline -30
 
 Expected: 看到 ~20 条 "feat(p0)/test(p0)/chore(p0)/docs(p0)" commits。
 
-- [ ] **Step 7: tag phase-0 完成**
+- [x] **Step 7: tag phase-0 完成**
 
 ```bash
 git tag -a phase-0 -m "Phase 0 complete: skeleton + M1 LLM + M2 A2A toy"
