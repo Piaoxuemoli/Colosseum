@@ -50,7 +50,7 @@ Colosseum/
 
 ## Task 1: 安装 @floating-ui/react + framer-motion
 
-- [ ] **Step 1: 安装**
+- [x] **Step 1: 安装**
 
 Run:
 ```bash
@@ -59,7 +59,7 @@ npm install @floating-ui/react framer-motion
 
 Expected: 无错。
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add package.json package-lock.json
