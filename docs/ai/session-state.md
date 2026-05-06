@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
 - Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B-3 Task 1
+- Current task: Phase 1B-3 Task 2
 
 ## Last Known Status
 
@@ -77,6 +77,7 @@
 | 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 6 agents management page |
 | 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 7 match setup page |
 | 2026-05-06 | `npm run check` | Passed | Phase 1B-2 gate: lint, typecheck, 47 test files / 125 tests, Next production build |
+| 2026-05-06 | `npm install @floating-ui/react framer-motion` | Passed | Phase 1B-3 Task 1 spectator UI dependencies |
 
 ## Open Questions / Blockers
 
