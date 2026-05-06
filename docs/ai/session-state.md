@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: `docs/superpowers/plans/2026-05-06-phase-1a-*.md`
 - Current phase: Phase 1A — poker engine and GM foundation
-- Current task: Phase 1A-5 Task 18 complete; next Task 19
+- Current task: Phase 1A-5 Task 19 complete; next Task 20
 
 ## Last Known Status
 
@@ -47,6 +47,7 @@
 | 2026-05-06 | `npm test games/poker/engine/__tests__/poker-engine.test.ts` | Passed | Task 16 PokerEngine street transitions/boundary, 11 tests |
 | 2026-05-06 | `npm test games/poker/engine/__tests__/poker-engine.test.ts` + `npm run typecheck` | Passed | Task 17 PokerEngine settlement/finalize, 13 tests |
 | 2026-05-06 | `npm test games/poker/agent/__tests__/bot-strategy.test.ts` | Passed | Task 18 rule-based PokerBotStrategy, 2 tests |
+| 2026-05-06 | `npm test games/poker/agent/__tests__/response-parser.test.ts` | Passed | Task 19 PokerResponseParser, 4 tests |
 
 ## Open Questions / Blockers
 
