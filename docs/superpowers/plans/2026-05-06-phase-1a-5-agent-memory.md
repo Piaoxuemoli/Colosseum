@@ -379,7 +379,7 @@ git commit -m "feat(p1a): poker ContextBuilder (minimal; LLM Phase will flesh ou
 
 **Source:** `old/src/games/poker/agent/poker-ema.ts`
 
-- [ ] **Step 1: 抄 EMA**
+- [x] **Step 1: 抄 EMA**
 
 ```bash
 cp old/src/games/poker/agent/poker-ema.ts games/poker/memory/ema.ts
@@ -444,7 +444,7 @@ function roundScore(v: number): number {
 }
 ```
 
-- [ ] **Step 2: 写 EMA 测试**
+- [x] **Step 2: 写 EMA 测试**
 
 Create `games/poker/memory/__tests__/ema.test.ts`:
 
@@ -477,7 +477,7 @@ describe('applyEMA', () => {
 })
 ```
 
-- [ ] **Step 3: 写 Working memory**
+- [x] **Step 3: 写 Working memory**
 
 Create `games/poker/memory/working.ts`:
 
@@ -531,7 +531,7 @@ export function formatWorkingForPrompt(w: PokerWorkingMemory): string {
 }
 ```
 
-- [ ] **Step 4: 写 working memory 测试**
+- [x] **Step 4: 写 working memory 测试**
 
 Create `games/poker/memory/__tests__/working.test.ts`:
 
@@ -560,7 +560,7 @@ describe('poker working memory', () => {
 })
 ```
 
-- [ ] **Step 5: 跑测试 + commit**
+- [x] **Step 5: 跑测试 + commit**
 
 Run: `npm test games/poker/memory/__tests__/`
 Expected: 5 passed。
