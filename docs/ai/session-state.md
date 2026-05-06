@@ -6,9 +6,9 @@
 
 - Active spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
-- Active plan set: `docs/superpowers/plans/2026-05-06-phase-1a-*.md`
-- Current phase: Phase 1A — poker engine and GM foundation
-- Current task: Phase 1A complete; local merge/tag/push pending
+- Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
+- Current phase: Phase 1B — API and frontend playable experience
+- Current task: Starting Phase 1B-1 Task 1
 
 ## Last Known Status
 
@@ -19,6 +19,7 @@
 - Next build output is `.next-build` because an old `.next/trace` file on this Windows machine has abnormal ACL/lock and cannot be removed by the current user.
 - `old/` remains reference-only; do not edit it unless explicitly requested.
 - Independent development mode: do not create or suggest PR / MR; all merges are local.
+- Phase 1A is merged to `main` and pushed. Tag `phase-1a` exists remotely.
 
 ## Validation Log
 
