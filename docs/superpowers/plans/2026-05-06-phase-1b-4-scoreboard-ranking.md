@@ -177,7 +177,7 @@ git commit -m "feat(p1b-4): chipHistory + errorCount in match-view-store"
 - Create: `app/api/matches/[id]/errors/route.ts`
 - Create: `tests/api/errors-list.test.ts`
 
-- [ ] **Step 1: 补 query**
+- [x] **Step 1: 补 query**
 
 在 `db/queries/errors.ts` 追加：
 
@@ -195,7 +195,7 @@ export async function listErrorsByMatch(matchId: string, limit = 20) {
 }
 ```
 
-- [ ] **Step 2: 写 API 路由**
+- [x] **Step 2: 写 API 路由**
 
 在 `app/api/matches/[id]/errors/route.ts`：
 
@@ -213,7 +213,7 @@ export async function GET(
 }
 ```
 
-- [ ] **Step 3: 测试**
+- [x] **Step 3: 测试**
 
 在 `tests/api/errors-list.test.ts`：
 
@@ -246,7 +246,7 @@ describe('GET /api/matches/:id/errors', () => {
 Run: `npx vitest run tests/api/errors-list.test.ts`
 Expected: PASS。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add db/queries/errors.ts app/api/matches/\[id\]/errors/route.ts tests/api/errors-list.test.ts
