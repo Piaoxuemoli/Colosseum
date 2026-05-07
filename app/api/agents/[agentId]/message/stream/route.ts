@@ -1,6 +1,7 @@
 import { streamText } from 'ai'
 import { z } from 'zod'
 import { createA2AStreamResponse } from '@/lib/a2a-core/server-helpers'
+import { parseRpcRequest, rpcError, RpcErrors } from '@/lib/a2a-core/jsonrpc'
 import { getApiKey } from '@/lib/agent/key-cache'
 import { LlmError } from '@/lib/agent/llm-errors'
 import { runDecision } from '@/lib/agent/llm-runtime'
@@ -34,6 +35,47 @@ const messageSchema = z.object({
     ),
   }),
 })
+
+/**
+ * A2A v0.3 exposes `message/stream` via JSON-RPC. Next.js route path segments
+ * cannot contain a colon, so the physical path uses `/message/stream` but the
+ * JSON-RPC `method` string is still `"message/stream"`. This is documented in
+ * `docs/demo/a2a-compliance-check.md`.
+ *
+ * This route accepts BOTH shapes for backward compatibility:
+ * 1. Direct body  : `{ message: { taskId, role, parts } }` (legacy GM path)
+ * 2. JSON-RPC     : `{ jsonrpc:"2.0", id, method:"message/stream",
+ *                      params: { message, matchId? } }` (A2A v0.3 spec)
+ */
+function unwrapBody(raw: unknown): {
+  shape: 'direct' | 'jsonrpc'
+  rpcId: number | string | null
+  inner: unknown
+} | { shape: 'error'; status: number; body: unknown } {
+  if (typeof raw !== 'object' || raw === null) {
+    return { shape: 'error', status: 400, body: { error: 'invalid json body' } }
+  }
+  const o = raw as Record<string, unknown>
+  if (o.jsonrpc === '2.0') {
+    const rpc = parseRpcRequest(raw)
+    if (!rpc.ok) {
+      return {
+        shape: 'error',
+        status: 400,
+        body: { jsonrpc: '2.0', id: null, error: rpc.error },
+      }
+    }
+    if (rpc.value.method !== 'message/stream') {
+      return {
+        shape: 'error',
+        status: 404,
+        body: rpcError(rpc.value.id, RpcErrors.METHOD_NOT_FOUND, rpc.value.method),
+      }
+    }
+    return { shape: 'jsonrpc', rpcId: rpc.value.id, inner: rpc.value.params }
+  }
+  return { shape: 'direct', rpcId: null, inner: raw }
+}
 
 const emptyMemoryContext = {
   workingSummary: '',
@@ -131,9 +173,20 @@ export async function POST(
   const handler = toyAgents[agentId]
 
   const json = await req.json().catch(() => null)
-  const parsed = messageSchema.safeParse(json)
+  const unwrapped = unwrapBody(json)
+  if (unwrapped.shape === 'error') {
+    return Response.json(unwrapped.body, { status: unwrapped.status })
+  }
+  const parsed = messageSchema.safeParse(unwrapped.inner)
   if (!parsed.success) {
-    return Response.json({ error: 'invalid body', details: parsed.error.flatten() }, { status: 400 })
+    const errPayload = { error: 'invalid body', details: parsed.error.flatten() }
+    if (unwrapped.shape === 'jsonrpc') {
+      return Response.json(
+        rpcError(unwrapped.rpcId, RpcErrors.INVALID_PARAMS, 'invalid params', errPayload),
+        { status: 400 },
+      )
+    }
+    return Response.json(errPayload, { status: 400 })
   }
 
   if (handler) {
@@ -147,10 +200,21 @@ export async function POST(
   const agent = await findAgentById(agentId).catch(() => undefined)
   if (!agent) return Response.json({ error: `unknown agent: ${agentId}` }, { status: 404 })
 
-  const matchId = req.headers.get('X-Match-Id')
+  const matchId =
+    (unwrapped.shape === 'jsonrpc'
+      ? ((unwrapped.inner as { matchId?: unknown } | null | undefined)?.matchId as string | null | undefined)
+      : null) ?? req.headers.get('X-Match-Id')
   const token = req.headers.get('X-Match-Token')
   const tokenContext = await validateMatchToken(matchId, token, agentId)
-  if (!tokenContext) return Response.json({ error: 'unauthorized' }, { status: 401 })
+  if (!tokenContext) {
+    if (unwrapped.shape === 'jsonrpc') {
+      return Response.json(
+        rpcError(unwrapped.rpcId, RpcErrors.UNAUTHORIZED, 'invalid match token'),
+        { status: 401 },
+      )
+    }
+    return Response.json({ error: 'unauthorized' }, { status: 401 })
+  }
 
   const gameType = gameTypeSchema.parse(agent.gameType)
   const game = getGame(gameType)
