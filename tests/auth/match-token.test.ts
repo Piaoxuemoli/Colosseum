@@ -33,6 +33,14 @@ describe('HMAC match-token', () => {
     expect(verifyMatchTokenHmac(null, 'm1')).toBe(false)
   })
 
+  it('rejects short / non-base64url signature without crashing', () => {
+    const now = Math.floor(Date.now() / 1000) + 60
+    // a valid-looking token but the signature is only 4 chars (decodes to 3 bytes)
+    expect(verifyMatchTokenHmac(`m1.${now}.abcd`, 'm1')).toBe(false)
+    // tokens with illegal base64url characters decode to a shorter buffer
+    expect(verifyMatchTokenHmac(`m1.${now}.!!!invalid!!!`, 'm1')).toBe(false)
+  })
+
   it('throws when MATCH_TOKEN_SECRET is missing', () => {
     const prev = process.env.MATCH_TOKEN_SECRET
     delete process.env.MATCH_TOKEN_SECRET

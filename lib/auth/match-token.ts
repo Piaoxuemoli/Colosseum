@@ -36,9 +36,18 @@ export function verifyMatchTokenHmac(
   if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return false
   const expected = createHmac('sha256', secretBytes())
     .update(`${mid}.${expStr}`)
-    .digest('base64url')
-  const a = Buffer.from(sig)
-  const b = Buffer.from(expected)
-  if (a.length !== b.length) return false
-  return timingSafeEqual(a, b)
+    .digest()
+  // Decode the provided signature as base64url *raw bytes* so the constant-time
+  // comparison is over 32 bytes of HMAC rather than the ASCII representation.
+  // `Buffer.from(str, 'base64url')` tolerates missing padding and rejects
+  // invalid characters by producing a shorter buffer, which the length check
+  // catches before timingSafeEqual runs.
+  let provided: Buffer
+  try {
+    provided = Buffer.from(sig, 'base64url')
+  } catch {
+    return false
+  }
+  if (provided.length !== expected.length) return false
+  return timingSafeEqual(provided, expected)
 }
