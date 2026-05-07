@@ -114,4 +114,39 @@ describe('replay-store', () => {
     expect(useReplayStore.getState().cursor).toBe(2)
     expect(useReplayStore.getState().isPlaying).toBe(false) // end reached
   })
+
+  it('load with seatSetup re-applies players on every seek (regression)', () => {
+    const seatSetup = {
+      matchId: 'm',
+      players: [
+        {
+          agentId: 'a',
+          displayName: 'Alice',
+          avatarEmoji: '🃏',
+          seatIndex: 0,
+          chips: 200,
+          currentBet: 0,
+          status: 'active' as const,
+          holeCards: [],
+        },
+      ],
+    }
+
+    useReplayStore.getState().load(
+      [
+        evt({ seq: 1, kind: 'agent_error' }),
+        evt({ seq: 2, kind: 'agent_error' }),
+      ],
+      seatSetup,
+    )
+    expect(useMatchViewStore.getState().players).toHaveLength(1)
+
+    useReplayStore.getState().seekTo(2)
+    // seats must survive the reset-and-replay trip
+    expect(useMatchViewStore.getState().players).toHaveLength(1)
+    expect(useMatchViewStore.getState().players[0].displayName).toBe('Alice')
+
+    useReplayStore.getState().stepBackward()
+    expect(useMatchViewStore.getState().players).toHaveLength(1)
+  })
 })

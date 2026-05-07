@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { RightPanel } from '@/components/match/RightPanel'
@@ -91,10 +92,18 @@ export function SpectatorView({
               </h1>
               <p className="mt-2 font-mono text-xs text-muted-foreground">{matchId}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{werewolfPhase ?? 'waiting'}</Badge>
               <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
               {matchComplete ? <Badge>对局结束</Badge> : null}
+              {status !== 'running' ? (
+                <Link
+                  href={`/matches/${matchId}/replay`}
+                  className="inline-flex items-center rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200 hover:bg-emerald-400/20"
+                >
+                  查看回放 →
+                </Link>
+              ) : null}
             </div>
           </div>
 
@@ -120,10 +129,18 @@ export function SpectatorView({
             <h1 className="mt-3 text-3xl font-black tracking-tight text-white">德州扑克 · 第 {handNumber} 手</h1>
             <p className="mt-2 font-mono text-xs text-muted-foreground">{matchId}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{phase}</Badge>
             <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
             {matchComplete ? <Badge>对局结束</Badge> : null}
+            {status !== 'running' ? (
+              <Link
+                href={`/matches/${matchId}/replay`}
+                className="inline-flex items-center rounded-lg border border-cyan-300/40 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100 hover:bg-cyan-300/20"
+              >
+                查看回放 →
+              </Link>
+            ) : null}
           </div>
         </div>
 
