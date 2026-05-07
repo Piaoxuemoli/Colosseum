@@ -136,4 +136,45 @@ describe('advancePhase', () => {
     expect(next.matchComplete).toBe(true)
     expect(next.winner).toBe('werewolves')
   })
+
+  it('witchAction-triggered win keeps phase at night/witchAction (not day/announce)', () => {
+    const base = makeBaseState()
+    const s = {
+      ...base,
+      phase: 'night/witchAction' as const,
+      lastNightKilled: 's',
+      lastNightPoisoned: 'wi',
+      players: base.players.map((p) =>
+        p.agentId === 'v1' ? { ...p, alive: false, deathDay: 0, deathCause: 'vote' as const } : p,
+      ),
+    }
+    const next = advancePhase(s)
+    expect(next.matchComplete).toBe(true)
+    expect(next.phase).toBe('night/witchAction')
+    expect(next.currentActor).toBeNull()
+    expect(next.day).toBe(0)
+  })
+
+  it('day/execute-triggered win keeps phase at day/execute (not night/werewolfDiscussion)', () => {
+    const base = makeBaseState()
+    // Set up so only 1 wolf remains; voting out that wolf triggers villager win
+    const s = {
+      ...base,
+      phase: 'day/execute' as const,
+      day: 1,
+      players: base.players.map((p) =>
+        p.agentId === 'w2' ? { ...p, alive: false, deathDay: 1, deathCause: 'vote' as const } : p,
+      ),
+      voteLog: [
+        { day: 1, voter: 's', target: 'w1', at: 0 },
+        { day: 1, voter: 'wi', target: 'w1', at: 0 },
+        { day: 1, voter: 'v1', target: 'w1', at: 0 },
+      ],
+    }
+    const next = advancePhase(s)
+    expect(next.matchComplete).toBe(true)
+    expect(next.winner).toBe('villagers')
+    expect(next.phase).toBe('day/execute')
+    expect(next.currentActor).toBeNull()
+  })
 })
