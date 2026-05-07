@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -11,6 +11,7 @@ type ErrorItem = {
   layer: string
   errorCode: string
   occurredAt: string
+  rawResponse?: string | null
 }
 
 export function ErrorBadge({ matchId }: { matchId: string }) {
@@ -38,6 +39,16 @@ export function ErrorBadge({ matchId }: { matchId: string }) {
     }
   }, [matchId, setErrorCount])
 
+  const groups = useMemo(() => {
+    const out = new Map<string, ErrorItem[]>()
+    for (const item of items) {
+      const list = out.get(item.errorCode) ?? []
+      list.push(item)
+      out.set(item.errorCode, list)
+    }
+    return Array.from(out.entries()).sort((a, b) => b[1].length - a[1].length)
+  }, [items])
+
   if (errorCount === 0) return null
 
   return (
@@ -48,18 +59,43 @@ export function ErrorBadge({ matchId }: { matchId: string }) {
           <Badge variant="destructive">{errorCount}</Badge>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80">
-        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-200">Agent 错误</div>
-        <ul className="space-y-2 text-xs">
-          {items.slice(0, 5).map((item, index) => (
-            <li key={`${item.agentId}-${item.errorCode}-${index}`} className="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2">
-              <div className="font-mono text-red-200">{item.errorCode}</div>
-              <div className="mt-1 text-muted-foreground">
-                {item.layer} · {item.agentId}
-              </div>
-            </li>
-          ))}
-        </ul>
+      <PopoverContent align="end" className="max-h-[400px] w-96 overflow-y-auto">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-200">
+          Agent 错误分布
+        </div>
+        {groups.length === 0 ? (
+          <div className="text-xs text-muted-foreground">暂无错误</div>
+        ) : (
+          <ul className="space-y-2">
+            {groups.map(([code, list]) => (
+              <li key={code}>
+                <details>
+                  <summary className="cursor-pointer text-xs text-red-300">
+                    <span className="font-mono">{code}</span>
+                    <span className="ml-2 text-muted-foreground">× {list.length}</span>
+                  </summary>
+                  <ul className="mt-1 space-y-1 text-[11px]">
+                    {list.slice(0, 5).map((item, i) => (
+                      <li
+                        key={`${item.agentId}-${i}`}
+                        className="rounded-lg border border-red-400/20 bg-red-500/10 px-2 py-1"
+                      >
+                        <div className="text-muted-foreground">
+                          <span>{item.layer}</span> · <span>{item.agentId}</span>
+                        </div>
+                        {item.rawResponse ? (
+                          <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap text-muted-foreground">
+                            {String(item.rawResponse).slice(0, 400)}
+                          </pre>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </li>
+            ))}
+          </ul>
+        )}
       </PopoverContent>
     </Popover>
   )
