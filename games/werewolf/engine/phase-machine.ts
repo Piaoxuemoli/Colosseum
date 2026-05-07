@@ -31,10 +31,19 @@ export function advancePhase(state: WerewolfState): WerewolfState {
 
     case 'night/witchAction':
       resolveNightDeaths(s)
+      {
+        const winEarly = checkWin(s)
+        if (winEarly.settled) {
+          s.matchComplete = true
+          s.winner = winEarly.winner
+          s.currentActor = null
+          return s
+        }
+      }
       s.phase = 'day/announce'
       s.day += 1
       s.currentActor = null
-      return markWinIfSettled(s)
+      return s
 
     case 'day/announce':
       s.phase = 'day/speak'
@@ -58,12 +67,22 @@ export function advancePhase(state: WerewolfState): WerewolfState {
 
     case 'day/execute':
       resolveVoteExecution(s)
+      {
+        const winEarly = checkWin(s)
+        if (winEarly.settled) {
+          s.matchComplete = true
+          s.winner = winEarly.winner
+          s.currentActor = null
+          // phase stays at 'day/execute' — stored state is internally consistent.
+          return s
+        }
+      }
       s.phase = 'night/werewolfDiscussion'
       s.werewolfDiscussionQueue = s.players
         .filter((p) => p.alive && s.roleAssignments[p.agentId] === 'werewolf')
         .map((p) => p.agentId)
       s.currentActor = s.werewolfDiscussionQueue.shift() ?? null
-      return markWinIfSettled(s)
+      return s
 
     default: {
       const exhaustive: never = s.phase
