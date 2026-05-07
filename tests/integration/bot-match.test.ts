@@ -55,6 +55,21 @@ describe('M3: 6 bots end-to-end', () => {
     process.env.DB_DRIVER = 'sqlite'
     process.env.SQLITE_PATH = './tests/tmp-bot-match.db'
     process.env.REDIS_URL = 'redis://localhost:6379'
+    // No HTTP server is running inside the test process; the orchestrator
+    // still calls its own agent endpoint via fetch. Short-circuit that so
+    // we go straight to the bot fallback without waiting for a 5s abort.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (typeof url === 'string' && url.includes('/api/agents/')) {
+          return new Response('{"error":"no server in tests"}', {
+            status: 503,
+            headers: { 'content-type': 'application/json' },
+          })
+        }
+        throw new Error(`unexpected fetch in bot-match test: ${url}`)
+      }),
+    )
     migrateSqliteTestDb('./tests/tmp-bot-match.db')
   })
 
