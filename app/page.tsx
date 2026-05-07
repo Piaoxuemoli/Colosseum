@@ -70,21 +70,41 @@ export default async function Lobby() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {rows.map((match) => (
-              <Link key={match.id} href={`/matches/${match.id}`}>
-                <Card className="h-full transition hover:border-cyan-300/40 hover:bg-cyan-300/5">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-base">{match.gameType === 'poker' ? '德州扑克' : '狼人杀'}</CardTitle>
-                    <Badge variant={statusBadgeVariant(match.status)}>{match.status}</Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm text-muted-foreground">
-                    <div>开始：{new Date(match.startedAt).toLocaleString('zh-CN')}</div>
-                    {match.completedAt ? <div>结束：{new Date(match.completedAt).toLocaleString('zh-CN')}</div> : null}
-                    <div className="font-mono text-xs text-cyan-100/70">{match.id}</div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            {rows.map((match) => {
+              const settled =
+                match.status === 'completed' ||
+                match.status === 'errored' ||
+                match.status === 'aborted_by_errors'
+              return (
+                <div key={match.id} className="relative">
+                  <Link href={`/matches/${match.id}`} className="block">
+                    <Card className="h-full transition hover:border-cyan-300/40 hover:bg-cyan-300/5">
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-base">
+                          {match.gameType === 'poker' ? '德州扑克' : '狼人杀'}
+                        </CardTitle>
+                        <Badge variant={statusBadgeVariant(match.status)}>{match.status}</Badge>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm text-muted-foreground">
+                        <div>开始：{new Date(match.startedAt).toLocaleString('zh-CN')}</div>
+                        {match.completedAt ? (
+                          <div>结束：{new Date(match.completedAt).toLocaleString('zh-CN')}</div>
+                        ) : null}
+                        <div className="font-mono text-xs text-cyan-100/70">{match.id}</div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  {settled ? (
+                    <Link
+                      href={`/matches/${match.id}/replay`}
+                      className="absolute bottom-3 right-3 rounded-md border border-emerald-400/40 bg-emerald-400/10 px-2 py-1 text-xs font-semibold text-emerald-200 hover:bg-emerald-400/20"
+                    >
+                      回放 →
+                    </Link>
+                  ) : null}
+                </div>
+              )
+            })}
           </div>
         )}
       </section>
