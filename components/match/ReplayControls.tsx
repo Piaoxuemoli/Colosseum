@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { FastForward, Pause, Play, Rewind, SkipBack, SkipForward } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useReplayStore } from '@/store/replay-store'
@@ -22,6 +22,12 @@ export function ReplayControls() {
   const setSpeed = useReplayStore((s) => s.setSpeed)
   const tickOne = useReplayStore((s) => s.tickOne)
 
+  // While the user is dragging, `dragging` holds the scrubbing position so we
+  // DO NOT replay the event log on every onChange (which is O(target) work per
+  // mousemove frame). Commit the seek on pointer/mouse/touch release.
+  const [dragging, setDragging] = useState<number | null>(null)
+  const sliderValue = dragging ?? cursor
+
   useEffect(() => {
     if (!isPlaying) return
     const ms = Math.max(40, intervalMs / Math.max(0.1, speed))
@@ -29,7 +35,12 @@ export function ReplayControls() {
     return () => clearInterval(handle)
   }, [isPlaying, speed, intervalMs, tickOne])
 
-  const pct = total === 0 ? 0 : (cursor / total) * 100
+  const pct = total === 0 ? 0 : (sliderValue / total) * 100
+
+  const commitDrag = (raw: number) => {
+    seekTo(raw)
+    setDragging(null)
+  }
 
   return (
     <div
@@ -86,14 +97,19 @@ export function ReplayControls() {
               type="range"
               min={0}
               max={total}
-              value={cursor}
-              onChange={(e) => seekTo(Number(e.target.value))}
+              value={sliderValue}
+              onChange={(e) => setDragging(Number(e.target.value))}
+              onPointerUp={(e) => commitDrag(Number(e.currentTarget.value))}
+              onMouseUp={(e) => commitDrag(Number(e.currentTarget.value))}
+              onTouchEnd={(e) => commitDrag(Number(e.currentTarget.value))}
+              onKeyUp={(e) => commitDrag(Number(e.currentTarget.value))}
+              onBlur={(e) => commitDrag(Number(e.currentTarget.value))}
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               aria-label="回放进度"
             />
           </div>
           <div className="mt-1 text-center font-mono text-[10px] text-neutral-500">
-            {cursor} / {total}
+            {sliderValue} / {total}
           </div>
         </div>
 

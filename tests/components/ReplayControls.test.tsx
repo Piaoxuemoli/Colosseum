@@ -87,4 +87,22 @@ describe('ReplayControls', () => {
     fireEvent.click(screen.getByRole('button', { name: '跳到末尾' }))
     expect(useReplayStore.getState().cursor).toBe(3)
   })
+
+  it('slider drag does NOT seek on every onChange; commit happens on release', () => {
+    act(() => {
+      useReplayStore.getState().load([evt(1), evt(2), evt(3), evt(4)])
+    })
+    render(<ReplayControls />)
+    const slider = screen.getByRole('slider', { name: '回放进度' })
+
+    // Simulate dragging: intermediate values must NOT mutate store.cursor.
+    fireEvent.change(slider, { target: { value: '1' } })
+    fireEvent.change(slider, { target: { value: '2' } })
+    fireEvent.change(slider, { target: { value: '3' } })
+    expect(useReplayStore.getState().cursor).toBe(0)
+
+    // Release commits the final value.
+    fireEvent.pointerUp(slider, { currentTarget: { value: '3' } })
+    expect(useReplayStore.getState().cursor).toBe(3)
+  })
 })
