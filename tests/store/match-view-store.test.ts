@@ -99,4 +99,83 @@ describe('match-view-store', () => {
     expect(useMatchViewStore.getState().status).toBe('settled')
     expect(useMatchViewStore.getState().matchComplete).toBe(true)
   })
+
+  describe('werewolf derivations', () => {
+    it('records moderator narration and updates phase', () => {
+      useMatchViewStore.getState().ingestEvent(
+        event({
+          gameType: 'werewolf',
+          kind: 'werewolf/moderator-narrate',
+          actorAgentId: 'mod',
+          payload: { day: 1, upcomingPhase: 'night/seerCheck', narration: '预言家请睁眼。' },
+        }),
+      )
+      const ww = useMatchViewStore.getState().werewolf
+      expect(ww.moderatorNarration).toHaveLength(1)
+      expect(ww.moderatorNarration[0].narration).toBe('预言家请睁眼。')
+      expect(ww.phase).toBe('night/seerCheck')
+      expect(ww.day).toBe(1)
+    })
+
+    it('appends speeches with claimedRole', () => {
+      useMatchViewStore.getState().ingestEvent(
+        event({
+          gameType: 'werewolf',
+          kind: 'werewolf/speak',
+          actorAgentId: 'a',
+          payload: { day: 1, content: '我是预言家', claimedRole: 'seer' },
+        }),
+      )
+      const ww = useMatchViewStore.getState().werewolf
+      expect(ww.speechLog).toHaveLength(1)
+      expect(ww.speechLog[0]).toMatchObject({ day: 1, agentId: 'a', content: '我是预言家', claimedRole: 'seer' })
+    })
+
+    it('appends votes and groups by day', () => {
+      useMatchViewStore.getState().ingestEvent(
+        event({
+          gameType: 'werewolf',
+          kind: 'werewolf/vote',
+          actorAgentId: 'a',
+          payload: { day: 1, target: 'b', reason: '可疑' },
+        }),
+      )
+      const ww = useMatchViewStore.getState().werewolf
+      expect(ww.voteLog).toHaveLength(1)
+      expect(ww.voteLog[0]).toMatchObject({ day: 1, voter: 'a', target: 'b' })
+    })
+
+    it('reveals roles and marks settled on werewolf/game-end', () => {
+      useMatchViewStore.getState().ingestEvent(
+        event({
+          gameType: 'werewolf',
+          kind: 'werewolf/game-end',
+          actorAgentId: null,
+          payload: {
+            winner: 'werewolves',
+            actualRoles: { a: 'werewolf', b: 'seer', c: 'villager' },
+          },
+        }),
+      )
+      const s = useMatchViewStore.getState()
+      expect(s.status).toBe('settled')
+      expect(s.matchComplete).toBe(true)
+      expect(s.werewolf.winner).toBe('werewolves')
+      expect(s.werewolf.roleAssignments?.a).toBe('werewolf')
+    })
+
+    it('ignores vote events without a target (abstention)', () => {
+      useMatchViewStore.getState().ingestEvent(
+        event({
+          gameType: 'werewolf',
+          kind: 'werewolf/vote',
+          actorAgentId: 'a',
+          payload: { day: 1, target: null },
+        }),
+      )
+      const ww = useMatchViewStore.getState().werewolf
+      expect(ww.voteLog).toHaveLength(1)
+      expect(ww.voteLog[0].target).toBeNull()
+    })
+  })
 })

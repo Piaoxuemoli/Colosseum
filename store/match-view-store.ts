@@ -22,6 +22,36 @@ export type ChipSnapshot = {
   chips: Record<string, number>
 }
 
+export type WerewolfSpeechEntry = {
+  day: number
+  agentId: string
+  content: string
+  claimedRole?: string
+}
+
+export type WerewolfVoteEntry = {
+  day: number
+  voter: string
+  target: string | null
+  reason?: string
+}
+
+export type WerewolfNarrationEntry = {
+  day: number
+  phase: string
+  narration: string
+}
+
+export type WerewolfDerived = {
+  day: number
+  phase: string | null
+  speechLog: WerewolfSpeechEntry[]
+  voteLog: WerewolfVoteEntry[]
+  moderatorNarration: WerewolfNarrationEntry[]
+  roleAssignments: Record<string, string> | null
+  winner: 'werewolves' | 'villagers' | 'tie' | null
+}
+
 export type MatchViewState = {
   matchId: string
   initialized: boolean
@@ -40,6 +70,7 @@ export type MatchViewState = {
   fallbackCount: number
   chipHistory: ChipSnapshot[]
   errorCount: number
+  werewolf: WerewolfDerived
   reset(): void
   init(input: { matchId: string; players: PokerUiPlayer[] }): void
   ingestEvent(event: GameEvent): void
@@ -49,6 +80,16 @@ export type MatchViewState = {
   recordHandSnapshot(handNumber: number, chips: Record<string, number>): void
   incrementError(): void
   setErrorCount(count: number): void
+}
+
+const initialWerewolf: WerewolfDerived = {
+  day: 0,
+  phase: null,
+  speechLog: [],
+  voteLog: [],
+  moderatorNarration: [],
+  roleAssignments: null,
+  winner: null,
 }
 
 const initialState = {
@@ -69,6 +110,7 @@ const initialState = {
   fallbackCount: 0,
   chipHistory: [] as ChipSnapshot[],
   errorCount: 0,
+  werewolf: initialWerewolf,
 }
 
 function cardsFromPayload(payload: Record<string, unknown>): CardVisual[] {
@@ -113,6 +155,7 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
       let status = state.status
       let chipHistory = state.chipHistory
       let errorCount = state.errorCount
+      let werewolf = state.werewolf
       const players = state.players.map((player) => ({ ...player }))
 
       switch (event.kind) {
@@ -195,6 +238,67 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           winnerAgentId = typeof event.payload.winnerId === 'string' ? event.payload.winnerId : null
           currentActor = null
           break
+        case 'werewolf/moderator-narrate': {
+          const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
+          const upcomingPhase =
+            typeof event.payload.upcomingPhase === 'string' ? event.payload.upcomingPhase : werewolf.phase
+          const narration =
+            typeof event.payload.narration === 'string' ? event.payload.narration : ''
+          werewolf = {
+            ...werewolf,
+            day,
+            phase: upcomingPhase,
+            moderatorNarration: [
+              ...werewolf.moderatorNarration,
+              { day, phase: upcomingPhase ?? '', narration },
+            ],
+          }
+          break
+        }
+        case 'werewolf/speak': {
+          const actorId = event.actorAgentId
+          if (!actorId) break
+          const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
+          const content =
+            typeof event.payload.content === 'string' ? event.payload.content : ''
+          const claimedRole =
+            typeof event.payload.claimedRole === 'string' ? event.payload.claimedRole : undefined
+          werewolf = {
+            ...werewolf,
+            speechLog: [...werewolf.speechLog, { day, agentId: actorId, content, claimedRole }],
+          }
+          break
+        }
+        case 'werewolf/vote': {
+          const actorId = event.actorAgentId
+          if (!actorId) break
+          const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
+          const target =
+            typeof event.payload.target === 'string' ? event.payload.target : null
+          const reason =
+            typeof event.payload.reason === 'string' ? event.payload.reason : undefined
+          werewolf = {
+            ...werewolf,
+            voteLog: [...werewolf.voteLog, { day, voter: actorId, target, reason }],
+          }
+          break
+        }
+        case 'werewolf/game-end': {
+          const winnerRaw = event.payload.winner
+          const winner =
+            winnerRaw === 'werewolves' || winnerRaw === 'villagers' || winnerRaw === 'tie'
+              ? winnerRaw
+              : null
+          const actualRoles =
+            event.payload.actualRoles && typeof event.payload.actualRoles === 'object'
+              ? (event.payload.actualRoles as Record<string, string>)
+              : null
+          werewolf = { ...werewolf, winner, roleAssignments: actualRoles }
+          matchComplete = true
+          status = 'settled'
+          currentActor = null
+          break
+        }
       }
 
       return {
@@ -211,6 +315,7 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
         thinkingByAgent,
         chipHistory,
         errorCount,
+        werewolf,
       }
     })
   },
