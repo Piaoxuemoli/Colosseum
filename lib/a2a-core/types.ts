@@ -1,3 +1,13 @@
+export type {
+  AgentCard,
+  Message as A2AMessage,
+  Part as A2APart,
+  Task as A2ATask,
+  TaskStatus as A2ATaskStatus,
+  Artifact as A2AArtifact,
+  SecurityScheme as A2ASecurityScheme,
+} from '@a2a-js/sdk'
+
 export type TaskState = 'submitted' | 'working' | 'input-required' | 'completed' | 'failed' | 'canceled' | 'rejected'
 
 export type TextPart = { kind: 'text'; text: string }
