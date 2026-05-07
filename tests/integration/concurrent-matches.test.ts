@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { migrateSqliteTestDb } from '../lib/db/test-utils'
 
 /**
@@ -80,6 +80,11 @@ describe('M5: concurrent matches isolation', () => {
       }),
     )
     migrateSqliteTestDb('./tests/tmp-concurrent.db')
+  })
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
   })
 
   it('two parallel matches settle independently without event crosstalk', async () => {

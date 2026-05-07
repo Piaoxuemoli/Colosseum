@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { migrateSqliteTestDb } from '../lib/db/test-utils'
 
 class FakeRedis {
@@ -71,6 +71,14 @@ describe('M3: 6 bots end-to-end', () => {
       }),
     )
     migrateSqliteTestDb('./tests/tmp-bot-match.db')
+  })
+
+  afterAll(() => {
+    // Without this teardown, vi.stubGlobal('fetch', ...) leaks into every
+    // subsequent test file when vitest shares a worker, silently making
+    // any real-fetch test 503. Must restore before the next file runs.
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
   })
 
   it('creates match, runs to completion, and persists final ranking/events', async () => {
