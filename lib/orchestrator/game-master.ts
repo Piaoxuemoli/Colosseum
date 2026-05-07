@@ -8,6 +8,7 @@ import { loadEnv } from '@/lib/env'
 import { redis } from '@/lib/redis/client'
 import { keys } from '@/lib/redis/keys'
 import { log } from '@/lib/telemetry/logger'
+import { inc, observe } from '@/lib/telemetry/metrics'
 import { coerceToValidAction } from './action-validator'
 import { finalizeMatch } from './match-lifecycle'
 import { publishSse } from './sse-broadcast'
@@ -21,6 +22,7 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     return { done: false }
   }
 
+  const tickStart = performance.now()
   try {
     const match = await findMatchById(matchId)
     if (!match || match.status !== 'running') return { done: true }
@@ -34,14 +36,18 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     const state = JSON.parse(stateRaw) as unknown
     const game = getGame(match.gameType as GameType)
     const actorId = game.engine.currentActor(state)
+    const gameType = String(match.gameType)
 
     if (!actorId) {
       await finalizeMatch(matchId)
       await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
+      inc('tick.count', 1, { gameType, outcome: 'finalize' })
+      observe('tick.duration_ms', performance.now() - tickStart, { gameType })
       return { done: true }
     }
 
     const validActions = game.engine.availableActions(state, actorId)
+    const agentStart = performance.now()
     const agentDecision = await requestAgentDecision({
       matchId,
       agentId: actorId,
@@ -50,6 +56,7 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
       timeoutMs: typeof match.config.agentTimeoutMs === 'number' ? match.config.agentTimeoutMs : undefined,
       fallback: () => game.botStrategy.decide(state, validActions as unknown[]),
     })
+    observe('agent.request_ms', performance.now() - agentStart, { gameType })
     const { action, layer } = coerceToValidAction(agentDecision.action, validActions, state, game.botStrategy, {
       matchId,
       agentId: actorId,
@@ -57,6 +64,7 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     })
 
     if (agentDecision.fallback || layer === 'fallback') {
+      inc('agent.fallback', 1, { gameType, reason: agentDecision.errorCode ?? 'invalid-action' })
       await recordAgentError({
         matchId,
         agentId: actorId,
@@ -83,9 +91,13 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     if (boundary === 'match-end') {
       await finalizeMatch(matchId)
       await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
+      inc('tick.count', 1, { gameType, outcome: 'match-end' })
+      observe('tick.duration_ms', performance.now() - tickStart, { gameType })
       return { done: true }
     }
 
+    inc('tick.count', 1, { gameType, outcome: 'continue' })
+    observe('tick.duration_ms', performance.now() - tickStart, { gameType })
     return { done: false }
   } finally {
     await redis.del(keys.matchLock(matchId))
