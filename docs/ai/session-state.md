@@ -6,20 +6,18 @@
 
 - Active spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
-- Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
-- Current phase: Phase 1B — API and frontend playable experience
-- Current task: Phase 1B complete (automated); M4 real manual run blocked locally
+- Active plan set: Phase 4 (deployment) up next — `docs/superpowers/plans/2026-05-06-phase-4-deployment.md`
+- Current phase: Phase 3 closed (werewolf vertical slice merged to main)
+- Current task: — (Phase 4 not yet started)
 
 ## Last Known Status
 
 - Phase 0 is merged to `main` and pushed. Tag `phase-0` exists remotely.
-- Node was switched to `v24.12.0` via nvm; this satisfies `.nvmrc` / `npm run doctor`.
-- Phase 0 quality gate passed: `npm run check` passed with lint, typecheck, 14 test files / 28 tests, and Next production build.
-- Production smoke used port 3001 because local port 3000 was occupied; toy agent card and toy message stream worked.
-- Next build output is `.next-build` because an old `.next/trace` file on this Windows machine has abnormal ACL/lock and cannot be removed by the current user.
-- `old/` remains reference-only; do not edit it unless explicitly requested.
-- Independent development mode: do not create or suggest PR / MR; all merges are local.
 - Phase 1A is merged to `main` and pushed. Tag `phase-1a` exists remotely.
+- Phase 1B is merged to `main` and pushed.
+- Phases 2-1, 2-2, 3-1, 3-2, 3-3, 3-4 merged to `main` and pushed (merge commit `7acea7a`).
+- `npm run check` green on main after merge: lint, typecheck, 85 test files / 333 tests, Next production build.
+- Docker still unavailable locally; real Redis/Postgres smoke and Phase 4 deploy must happen on a box with Docker.
 
 ## Validation Log
 
@@ -105,12 +103,20 @@
 | 2026-05-06 | docs only | Passed | Phase 1B-5 Task 6 M4 manual checklist drafted; real run remains blocked locally by missing Docker / real keys |
 | 2026-05-06 | `npm test tests/e2e/m4-smoke.test.ts lib/agent/tests/llm-runtime.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 7 mock-LLM M4 smoke through route handler + GM |
 | 2026-05-06 | `npm run check` | Passed | Phase 1B-5 gate: lint, typecheck, 54 test files / 147 tests, Next production build |
+| 2026-05-07 | `npm test` | Passed | Phase 2-1 A2A compliance suites (AgentCard skills, JSON-RPC route, SSE status/artifact frames) |
+| 2026-05-07 | `npm test` | Passed | Phase 2-2 concurrency + observability (HMAC match tokens, in-process metrics, 2-match isolation e2e, ErrorBadge grouping) |
+| 2026-05-07 | `npm test` | Passed | Phase 3-1 werewolf engine (roles/validator/win-condition/phase-machine, 47 engine tests) |
+| 2026-05-07 | `npm test` | Passed | Phase 3-2 werewolf agent + three-layer memory |
+| 2026-05-07 | `npm test` | Passed | Phase 3-3 moderator context + parser; werewolf plugin registered; GM boundary narration hook; match creation validation |
+| 2026-05-07 | `npm test` | Passed | Phase 3-4 werewolf UI (PlayerCard / ModeratorPanel / SpeechBubble / VoteTally / WerewolfBoard / WerewolfResultPanel) + store derivations |
+| 2026-05-07 | `npm run check` | Passed | Post-merge gate on main: 85 files / 333 tests, lint + typecheck + Next build |
 
 ## Open Questions / Blockers
 
-- Docker is not installed on this machine, so container-backed Postgres/Redis checks remain blocked locally.
-- Phase 1B-4 manual 6-bot Redis/Docker E2E remains blocked locally by missing Docker; automated lint/test/build passed.
+- Docker is not installed on this machine — Phase 4 (Docker Compose + Caddy + Postgres 生产部署) cannot be executed locally; it must run on a box with Docker or against the target VPS `43.156.230.108`.
+- Phase 1B-4 / 3-3 M6 manual 6-bot Redis/Docker E2E still deferred pending Docker.
 - Real M1 LLM curl was not run because no real `TEST_LLM_*` key was used; mocked SSE path is verified.
+- Default system moderator seed (`db/seeds/default-moderator.ts`) was deferred from Phase 3-3 Task 4 — fold into Phase 4 seeding step.
 
 ## SDK / Plan Drift Notes
 
