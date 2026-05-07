@@ -120,8 +120,8 @@ describe('Matches API — werewolf validation', () => {
       }),
     )
     expect(res.status).toBe(400)
-    const body = (await res.json()) as { message?: string }
-    expect(body.message ?? '').toMatch(/6 player agents/)
+    const body = (await res.json()) as { details?: { message?: string } }
+    expect(body.details?.message ?? '').toMatch(/6 player agents/)
   })
 
   it('rejects werewolf match without moderator', async () => {
@@ -134,8 +134,8 @@ describe('Matches API — werewolf validation', () => {
       }),
     )
     expect(res.status).toBe(400)
-    const body = (await res.json()) as { message?: string }
-    expect(body.message ?? '').toMatch(/moderator/i)
+    const body = (await res.json()) as { details?: { message?: string } }
+    expect(body.details?.message ?? '').toMatch(/moderator/i)
   })
 
   it('rejects werewolf match when moderator is also a player', async () => {
@@ -152,7 +152,34 @@ describe('Matches API — werewolf validation', () => {
       }),
     )
     expect(res.status).toBe(400)
-    const body = (await res.json()) as { message?: string }
-    expect(body.message ?? '').toMatch(/moderator.*player/i)
+    const body = (await res.json()) as { details?: { message?: string } }
+    expect(body.details?.message ?? '').toMatch(/moderator.*player/i)
+  })
+
+  it('does not let engineConfig.moderatorAgentId override the validated value', async () => {
+    const { POST } = await import('@/app/api/matches/route')
+    const res = await POST(
+      new Request('http://localhost/api/matches', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          gameType: 'werewolf',
+          agentIds: playerIds,
+          moderatorAgentId: moderatorId,
+          // Malicious engineConfig: tries to pin a player as moderator.
+          engineConfig: { moderatorAgentId: playerIds[0] },
+        }),
+      }),
+    )
+    expect(res.status).toBe(201)
+    const { matchId } = (await res.json()) as { matchId: string }
+
+    // Inspect the persisted state directly: the validated moderator wins.
+    const { redis } = await import('@/lib/redis/client')
+    const { keys } = await import('@/lib/redis/keys')
+    const raw = await redis.get(keys.matchState(matchId))
+    expect(raw).toBeTruthy()
+    const state = JSON.parse(raw as string) as { moderatorAgentId: string | null }
+    expect(state.moderatorAgentId).toBe(moderatorId)
   })
 })
