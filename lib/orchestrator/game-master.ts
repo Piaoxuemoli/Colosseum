@@ -9,10 +9,13 @@ import { redis } from '@/lib/redis/client'
 import { keys } from '@/lib/redis/keys'
 import { log } from '@/lib/telemetry/logger'
 import { inc, observe } from '@/lib/telemetry/metrics'
+import { newEventId } from '@/lib/core/ids'
 import { coerceToValidAction } from './action-validator'
 import { bucketizeFallbackReason } from './fallback-reasons'
 import { finalizeMatch } from './match-lifecycle'
 import { publishSse } from './sse-broadcast'
+import { moderatorNarrationEvent } from './werewolf-hooks'
+import type { WerewolfState } from '@/games/werewolf/engine/types'
 
 export type TickResult = { done: boolean }
 
@@ -77,8 +80,25 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     }
 
     const { nextState, events } = game.engine.applyAction(state, actorId, action)
+
+    const augmentedEvents = [...events]
+    if (match.gameType === 'werewolf') {
+      const narrationEvent = moderatorNarrationEvent(
+        state as WerewolfState,
+        nextState as WerewolfState,
+      )
+      if (narrationEvent) {
+        augmentedEvents.push({
+          ...narrationEvent,
+          id: newEventId(),
+          matchId: '',
+          seq: 0,
+        })
+      }
+    }
+
     let seq = await nextSeq(matchId)
-    const finalEvents = events.map((event) => ({ ...event, matchId, seq: seq++ }))
+    const finalEvents = augmentedEvents.map((event) => ({ ...event, matchId, seq: seq++ }))
     await appendEvents(finalEvents)
 
     for (const event of finalEvents) {
