@@ -52,6 +52,52 @@ describe('POST /api/agents/:id/message/stream', () => {
 
     expect(res.status).toBe(400)
   })
+
+  it('accepts JSON-RPC envelope and streams toy-poker fold', async () => {
+    const { POST } = await import('@/app/api/agents/[agentId]/message/stream/route')
+    const rpcBody = {
+      jsonrpc: '2.0',
+      id: 42,
+      method: 'message/stream',
+      params: {
+        message: { messageId: 'm1', taskId: 't-rpc', role: 'user', parts: [{ kind: 'data', data: {} }] },
+      },
+    }
+    const req = new Request('http://localhost/api/agents/toy-poker/message/stream', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'X-Match-Token': 'toy-token' },
+      body: JSON.stringify(rpcBody),
+    })
+    const res = await POST(req, { params: Promise.resolve({ agentId: 'toy-poker' }) })
+
+    expect(res.status).toBe(200)
+    const raw = await readStream(res)
+    expect(raw).toContain('"kind":"status-update"')
+    expect(raw).toContain('"kind":"artifact-update"')
+    expect(raw).toContain('"action":"fold"')
+  })
+
+  it('JSON-RPC with unknown method returns -32601', async () => {
+    const { POST } = await import('@/app/api/agents/[agentId]/message/stream/route')
+    const rpcBody = {
+      jsonrpc: '2.0',
+      id: 99,
+      method: 'wrong/method',
+      params: { message: { messageId: 'm', taskId: 't', role: 'user', parts: [] } },
+    }
+    const req = new Request('http://localhost/x', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(rpcBody),
+    })
+    const res = await POST(req, { params: Promise.resolve({ agentId: 'toy-poker' }) })
+
+    expect(res.status).toBe(404)
+    const body = (await res.json()) as { jsonrpc: string; id: number; error: { code: number } }
+    expect(body.jsonrpc).toBe('2.0')
+    expect(body.id).toBe(99)
+    expect(body.error.code).toBe(-32601)
+  })
 })
 
 async function readStream(res: Response): Promise<string> {
