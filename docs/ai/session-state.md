@@ -6,18 +6,19 @@
 
 - Active spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
-- Active plan set: Phase 4 (deployment) up next — `docs/superpowers/plans/2026-05-06-phase-4-deployment.md`
-- Current phase: Phase 3 closed (werewolf vertical slice merged to main)
-- Current task: — (Phase 4 not yet started)
+- Active plan set: Phase 5-2 (Vercel fallback + polish) up next — `docs/superpowers/plans/2026-05-06-phase-5-2-vercel-polish.md`
+- Current phase: Phase 5-1 closed (replay player merged to main)
+- Current task: — (Phase 5-2 not yet started)
 
 ## Last Known Status
 
 - Phase 0 is merged to `main` and pushed. Tag `phase-0` exists remotely.
 - Phase 1A is merged to `main` and pushed. Tag `phase-1a` exists remotely.
 - Phase 1B is merged to `main` and pushed.
-- Phases 2-1, 2-2, 3-1, 3-2, 3-3, 3-4 merged to `main` and pushed (merge commit `7acea7a`).
-- `npm run check` green on main after merge: lint, typecheck, 85 test files / 333 tests, Next production build.
-- Docker still unavailable locally; real Redis/Postgres smoke and Phase 4 deploy must happen on a box with Docker.
+- Phases 2-1, 2-2, 3-1, 3-2, 3-3, 3-4 merged to `main` (merge commit `7acea7a`).
+- Phase 5-1 (replay) merged to `main` (merge commit `6300b61`) and pushed.
+- `npm run check` green on main: lint, typecheck, 87 test files / 349 tests, Next production build (includes new `/matches/:id/replay` route).
+- Docker still unavailable locally; Phase 4 deploy + any real Redis/Postgres smoke must happen on a box with Docker.
 
 ## Validation Log
 
@@ -110,6 +111,8 @@
 | 2026-05-07 | `npm test` | Passed | Phase 3-3 moderator context + parser; werewolf plugin registered; GM boundary narration hook; match creation validation |
 | 2026-05-07 | `npm test` | Passed | Phase 3-4 werewolf UI (PlayerCard / ModeratorPanel / SpeechBubble / VoteTally / WerewolfBoard / WerewolfResultPanel) + store derivations |
 | 2026-05-07 | `npm run check` | Passed | Post-merge gate on main: 85 files / 333 tests, lint + typecheck + Next build |
+| 2026-05-07 | `npm test` | Passed | Phase 5-1 replay player (replay-store 8 tests, ReplayControls 8 tests incl. drag-no-seek regression, seatSetup-survives-seek regression) |
+| 2026-05-07 | `npm run check` | Passed | Phase 5-1 post-merge gate on main: 87 files / 349 tests, Next build includes `/matches/:id/replay` route |
 
 ## Open Questions / Blockers
 
