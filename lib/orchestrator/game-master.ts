@@ -10,6 +10,7 @@ import { keys } from '@/lib/redis/keys'
 import { log } from '@/lib/telemetry/logger'
 import { inc, observe } from '@/lib/telemetry/metrics'
 import { coerceToValidAction } from './action-validator'
+import { bucketizeFallbackReason } from './fallback-reasons'
 import { finalizeMatch } from './match-lifecycle'
 import { publishSse } from './sse-broadcast'
 
@@ -64,12 +65,13 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     })
 
     if (agentDecision.fallback || layer === 'fallback') {
-      inc('agent.fallback', 1, { gameType, reason: agentDecision.errorCode ?? 'invalid-action' })
+      const rawCode = agentDecision.errorCode ?? 'agent-invalid-action'
+      inc('agent.fallback', 1, { gameType, reason: bucketizeFallbackReason(rawCode) })
       await recordAgentError({
         matchId,
         agentId: actorId,
         layer: 'fallback',
-        errorCode: agentDecision.errorCode ?? 'agent-invalid-action',
+        errorCode: rawCode,
         recoveryAction: action as Record<string, unknown>,
       })
     }
