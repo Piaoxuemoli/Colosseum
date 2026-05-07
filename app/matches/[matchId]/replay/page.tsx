@@ -1,22 +1,26 @@
 import { notFound } from 'next/navigation'
 import { loadMatchSpectatorBundle } from '@/lib/match/load-spectator-bundle'
-import { SpectatorView } from './SpectatorView'
+import { ReplayView } from './ReplayView'
 
 export const dynamic = 'force-dynamic'
 
-export default async function MatchPage({ params }: { params: Promise<{ matchId: string }> }) {
+export default async function ReplayPage({
+  params,
+}: {
+  params: Promise<{ matchId: string }>
+}) {
   const { matchId } = await params
   const bundle = await loadMatchSpectatorBundle(matchId)
   if (!bundle) notFound()
 
   return (
-    <SpectatorView
+    <ReplayView
       matchId={matchId}
       gameType={bundle.match.gameType as 'poker' | 'werewolf'}
       initialPlayers={bundle.initialPlayers}
-      initialEvents={bundle.initialEvents}
+      events={bundle.initialEvents}
       initialChips={bundle.initialChips}
-      status={bundle.match.status}
+      totalEvents={bundle.initialEvents.length}
     />
   )
 }
