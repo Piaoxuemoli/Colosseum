@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { loadMatchSpectatorBundle } from '@/lib/match/load-spectator-bundle'
 import { ReplayView } from './ReplayView'
 
@@ -12,6 +12,13 @@ export default async function ReplayPage({
   const { matchId } = await params
   const bundle = await loadMatchSpectatorBundle(matchId)
   if (!bundle) notFound()
+
+  // Don't let a user replay a live match — the event log is still growing, the
+  // frozen snapshot would look complete but is not. Bounce back to the live
+  // spectator view instead.
+  if (bundle.match.status === 'running') {
+    redirect(`/matches/${matchId}`)
+  }
 
   return (
     <ReplayView
