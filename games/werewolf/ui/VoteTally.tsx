@@ -5,7 +5,16 @@ import { useMatchViewStore } from '@/store/match-view-store'
 
 export function VoteTally() {
   const votes = useMatchViewStore((s) => s.werewolf.voteLog)
-  const day = useMatchViewStore((s) => s.werewolf.day)
+
+  // Source of truth = the max `day` seen in the vote log itself. Using the
+  // store's `werewolf.day` would drop today's votes if they arrive before the
+  // moderator-narrate event that advances the day (possible under future
+  // concurrent delivery; harmless but confusing until then).
+  const day = useMemo(() => {
+    let max = 0
+    for (const v of votes) if (v.day > max) max = v.day
+    return max
+  }, [votes])
 
   const tally = useMemo(() => {
     const m = new Map<string, number>()

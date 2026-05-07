@@ -97,6 +97,31 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
       }
     }
 
+    // Emit a terminal werewolf/game-end event BEFORE finalize so the SSE
+    // consumer can reveal roles. Without this, the UI result panel never
+    // opens because it waits for ww.winner to be populated by this event.
+    const isTerminalTransition =
+      game.engine.boundary(state, nextState) === 'match-end'
+    if (isTerminalTransition && match.gameType === 'werewolf') {
+      const ws = nextState as WerewolfState
+      augmentedEvents.push({
+        gameType: 'werewolf',
+        occurredAt: new Date().toISOString(),
+        kind: 'werewolf/game-end',
+        actorAgentId: null,
+        payload: {
+          winner: ws.winner,
+          actualRoles: ws.roleAssignments,
+          totalDays: ws.day,
+        },
+        visibility: 'public',
+        restrictedTo: null,
+        id: newEventId(),
+        matchId: '',
+        seq: 0,
+      })
+    }
+
     let seq = await nextSeq(matchId)
     const finalEvents = augmentedEvents.map((event) => ({ ...event, matchId, seq: seq++ }))
     await appendEvents(finalEvents)
@@ -109,8 +134,7 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
 
     await redis.set(keys.matchState(matchId), JSON.stringify(nextState), 'EX', 24 * 60 * 60)
 
-    const boundary = game.engine.boundary(state, nextState)
-    if (boundary === 'match-end') {
+    if (isTerminalTransition) {
       await finalizeMatch(matchId)
       await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
       inc('tick.count', 1, { gameType, outcome: 'match-end' })

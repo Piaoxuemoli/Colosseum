@@ -18,7 +18,7 @@ describe('advancePhase', () => {
     expect(next.currentActor).toBe('wi')
   })
 
-  it('night/witchAction resolves deaths and enters day/announce', () => {
+  it('night/witchAction resolves deaths and enters day/speak (announce is collapsed)', () => {
     const s = {
       ...makeBaseState(),
       phase: 'night/witchAction' as const,
@@ -26,8 +26,11 @@ describe('advancePhase', () => {
       lastNightKilled: 'v1',
     }
     const next = advancePhase(s)
-    expect(next.phase).toBe('day/announce')
+    // day/announce is a non-actor phase and is collapsed into day/speak so
+    // the orchestrator never sees a null currentActor mid-game.
+    expect(next.phase).toBe('day/speak')
     expect(next.day).toBe(1)
+    expect(next.currentActor).not.toBeNull()
     const v1 = next.players.find((p) => p.agentId === 'v1')!
     expect(v1.alive).toBe(false)
     expect(v1.deathCause).toBe('werewolfKill')
@@ -161,6 +164,50 @@ describe('advancePhase', () => {
     const s = {
       ...base,
       phase: 'day/execute' as const,
+      day: 1,
+      players: base.players.map((p) =>
+        p.agentId === 'w2' ? { ...p, alive: false, deathDay: 1, deathCause: 'vote' as const } : p,
+      ),
+      voteLog: [
+        { day: 1, voter: 's', target: 'w1', at: 0 },
+        { day: 1, voter: 'wi', target: 'w1', at: 0 },
+        { day: 1, voter: 'v1', target: 'w1', at: 0 },
+      ],
+    }
+    const next = advancePhase(s)
+    expect(next.matchComplete).toBe(true)
+    expect(next.winner).toBe('villagers')
+    expect(next.phase).toBe('day/execute')
+    expect(next.currentActor).toBeNull()
+  })
+
+  it('day/vote advances directly into next night with a non-null currentActor', () => {
+    // Live code-path: the last voter's action lands in day/vote, then
+    // advancePhase collapses day/execute so the GM never sees a null actor.
+    const s = {
+      ...makeBaseState(),
+      phase: 'day/vote' as const,
+      day: 1,
+      voteLog: [
+        { day: 1, voter: 'w1', target: 'v2', at: 0 },
+        { day: 1, voter: 'w2', target: 'v2', at: 0 },
+        { day: 1, voter: 's', target: 'v2', at: 0 },
+        { day: 1, voter: 'v1', target: 'v2', at: 0 },
+      ],
+    }
+    const next = advancePhase(s)
+    expect(next.phase).toBe('night/werewolfDiscussion')
+    expect(next.currentActor).not.toBeNull()
+    const v2 = next.players.find((p) => p.agentId === 'v2')!
+    expect(v2.alive).toBe(false)
+    expect(v2.deathCause).toBe('vote')
+  })
+
+  it('day/vote settles with winner (no remaining wolves) and phase is parked on day/execute', () => {
+    const base = makeBaseState()
+    const s = {
+      ...base,
+      phase: 'day/vote' as const,
       day: 1,
       players: base.players.map((p) =>
         p.agentId === 'w2' ? { ...p, alive: false, deathDay: 1, deathCause: 'vote' as const } : p,

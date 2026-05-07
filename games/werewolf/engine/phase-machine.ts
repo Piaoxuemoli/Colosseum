@@ -40,12 +40,40 @@ export function advancePhase(state: WerewolfState): WerewolfState {
           return s
         }
       }
-      s.phase = 'day/announce'
+      // `day/announce` is a non-actor phase (no action taker). Collapse it
+      // straight into `day/speak` so the GM never sees a null currentActor
+      // mid-game — it would otherwise finalize the match prematurely.
+      s.phase = 'day/speak'
       s.day += 1
-      s.currentActor = null
+      s.speechQueue = s.players.filter((p) => p.alive).map((p) => p.agentId)
+      s.currentActor = s.speechQueue.shift() ?? null
+      return markWinIfSettled(s)
+
+    case 'day/vote':
+      // `day/execute` is a non-actor phase (no action taker). Collapse it
+      // straight into the next actionable phase (night/werewolfDiscussion,
+      // or match-end) so tickMatch doesn't see a null currentActor mid-game.
+      resolveVoteExecution(s)
+      {
+        const winEarly = checkWin(s)
+        if (winEarly.settled) {
+          s.matchComplete = true
+          s.winner = winEarly.winner
+          s.currentActor = null
+          s.phase = 'day/execute'
+          return s
+        }
+      }
+      s.phase = 'night/werewolfDiscussion'
+      s.werewolfDiscussionQueue = s.players
+        .filter((p) => p.alive && s.roleAssignments[p.agentId] === 'werewolf')
+        .map((p) => p.agentId)
+      s.currentActor = s.werewolfDiscussionQueue.shift() ?? null
       return s
 
     case 'day/announce':
+      // Legacy; retained only so pre-existing fixtures/tests exercising this
+      // phase still advance correctly. Live play never enters this phase.
       s.phase = 'day/speak'
       s.speechQueue = s.players.filter((p) => p.alive).map((p) => p.agentId)
       s.currentActor = s.speechQueue.shift() ?? null
@@ -60,12 +88,10 @@ export function advancePhase(state: WerewolfState): WerewolfState {
       s.currentActor = firstAlive(s)
       return markWinIfSettled(s)
 
-    case 'day/vote':
-      s.phase = 'day/execute'
-      s.currentActor = null
-      return markWinIfSettled(s)
-
     case 'day/execute':
+      // Legacy; reachable only from the pre-existing day/announce path above
+      // or fixtures that assembled this phase manually. Live play collapses
+      // day/execute into the win-check inside day/vote.
       resolveVoteExecution(s)
       {
         const winEarly = checkWin(s)
@@ -73,7 +99,6 @@ export function advancePhase(state: WerewolfState): WerewolfState {
           s.matchComplete = true
           s.winner = winEarly.winner
           s.currentActor = null
-          // phase stays at 'day/execute' — stored state is internally consistent.
           return s
         }
       }

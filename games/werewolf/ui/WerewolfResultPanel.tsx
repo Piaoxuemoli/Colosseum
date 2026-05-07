@@ -21,10 +21,13 @@ const TITLE: Record<string, string> = {
 
 export function WerewolfResultPanel({ players }: { players: PokerUiPlayer[] }) {
   const status = useMatchViewStore((s) => s.status)
-  const ww = useMatchViewStore((s) => s.werewolf)
+  const winner = useMatchViewStore((s) => s.werewolf.winner)
+  const roleAssignments = useMatchViewStore((s) => s.werewolf.roleAssignments)
+  const day = useMatchViewStore((s) => s.werewolf.day)
+  const speechCount = useMatchViewStore((s) => s.werewolf.speechLog.length)
   const router = useRouter()
-  const open = status === 'settled' && ww.winner !== null
-  const title = ww.winner ? TITLE[ww.winner] : ''
+  const open = status === 'settled' && winner !== null
+  const title = winner ? TITLE[winner] : ''
 
   const ordered = [...players].sort((a, b) => a.seatIndex - b.seatIndex)
 
@@ -50,14 +53,14 @@ export function WerewolfResultPanel({ players }: { players: PokerUiPlayer[] }) {
               </div>
               <div className="min-w-0 flex-1 truncate">{p.displayName}</div>
               <div className="text-sm text-neutral-200">
-                {ZH[ww.roleAssignments?.[p.agentId] ?? ''] ?? '?'}
+                {ZH[roleAssignments?.[p.agentId] ?? ''] ?? '?'}
               </div>
             </div>
           ))}
         </div>
 
         <div className="mt-2 text-xs text-neutral-500">
-          持续 {ww.day} 天 · 共发言 {ww.speechLog.length} 次
+          持续 {day} 天 · 共发言 {speechCount} 次
         </div>
 
         <div className="flex justify-end">
