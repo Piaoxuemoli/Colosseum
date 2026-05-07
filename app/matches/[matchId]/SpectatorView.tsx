@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { RightPanel } from '@/components/match/RightPanel'
 import { RankingPanel } from '@/components/match/RankingPanel'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
+import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
+import { WerewolfResultPanel } from '@/games/werewolf/ui/WerewolfResultPanel'
 import { useMatchStream } from '@/lib/client/sse'
 import type { GameEvent } from '@/lib/core/types'
 import { useMatchViewStore, type PokerUiPlayer } from '@/store/match-view-store'
@@ -44,6 +46,8 @@ export function SpectatorView({
   const thinkingByAgent = useMatchViewStore((state) => state.thinkingByAgent)
   const matchComplete = useMatchViewStore((state) => state.matchComplete)
   const winnerAgentId = useMatchViewStore((state) => state.winnerAgentId)
+  const werewolfDay = useMatchViewStore((state) => state.werewolf.day)
+  const werewolfPhase = useMatchViewStore((state) => state.werewolf.phase)
 
   useEffect(() => {
     init({ matchId, players: initialPlayers })
@@ -70,8 +74,37 @@ export function SpectatorView({
 
   useMatchStream(matchId, onMessage)
 
-  if (gameType !== 'poker') {
-    return <div className="p-8 text-muted-foreground">狼人杀观战页将在 Phase 3 实现。</div>
+  if (gameType === 'werewolf') {
+    // Werewolf uses the initial players from SSR (seat + displayName) since
+    // the store's `players` array is only mutated by poker events.
+    const werewolfPlayers = players.length > 0 ? players : initialPlayers
+    return (
+      <div className="flex flex-col gap-4 px-4 py-8 md:px-8 lg:flex-row">
+        <main className="min-w-0 flex-1">
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-300">
+                Spectator View
+              </p>
+              <h1 className="mt-3 text-3xl font-black tracking-tight text-white">
+                狼人杀 · Day {werewolfDay}
+              </h1>
+              <p className="mt-2 font-mono text-xs text-muted-foreground">{matchId}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{werewolfPhase ?? 'waiting'}</Badge>
+              <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
+              {matchComplete ? <Badge>对局结束</Badge> : null}
+            </div>
+          </div>
+
+          <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />
+        </main>
+
+        <RightPanel matchId={matchId} />
+        <WerewolfResultPanel players={werewolfPlayers} />
+      </div>
+    )
   }
 
   const winnerName = winnerAgentId
