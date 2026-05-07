@@ -29,4 +29,28 @@ describe('lib/telemetry/logger', () => {
     const arg = spy.mock.calls[0][0] as string
     expect((JSON.parse(arg) as { level: string }).level).toBe('error')
   })
+
+  it('withMatch scopes subsequent calls', () => {
+    const sub = log.withMatch('match_abc', { run: 1 })
+    sub.info('tick', { phase: 'deal' })
+    const arg = spy.mock.calls[0][0] as string
+    const parsed = JSON.parse(arg) as Record<string, unknown>
+    expect(parsed.matchId).toBe('match_abc')
+    expect(parsed.run).toBe(1)
+    expect(parsed.phase).toBe('deal')
+  })
+
+  it('respects LOG_LEVEL env to suppress lower levels', () => {
+    const prev = process.env.LOG_LEVEL
+    process.env.LOG_LEVEL = 'warn'
+    try {
+      log.info('should be dropped')
+      log.warn('kept')
+      expect(spy).toHaveBeenCalledOnce()
+      const line = spy.mock.calls[0][0] as string
+      expect(line).toContain('kept')
+    } finally {
+      process.env.LOG_LEVEL = prev
+    }
+  })
 })
