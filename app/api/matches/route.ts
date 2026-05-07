@@ -6,6 +6,7 @@ import { matches } from '@/lib/db/schema.sqlite'
 import { loadEnv } from '@/lib/env'
 import { ensureGamesRegistered } from '@/lib/instrument'
 import { createAndStartMatch } from '@/lib/orchestrator/match-lifecycle'
+import { MatchCreateValidationError } from '@/lib/orchestrator/match-lifecycle-validation'
 import { log } from '@/lib/telemetry/logger'
 
 export const runtime = 'nodejs'
@@ -45,8 +46,15 @@ export async function POST(req: Request): Promise<Response> {
     const result = await createAndStartMatch(parsed.data)
     matchId = result.matchId
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    return Response.json({ error: 'validation', message }, { status: 400 })
+    if (err instanceof MatchCreateValidationError) {
+      return Response.json(
+        { error: 'validation', details: { message: err.message } },
+        { status: 400 },
+      )
+    }
+    // Infra failures (DB / Redis / etc) — let Next surface a 500 instead of
+    // mislabelling them as validation errors.
+    throw err
   }
   log.info('match created via api', { matchId })
 

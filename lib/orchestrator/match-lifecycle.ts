@@ -47,9 +47,17 @@ export async function createAndStartMatch(input: CreateMatchInput): Promise<{ ma
           startingChips: 200,
           maxBetsPerStreet: 4,
         }
-  const engineConfig = input.engineConfig
-    ? { ...defaultEngineConfig, ...input.engineConfig }
-    : defaultEngineConfig
+  // Caller's engineConfig overrides defaults (normal semantics), but the
+  // validated moderatorAgentId is pinned last so an untrusted engineConfig
+  // cannot shadow it with a different value (e.g. a player id).
+  const mergedEngineConfig = {
+    ...defaultEngineConfig,
+    ...(input.engineConfig ?? {}),
+  }
+  const engineConfig =
+    input.gameType === 'werewolf'
+      ? { ...mergedEngineConfig, moderatorAgentId: input.moderatorAgentId ?? null }
+      : mergedEngineConfig
   const initialState = game.engine.createInitialState(engineConfig, input.agentIds)
   const token = newMatchToken()
 

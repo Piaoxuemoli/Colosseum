@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { validateWerewolfCreate } from '@/lib/orchestrator/match-lifecycle-validation'
+import {
+  MatchCreateValidationError,
+  validateWerewolfCreate,
+} from '@/lib/orchestrator/match-lifecycle-validation'
 
 describe('validateWerewolfCreate', () => {
   const base = {
@@ -36,5 +39,15 @@ describe('validateWerewolfCreate', () => {
     expect(() =>
       validateWerewolfCreate({ ...base, moderatorAgentId: 'a' }),
     ).toThrow(/moderator.*player/i)
+  })
+
+  it('throws a typed MatchCreateValidationError so callers can distinguish it from infra errors', () => {
+    try {
+      validateWerewolfCreate({ ...base, moderatorAgentId: null })
+      throw new Error('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(MatchCreateValidationError)
+      expect((err as Error).name).toBe('MatchCreateValidationError')
+    }
   })
 })
