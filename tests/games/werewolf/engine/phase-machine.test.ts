@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { advancePhase } from '@/games/werewolf/engine/phase-machine'
+import type { WerewolfState } from '@/games/werewolf/engine/types'
 import { makeBaseState } from './_helpers'
 
 describe('advancePhase', () => {
@@ -68,7 +69,7 @@ describe('advancePhase', () => {
   })
 
   it('day/speak cycles currentActor through speechQueue then enters day/vote', () => {
-    let s = {
+    let s: WerewolfState = {
       ...makeBaseState(),
       phase: 'day/speak' as const,
       day: 1,
