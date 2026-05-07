@@ -13,6 +13,7 @@ export const runtime = 'nodejs'
 const createSchema = z.object({
   gameType: gameTypeSchema,
   agentIds: z.array(z.string()).min(2).max(10),
+  moderatorAgentId: z.string().nullable().optional(),
   config: z
     .object({
       agentTimeoutMs: z.number().int().nonnegative().optional(),
@@ -39,7 +40,14 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: 'validation', details: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { matchId } = await createAndStartMatch(parsed.data)
+  let matchId: string
+  try {
+    const result = await createAndStartMatch(parsed.data)
+    matchId = result.matchId
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return Response.json({ error: 'validation', message }, { status: 400 })
+  }
   log.info('match created via api', { matchId })
 
   const env = loadEnv()
