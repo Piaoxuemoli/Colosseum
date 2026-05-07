@@ -13,16 +13,23 @@ import {
 import { redis } from '@/lib/redis/client'
 import { keys } from '@/lib/redis/keys'
 import { log } from '@/lib/telemetry/logger'
+import { validateMatchCreate } from './match-lifecycle-validation'
 
 export type CreateMatchInput = {
   gameType: GameType
   agentIds: string[]
+  moderatorAgentId?: string | null
   config?: Partial<MatchConfig>
   keyring?: Record<string, string>
   engineConfig?: Record<string, unknown>
 }
 
 export async function createAndStartMatch(input: CreateMatchInput): Promise<{ matchId: string; token: string }> {
+  validateMatchCreate(input.gameType, {
+    agentIds: input.agentIds,
+    moderatorAgentId: input.moderatorAgentId ?? null,
+  })
+
   const config: MatchConfig = { ...defaultMatchConfig(), ...(input.config ?? {}) }
   const { matchId } = await createMatch({
     gameType: input.gameType,
@@ -31,13 +38,26 @@ export async function createAndStartMatch(input: CreateMatchInput): Promise<{ ma
   })
 
   const game = getGame(input.gameType)
+  const defaultEngineConfig: Record<string, unknown> =
+    input.gameType === 'werewolf'
+      ? { moderatorAgentId: input.moderatorAgentId ?? null }
+      : {
+          smallBlind: 2,
+          bigBlind: 4,
+          startingChips: 200,
+          maxBetsPerStreet: 4,
+        }
+  // Caller's engineConfig overrides defaults (normal semantics), but the
+  // validated moderatorAgentId is pinned last so an untrusted engineConfig
+  // cannot shadow it with a different value (e.g. a player id).
+  const mergedEngineConfig = {
+    ...defaultEngineConfig,
+    ...(input.engineConfig ?? {}),
+  }
   const engineConfig =
-    input.engineConfig ?? {
-      smallBlind: 2,
-      bigBlind: 4,
-      startingChips: 200,
-      maxBetsPerStreet: 4,
-    }
+    input.gameType === 'werewolf'
+      ? { ...mergedEngineConfig, moderatorAgentId: input.moderatorAgentId ?? null }
+      : mergedEngineConfig
   const initialState = game.engine.createInitialState(engineConfig, input.agentIds)
   const token = newMatchToken()
 

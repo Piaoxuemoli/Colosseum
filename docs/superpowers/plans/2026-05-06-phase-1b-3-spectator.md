@@ -50,7 +50,7 @@ Colosseum/
 
 ## Task 1: 安装 @floating-ui/react + framer-motion
 
-- [ ] **Step 1: 安装**
+- [x] **Step 1: 安装**
 
 Run:
 ```bash
@@ -59,7 +59,7 @@ npm install @floating-ui/react framer-motion
 
 Expected: 无错。
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add package.json package-lock.json
@@ -78,7 +78,7 @@ git commit -m "chore(p1b): install @floating-ui/react + framer-motion"
 
 **简化**：本 plan 不做 event sourcing；直接在 store 里维护一个 `derived` 对象，用 reducer 随事件 mutate。
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 Create `tests/store/match-view-store.test.ts`:
 
@@ -127,7 +127,7 @@ describe('match-view-store', () => {
 })
 ```
 
-- [ ] **Step 2: 写 store**
+- [x] **Step 2: 写 store**
 
 Create `store/match-view-store.ts`:
 
@@ -319,7 +319,7 @@ export const useMatchViewStore = create<MatchViewState>((set, get) => ({
 
 **注意**：reducer 里 `currentActor` 的更新没完整做 —— `currentActor` 主要依赖 `thinking-delta` 事件推进，真实 current actor 的计算在服务端。本版本简化：thinking 到谁 → currentActor 就是谁。
 
-- [ ] **Step 3: 跑测试 + commit**
+- [x] **Step 3: 跑测试 + commit**
 
 Run: `npm test tests/store/match-view-store.test.ts`
 Expected: 3 passed。
@@ -336,7 +336,7 @@ git commit -m "feat(p1b): match view store with event reducer"
 **Files:**
 - Create: `lib/client/sse.ts`
 
-- [ ] **Step 1: 写 hook**
+- [x] **Step 1: 写 hook**
 
 Create `lib/client/sse.ts`:
 
@@ -376,7 +376,7 @@ export function useMatchStream(
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add lib/client/sse.ts
@@ -390,7 +390,7 @@ git commit -m "feat(p1b): SSE subscription hook"
 **Files:**
 - Create: `games/poker/ui/PlayingCard.tsx`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/ui/PlayingCard.tsx`:
 
@@ -450,7 +450,7 @@ export function PlayingCard({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/ui/PlayingCard.tsx
@@ -464,7 +464,7 @@ git commit -m "feat(p1b): PlayingCard component with flip animation"
 **Files:**
 - Create: `games/poker/ui/ThinkingBubble.tsx`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/ui/ThinkingBubble.tsx`:
 
@@ -510,7 +510,7 @@ export function ThinkingBubble({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/ui/ThinkingBubble.tsx
@@ -524,7 +524,7 @@ git commit -m "feat(p1b): ThinkingBubble with floating-ui smart positioning"
 **Files:**
 - Create: `games/poker/ui/PlayerSeat.tsx`
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/ui/PlayerSeat.tsx`:
 
@@ -592,7 +592,7 @@ export function PlayerSeat({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/ui/PlayerSeat.tsx
@@ -607,7 +607,7 @@ git commit -m "feat(p1b): PlayerSeat with current-actor highlight + thinking bub
 - Create: `games/poker/ui/CommunityCards.tsx`
 - Create: `games/poker/ui/Pot.tsx`
 
-- [ ] **Step 1: 写 CommunityCards**
+- [x] **Step 1: 写 CommunityCards**
 
 Create `games/poker/ui/CommunityCards.tsx`:
 
@@ -637,7 +637,7 @@ export function CommunityCards({ cards }: { cards: CardVisual[] }) {
 }
 ```
 
-- [ ] **Step 2: 写 Pot**
+- [x] **Step 2: 写 Pot**
 
 Create `games/poker/ui/Pot.tsx`:
 
@@ -664,7 +664,7 @@ export function Pot({ amount, phase }: { amount: number; phase: string }) {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add games/poker/ui/CommunityCards.tsx games/poker/ui/Pot.tsx
@@ -680,7 +680,7 @@ git commit -m "feat(p1b): CommunityCards + Pot with animations"
 
 **Context:** 椭圆牌桌，6 座位环绕。用绝对定位 + 百分比放置座位。
 
-- [ ] **Step 1: 写实现**
+- [x] **Step 1: 写实现**
 
 Create `games/poker/ui/PokerBoard.tsx`:
 
@@ -746,7 +746,7 @@ export function PokerBoard({
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add games/poker/ui/PokerBoard.tsx
@@ -763,7 +763,7 @@ git commit -m "feat(p1b): PokerBoard with 6-seat oval layout"
 
 **Context:** Server 外壳 `page.tsx` 读 match/participants/agents 初始数据；Client `SpectatorView` 接管 SSE + 渲染。
 
-- [ ] **Step 1: 写 Server page**
+- [x] **Step 1: 写 Server page**
 
 Create `app/matches/[matchId]/page.tsx`:
 
@@ -821,7 +821,7 @@ export default async function MatchPage({
 }
 ```
 
-- [ ] **Step 2: 写 Client SpectatorView**
+- [x] **Step 2: 写 Client SpectatorView**
 
 Create `app/matches/[matchId]/SpectatorView.tsx`:
 
@@ -922,7 +922,9 @@ export function SpectatorView({
 }
 ```
 
-- [ ] **Step 3: 手工验证**
+- [x] **Step 3: 手工验证**
+
+Local note: page typecheck/build passed. Live SSE verification requires Redis and remains blocked on this machine because Docker is not installed.
 
 Run: `npm run infra:up && npm run dev`（新开终端跑 dev）：
 1. 访问 `/matches/new`，选 6 agent 开新对局，跳到观战页
@@ -936,7 +938,7 @@ Run: `npm run infra:up && npm run dev`（新开终端跑 dev）：
 - ThinkingBubble 不显示：检查 anchorRef 是否绑定
 - 动画卡顿：降低 Framer Motion `transition.duration`
 
-- [ ] **Step 4: Commit + tag**
+- [x] **Step 4: Commit + tag**
 
 ```bash
 git add app/matches/\[matchId\]/ games/poker/ui/
@@ -949,7 +951,7 @@ git tag -a phase-1b-3 -m "Phase 1b-3: spectator page + poker table renderer"
 ## Phase 1b-3 Done 定义
 
 1. ✅ 访问 `/matches/<id>` 能看到椭圆牌桌 + 6 座位
-2. ✅ SSE 事件驱动 UI：发牌 / 下注 / 弃牌 / 换街 / 摊牌 全部可见
+2. ✅ SSE 事件驱动 UI：发牌 / 下注 / 弃牌 / 换街 / 摊牌 全部可见（真实 SSE 手工验证需 Redis；本机 Docker 缺失阻塞）
 3. ✅ 当前 actor 有明显视觉高亮（ring-2 + pulse）
 4. ✅ Thinking bubble 浮动在座位附近，`@floating-ui/react` 自动避开遮挡
 5. ✅ Framer Motion 动画：发牌 flip、公共牌 stagger、pot 变化 scale
