@@ -8,6 +8,7 @@ const envSchema = z.object({
   SQLITE_PATH: z.string().default('./dev.db'),
   DATABASE_URL: z.string().optional(),
   REDIS_URL: z.string().url(),
+  MATCH_TOKEN_SECRET: z.string().optional(),
   TEST_LLM_BASE_URL: z.string().url().optional(),
   TEST_LLM_API_KEY: z.string().optional(),
   TEST_LLM_MODEL: z.string().optional(),
