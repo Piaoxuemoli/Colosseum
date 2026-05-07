@@ -142,12 +142,36 @@ export const werewolfEngine: GameEngine<WerewolfState, WerewolfAction, WerewolfE
           claimedRole: action.claimedRole,
           at: now,
         })
-        gameEvents.push(baseEvent('werewolf/speak', actorId, { day: next.day, content: action.content, claimedRole: action.claimedRole ?? null }, 'public'))
-        // speech phase only advances when the queue drains; delegate to phase-machine
-        if (next.speechQueue.length === 0) {
-          next = advancePhase(next)
+        if (state.phase === 'night/werewolfDiscussion') {
+          // Wolf-only discussion: visible to wolves only; cycle through queue.
+          gameEvents.push(
+            baseEvent(
+              'werewolf/werewolfDiscuss',
+              actorId,
+              { day: next.day, content: action.content },
+              'role-restricted',
+              werewolfIds(next),
+            ),
+          )
+          if (next.werewolfDiscussionQueue.length === 0) {
+            next = advancePhase(next)
+          } else {
+            next.currentActor = next.werewolfDiscussionQueue.shift() ?? null
+          }
         } else {
-          next.currentActor = next.speechQueue.shift() ?? null
+          gameEvents.push(
+            baseEvent(
+              'werewolf/speak',
+              actorId,
+              { day: next.day, content: action.content, claimedRole: action.claimedRole ?? null },
+              'public',
+            ),
+          )
+          if (next.speechQueue.length === 0) {
+            next = advancePhase(next)
+          } else {
+            next.currentActor = next.speechQueue.shift() ?? null
+          }
         }
         break
 

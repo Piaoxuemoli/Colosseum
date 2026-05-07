@@ -53,7 +53,13 @@ export function validate(
       return targetAlive(state, action.targetId)
 
     case 'day/speak':
-      if (state.phase !== 'day/speak') return { ok: false, reason: 'wrong-phase' }
+      // Wolves also use `day/speak` during `night/werewolfDiscussion` to coordinate.
+      if (state.phase !== 'day/speak' && state.phase !== 'night/werewolfDiscussion') {
+        return { ok: false, reason: 'wrong-phase' }
+      }
+      if (state.phase === 'night/werewolfDiscussion' && role !== 'werewolf') {
+        return { ok: false, reason: 'not-werewolf' }
+      }
       if (state.currentActor !== actorId) return { ok: false, reason: 'not-your-turn' }
       if (action.content.length > 200) return { ok: false, reason: 'speech-too-long' }
       return { ok: true }

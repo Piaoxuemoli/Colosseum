@@ -84,4 +84,36 @@ describe('werewolfEngine', () => {
     expect(result.ranking.length).toBe(6)
     expect(result.ranking[0].extra?.role).toBeDefined()
   })
+
+  it('night/werewolfDiscussion cycles BOTH wolves before advancing to werewolfKill', () => {
+    const s0 = init(1)
+    const wolves = Object.entries(s0.roleAssignments)
+      .filter(([, r]) => r === 'werewolf')
+      .map(([id]) => id)
+    expect(wolves.length).toBe(2)
+
+    // initial state: first wolf is currentActor, second is queued
+    expect(s0.phase).toBe('night/werewolfDiscussion')
+    expect(wolves).toContain(s0.currentActor)
+    const secondWolf = wolves.find((w) => w !== s0.currentActor)!
+
+    // first wolf speaks
+    const r1 = werewolfEngine.applyAction(s0, s0.currentActor!, {
+      type: 'day/speak',
+      content: 'lets kill a villager',
+    })
+    expect(r1.nextState.phase).toBe('night/werewolfDiscussion')
+    expect(r1.nextState.currentActor).toBe(secondWolf)
+    expect(r1.events[0].kind).toBe('werewolf/werewolfDiscuss')
+    expect(r1.events[0].visibility).toBe('role-restricted')
+    expect(r1.events[0].restrictedTo).toEqual(wolves)
+
+    // second wolf speaks -> advance to werewolfKill
+    const r2 = werewolfEngine.applyAction(r1.nextState, secondWolf, {
+      type: 'day/speak',
+      content: 'agreed',
+    })
+    expect(r2.nextState.phase).toBe('night/werewolfKill')
+    expect(wolves).toContain(r2.nextState.currentActor)
+  })
 })
