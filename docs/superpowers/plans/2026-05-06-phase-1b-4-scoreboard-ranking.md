@@ -55,7 +55,7 @@ Colosseum/
 
 **Context:** `chipHistory` 是每手结束（`hand_over` / `settlement` 事件）记录所有 agent 当时的筹码快照；`errors` 存本场累计的 agent_error 数量（从 SSE 或轮询得到）。
 
-- [ ] **Step 1: 更新 store 类型**
+- [x] **Step 1: 更新 store 类型**
 
 在 `store/match-view-store.ts` 的 `MatchViewState` interface 里追加：
 
@@ -76,7 +76,7 @@ export interface MatchViewState {
 }
 ```
 
-- [ ] **Step 2: 写失败测试**
+- [x] **Step 2: 写失败测试**
 
 在 `tests/store/match-view-store.test.ts` 追加：
 
@@ -114,12 +114,12 @@ describe('errorCount', () => {
 })
 ```
 
-- [ ] **Step 3: 运行（应失败）**
+- [x] **Step 3: 运行（应失败）**
 
 Run: `npx vitest run tests/store/match-view-store.test.ts`
 Expected: FAIL — `recordHandSnapshot is not a function`。
 
-- [ ] **Step 4: 实现**
+- [x] **Step 4: 实现**
 
 在 store 的 initial state 和 actions 里加入：
 
@@ -156,12 +156,12 @@ case 'agent_error':
   break
 ```
 
-- [ ] **Step 5: 运行（应通过）**
+- [x] **Step 5: 运行（应通过）**
 
 Run: `npx vitest run tests/store/match-view-store.test.ts`
 Expected: PASS。
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add store/match-view-store.ts tests/store/match-view-store.test.ts
@@ -177,7 +177,7 @@ git commit -m "feat(p1b-4): chipHistory + errorCount in match-view-store"
 - Create: `app/api/matches/[id]/errors/route.ts`
 - Create: `tests/api/errors-list.test.ts`
 
-- [ ] **Step 1: 补 query**
+- [x] **Step 1: 补 query**
 
 在 `db/queries/errors.ts` 追加：
 
@@ -195,7 +195,7 @@ export async function listErrorsByMatch(matchId: string, limit = 20) {
 }
 ```
 
-- [ ] **Step 2: 写 API 路由**
+- [x] **Step 2: 写 API 路由**
 
 在 `app/api/matches/[id]/errors/route.ts`：
 
@@ -213,7 +213,7 @@ export async function GET(
 }
 ```
 
-- [ ] **Step 3: 测试**
+- [x] **Step 3: 测试**
 
 在 `tests/api/errors-list.test.ts`：
 
@@ -246,7 +246,7 @@ describe('GET /api/matches/:id/errors', () => {
 Run: `npx vitest run tests/api/errors-list.test.ts`
 Expected: PASS。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add db/queries/errors.ts app/api/matches/\[id\]/errors/route.ts tests/api/errors-list.test.ts
@@ -262,7 +262,7 @@ git commit -m "feat(p1b-4): GET /api/matches/:id/errors"
 
 **Context:** 显示一个带红点的小徽标，hover 时列最近 5 条 kind+message。使用 `Popover`（shadcn/ui 已装）。
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 'use client'
@@ -319,7 +319,7 @@ export function ErrorBadge({ matchId }: { matchId: string }) {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add components/match/ErrorBadge.tsx
@@ -336,7 +336,7 @@ git commit -m "feat(p1b-4): ErrorBadge with 5s polling"
 
 **Context:** 右侧栏顶部的实时计分板。按当前筹码降序显示所有 agents，显示每位的：头像（首字母圆形）+ 名字 + 当前筹码 + 本手变化（`+20` 绿色 / `-15` 红色）。第 1 名旁边加个 👑。
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 'use client'
@@ -388,7 +388,7 @@ export function LiveScoreboard() {
 }
 ```
 
-- [ ] **Step 2: 写渲染测试**
+- [x] **Step 2: 写渲染测试**
 
 ```tsx
 import { render, screen } from '@testing-library/react'
@@ -417,7 +417,7 @@ describe('LiveScoreboard', () => {
 Run: `npx vitest run tests/components/LiveScoreboard.test.tsx`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/match/LiveScoreboard.tsx tests/components/LiveScoreboard.test.tsx
@@ -434,13 +434,13 @@ git commit -m "feat(p1b-4): LiveScoreboard with live diff + crown"
 
 **Context:** 用 Recharts 折线图画每位 agent 的筹码曲线。X 轴=手牌编号，Y 轴=筹码。数据源是 `chipHistory`。
 
-- [ ] **Step 1: 安装 recharts**
+- [x] **Step 1: 安装 recharts**
 
 ```bash
 npm install recharts
 ```
 
-- [ ] **Step 2: 组件**
+- [x] **Step 2: 组件**
 
 ```tsx
 'use client'
@@ -498,7 +498,7 @@ export function ChipChart() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/match/ChipChart.tsx package.json package-lock.json
@@ -515,7 +515,7 @@ git commit -m "feat(p1b-4): ChipChart with recharts"
 
 **Context:** 两个滚动列表，分别显示 `event.kind === 'action_taken'` 和 `event.kind === 'agent_thinking'`。共用同一容器通过 `Tabs`（shadcn/ui）切换。
 
-- [ ] **Step 1: ActionLog**
+- [x] **Step 1: ActionLog**
 
 ```tsx
 'use client'
@@ -562,7 +562,7 @@ export function ActionLog() {
 }
 ```
 
-- [ ] **Step 2: ThinkingLog**
+- [x] **Step 2: ThinkingLog**
 
 ```tsx
 'use client'
@@ -597,7 +597,7 @@ export function ThinkingLog() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/match/ActionLog.tsx components/match/ThinkingLog.tsx
@@ -614,7 +614,7 @@ git commit -m "feat(p1b-4): ActionLog + ThinkingLog"
 
 **Context:** 右侧 `w-80` 容器，从上到下：ErrorBadge 行 → LiveScoreboard → Tabs(Actions / Thinking) → ChipChart。
 
-- [ ] **Step 1: RightPanel**
+- [x] **Step 1: RightPanel**
 
 ```tsx
 'use client'
@@ -651,7 +651,7 @@ export function RightPanel({ matchId }: { matchId: string }) {
 }
 ```
 
-- [ ] **Step 2: 接入 SpectatorView**
+- [x] **Step 2: 接入 SpectatorView**
 
 在 `app/matches/[matchId]/SpectatorView.tsx` 的根容器修改为左右布局：
 
@@ -670,7 +670,7 @@ return (
 )
 ```
 
-- [ ] **Step 3: 确认 shadcn/ui 有 tabs**
+- [x] **Step 3: 确认 shadcn/ui 有 tabs**
 
 ```bash
 npx shadcn@latest add tabs popover badge
@@ -678,7 +678,7 @@ npx shadcn@latest add tabs popover badge
 
 （P1b-2 已装了 badge，这里补 tabs/popover。）
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/match/RightPanel.tsx app/matches/\[matchId\]/SpectatorView.tsx components/ui/
@@ -695,7 +695,7 @@ git commit -m "feat(p1b-4): RightPanel integrates scoreboard/logs/chart"
 
 **Context:** 当 store 的 `derived.status === 'settled'` 时自动弹出 Dialog，展示最终排名、每位的盈亏、总手数、可返回大厅。
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 'use client'
@@ -749,7 +749,7 @@ export function RankingPanel({ initialChips }: { initialChips: number }) {
 }
 ```
 
-- [ ] **Step 2: 接入 SpectatorView**
+- [x] **Step 2: 接入 SpectatorView**
 
 ```tsx
 import { RankingPanel } from '@/components/match/RankingPanel'
@@ -758,7 +758,7 @@ import { RankingPanel } from '@/components/match/RankingPanel'
 <RankingPanel initialChips={match.config.initialChips} />
 ```
 
-- [ ] **Step 3: 安装 shadcn dialog**
+- [x] **Step 3: 安装 shadcn dialog**
 
 ```bash
 npx shadcn@latest add dialog
@@ -770,7 +770,7 @@ npx shadcn@latest add dialog
 - 创建一个 6 座位 match，跑到结束
 - Expected: 结束瞬间弹 `RankingPanel`，显示 3 种奖牌 emoji + 盈亏着色
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components/match/RankingPanel.tsx app/matches/\[matchId\]/SpectatorView.tsx components/ui/dialog.tsx
@@ -787,7 +787,7 @@ git commit -m "feat(p1b-4): RankingPanel on match settlement"
 
 **Context:** 目前 store 的 `derived.status` 可能没有在 `match_end` / `settlement` 事件里更新为 `'settled'`。补上。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```typescript
 it('sets status to settled on match_end event', () => {
@@ -801,7 +801,7 @@ it('sets status to settled on match_end event', () => {
 Run: `npx vitest run tests/store/match-view-store.test.ts -t "match_end"`
 Expected: FAIL。
 
-- [ ] **Step 2: 实现**
+- [x] **Step 2: 实现**
 
 在 `ingestEvent` 里追加：
 
@@ -817,7 +817,7 @@ case 'settlement':
 Run: `npx vitest run tests/store/match-view-store.test.ts -t "match_end"`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add store/match-view-store.ts tests/store/match-view-store.test.ts
@@ -851,9 +851,11 @@ npm run dev
 - [ ] 手动触发一个 agent_error（例如把某个 agent profile 的 base URL 设为无效地址），`ErrorBadge` 出现红色数字
 - [ ] match 自动结束后弹出 `RankingPanel`，显示排名 + 盈亏
 
-- [ ] **Step 4: 记录**
+- [x] **Step 4: 记录**
 
 截图或日志保留，提交 commit。
+
+记录：`npm run lint`、`npm test`、`npm run build`、`npm run doctor` 已通过；本机 `docker` 命令不可用，Redis/Docker 手动 6-bot E2E 保持为本地环境阻塞，后续在可用 Docker 环境补跑。
 
 ```bash
 git add -A
@@ -864,13 +866,13 @@ git commit -m "chore(p1b-4): manual e2e verification passed" --allow-empty
 
 ## Done criteria (Phase 1b-4)
 
-- [ ] `LiveScoreboard` 实时显示排名和每手筹码变化
-- [ ] `ChipChart` 折线图展示每位 agent 的筹码历史
-- [ ] `ActionLog` / `ThinkingLog` Tab 可切换
-- [ ] `ErrorBadge` 能显示错误计数并 Popover 展示最近错误
-- [ ] `RankingPanel` 在 match 结束时自动弹出
-- [ ] `match-view-store` 包含 `chipHistory` / `errorCount` / `status` 派生
-- [ ] `npm run lint` / `npx vitest run` 全绿
+- [x] `LiveScoreboard` 实时显示排名和每手筹码变化
+- [x] `ChipChart` 折线图展示每位 agent 的筹码历史
+- [x] `ActionLog` / `ThinkingLog` Tab 可切换
+- [x] `ErrorBadge` 能显示错误计数并 Popover 展示最近错误
+- [x] `RankingPanel` 在 match 结束时自动弹出
+- [x] `match-view-store` 包含 `chipHistory` / `errorCount` / `status` 派生
+- [x] `npm run lint` / `npx vitest run` 全绿
 - [ ] 手动创建 6-bot match 完整跑完，所有组件正常显示
 
 完成后进入 **Phase 1b-5**：6 个真实 LLM agents 全流程演示。

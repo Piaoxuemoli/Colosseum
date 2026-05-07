@@ -6,9 +6,9 @@
 
 - Active spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
-- Active plan set: `docs/superpowers/plans/2026-05-06-phase-1a-*.md`
-- Current phase: Phase 1A — poker engine and GM foundation
-- Current task: Phase 1A complete; local merge/tag/push pending
+- Active plan set: `docs/superpowers/plans/2026-05-06-phase-1b-*.md`
+- Current phase: Phase 1B — API and frontend playable experience
+- Current task: Phase 1B complete (automated); M4 real manual run blocked locally
 
 ## Last Known Status
 
@@ -19,6 +19,7 @@
 - Next build output is `.next-build` because an old `.next/trace` file on this Windows machine has abnormal ACL/lock and cannot be removed by the current user.
 - `old/` remains reference-only; do not edit it unless explicitly requested.
 - Independent development mode: do not create or suggest PR / MR; all merges are local.
+- Phase 1A is merged to `main` and pushed. Tag `phase-1a` exists remotely.
 
 ## Validation Log
 
@@ -56,10 +57,59 @@
 | 2026-05-06 | `npm run infra:up` | Blocked | Docker is not installed on this machine; M3 uses test-local Redis mock instead |
 | 2026-05-06 | `npm test tests/integration/bot-match.test.ts` | Passed | Task 25 M3: 6 Bot match completed with mocked Redis, persisted final ranking/events |
 | 2026-05-06 | `npm run check` | Passed | Phase 1A gate: lint, typecheck, 36 test files / 98 tests, Next production build |
+| 2026-05-06 | `npm test tests/lib/instrument.test.ts` + `npm run typecheck` | Passed | Phase 1B-1 Task 1 game registration instrumentation |
+| 2026-05-06 | `npm test tests/api/providers.test.ts` | Passed | Phase 1B-1 Task 2 provider catalog API |
+| 2026-05-06 | `npm test tests/api/profiles.test.ts` | Passed | Phase 1B-1 Task 3 profiles CRUD API, 4 tests |
+| 2026-05-06 | `npm test tests/api/agents.test.ts tests/api/agent-card-real.test.ts` + `npm run typecheck` | Passed | Phase 1B-1 Task 4 agents CRUD and DB-backed agent cards, 7 tests |
+| 2026-05-06 | `npm test tests/api/agent-endpoint-real.test.ts` + `npm run typecheck` | Passed | Phase 1B-1 Task 5 real bot-backed agent endpoint with match token auth |
+| 2026-05-06 | `npm test tests/api/matches-create.test.ts` + `npm run typecheck` | Passed | Phase 1B-1 Task 6 matches create/list/detail API, 4 tests |
+| 2026-05-06 | `npm test tests/api/matches-tick.test.ts` + `npm run typecheck` | Passed | Phase 1B-1 Task 7 self-triggered tick route |
+| 2026-05-06 | `npm test tests/api/matches-stream.test.ts` + `npm run typecheck` | Passed | Phase 1B-1 Task 8 Redis-backed spectator SSE API with mocked subscriber |
+| 2026-05-06 | `npm test tests/integration/api-match-e2e.test.ts` | Passed | Phase 1B-1 Task 9 M4 API route-level end-to-end match with mocked Redis |
+| 2026-05-06 | `npm run infra:up` | Blocked | Docker is not installed on this machine; real Redis curl/SSE smoke remains blocked locally |
+| 2026-05-06 | `npm test tests/api/agent-card.test.ts tests/api/agent-message-stream.test.ts tests/api/agent-endpoint-real.test.ts` | Passed | P0 toy API regressions and P1B real agent endpoint regression after unknown-agent compatibility fix |
+| 2026-05-06 | `npm run check` | Passed | Phase 1B-1 gate: lint, typecheck, 46 test files / 122 tests, Next production build |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-2 Task 1 local shadcn-style UI primitives and dependencies |
+| 2026-05-06 | `npm test tests/lib/client/keyring.test.ts` + `npm run typecheck` | Passed | Phase 1B-2 Task 2 client API wrapper and localStorage keyring |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-2 Task 3 arena sidebar and global layout |
+| 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 4 Lobby server page with match list |
+| 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 5 profiles management page with local key actions |
+| 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 6 agents management page |
+| 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-2 Task 7 match setup page |
+| 2026-05-06 | `npm run check` | Passed | Phase 1B-2 gate: lint, typecheck, 47 test files / 125 tests, Next production build |
+| 2026-05-06 | `npm install @floating-ui/react framer-motion` | Passed | Phase 1B-3 Task 1 spectator UI dependencies |
+| 2026-05-06 | `npm test tests/store/match-view-store.test.ts` + `npm run typecheck` | Passed | Phase 1B-3 Task 2 spectator match view store |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-3 Task 3 client SSE subscription hook |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-3 Task 4 animated PlayingCard component |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-3 Task 5 floating ThinkingBubble component |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-3 Task 6 PlayerSeat component |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-3 Task 7 CommunityCards and Pot components |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-3 Task 8 PokerBoard six-seat oval layout |
+| 2026-05-06 | `npm run typecheck` + `npm run build` | Passed | Phase 1B-3 Task 9 spectator route and SSE-integrated client view |
+| 2026-05-06 | `npm run check` | Passed | Phase 1B-3 gate: lint, typecheck, 48 test files / 129 tests, Next production build |
+| 2026-05-06 | `npm test tests/store/match-view-store.test.ts` + `npm run typecheck` | Passed | Phase 1B-4 Task 1 chipHistory, errorCount, and settled state in match view store |
+| 2026-05-06 | `npm test tests/api/errors-list.test.ts` + `npm run typecheck` | Passed | Phase 1B-4 Task 2 match agent errors query/API |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 3 ErrorBadge with Popover and polling |
+| 2026-05-06 | `npm test tests/components/LiveScoreboard.test.tsx` + `npm run typecheck` | Passed | Phase 1B-4 Task 4 LiveScoreboard sorted by chips |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 5 ChipChart with Recharts |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 6 ActionLog and ThinkingLog |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 7 RightPanel with Tabs integrated into SpectatorView |
+| 2026-05-06 | `npm run typecheck` | Passed | Phase 1B-4 Task 8 RankingPanel on match settlement |
+| 2026-05-06 | `npm test tests/store/match-view-store.test.ts` + `npm run typecheck` | Passed | Phase 1B-4 Task 9 settled status for legacy settlement events |
+| 2026-05-06 | `npm run lint` + `npm test` + `npm run build` + `npm run doctor` | Passed | Phase 1B-4 automated gate; Docker/Compose are warnings because docker is unavailable locally |
+| 2026-05-06 | `npm test lib/agent/tests/llm-stream-parser.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 1 streaming parser for thinking/action tags |
+| 2026-05-06 | `npm test lib/agent/tests/llm-runtime.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 2 LLM runtime with mocked AI SDK streamText |
+| 2026-05-06 | `npm test tests/api/agent-stream.test.ts tests/api/agent-endpoint-real.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 3 real LLM agent endpoint path, Redis key cache, and bot fallback |
+| 2026-05-06 | `npm test tests/lib/client/keyring.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 4 client uploadKeysForMatch and match start integration |
+| 2026-05-06 | `npm test tests/lib/a2a-core/client.test.ts tests/lib/orchestrator tests/integration/bot-match.test.ts tests/api/matches-tick.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 5 GM requests agent endpoint through A2A and forwards thinking deltas |
+| 2026-05-06 | docs only | Passed | Phase 1B-5 Task 6 M4 manual checklist drafted; real run remains blocked locally by missing Docker / real keys |
+| 2026-05-06 | `npm test tests/e2e/m4-smoke.test.ts lib/agent/tests/llm-runtime.test.ts` + `npm run typecheck` | Passed | Phase 1B-5 Task 7 mock-LLM M4 smoke through route handler + GM |
+| 2026-05-06 | `npm run check` | Passed | Phase 1B-5 gate: lint, typecheck, 54 test files / 147 tests, Next production build |
 
 ## Open Questions / Blockers
 
 - Docker is not installed on this machine, so container-backed Postgres/Redis checks remain blocked locally.
+- Phase 1B-4 manual 6-bot Redis/Docker E2E remains blocked locally by missing Docker; automated lint/test/build passed.
 - Real M1 LLM curl was not run because no real `TEST_LLM_*` key was used; mocked SSE path is verified.
 
 ## SDK / Plan Drift Notes

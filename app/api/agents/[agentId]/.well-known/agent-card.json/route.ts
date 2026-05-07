@@ -1,29 +1,9 @@
+import type { AgentCard } from '@a2a-js/sdk'
 import { loadEnv } from '@/lib/env'
+import { findAgentById } from '@/lib/db/queries/agents'
+import { buildAgentCard } from '@/lib/a2a-core/agent-card'
 
 export const runtime = 'nodejs'
-
-type AgentCard = {
-  protocolVersion: string
-  name: string
-  description: string
-  version: string
-  url: string
-  capabilities: {
-    streaming: boolean
-    pushNotifications: boolean
-    stateTransitionHistory: boolean
-  }
-  skills: Array<{
-    id: string
-    name: string
-    description: string
-    tags: string[]
-    inputModes: string[]
-    outputModes: string[]
-  }>
-  defaultInputModes: string[]
-  defaultOutputModes: string[]
-}
 
 const TOY_AGENTS: Record<string, () => AgentCard> = {
   'toy-poker': () => ({
@@ -81,11 +61,37 @@ export async function GET(
   context: { params: Promise<{ agentId: string }> },
 ): Promise<Response> {
   const { agentId } = await context.params
-  const buildCard = TOY_AGENTS[agentId]
+  const buildToyCard = TOY_AGENTS[agentId]
 
-  if (!buildCard) {
-    return Response.json({ error: `unknown agent: ${agentId}` }, { status: 404 })
+  if (buildToyCard) {
+    return Response.json(buildToyCard())
   }
 
-  return Response.json(buildCard())
+  if (!agentId.startsWith('agt_')) {
+    return Response.json({ error: `agent not found: ${agentId}` }, { status: 404 })
+  }
+
+  const agent = await findAgentById(agentId).catch(() => undefined)
+  if (!agent) {
+    return Response.json({ error: `agent not found: ${agentId}` }, { status: 404 })
+  }
+
+  const env = loadEnv()
+  if (agent.gameType !== 'poker' && agent.gameType !== 'werewolf') {
+    return Response.json({ error: `unsupported gameType: ${agent.gameType}` }, { status: 400 })
+  }
+  if (agent.kind !== 'player' && agent.kind !== 'moderator') {
+    return Response.json({ error: `unsupported kind: ${agent.kind}` }, { status: 400 })
+  }
+  const card = buildAgentCard({
+    agent: {
+      id: agent.id,
+      name: agent.displayName,
+      gameType: agent.gameType,
+      kind: agent.kind,
+      description: agent.systemPrompt.slice(0, 200),
+    },
+    baseUrl: env.BASE_URL,
+  })
+  return Response.json(card)
 }
