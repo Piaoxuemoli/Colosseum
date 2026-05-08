@@ -120,12 +120,10 @@
 | 2026-05-08 | `npx vitest run tests/components tests/games` | Passed | Phase 5-2 Task 5 responsive pass (Sheet-based RightPanel on <lg, PokerBoard mobile stack, WerewolfBoard grid-cols-1); no UI regressions (22 files / 137 tests) |
 | 2026-05-08 | `npx vitest run tests/lib/client/toast.test.ts tests/components/ErrorBoundary.test.tsx` | Passed | Phase 5-2 Task 6 zustand toast store + ErrorBoundary, 5 tests |
 | 2026-05-08 | `npm run check` | Passed | Phase 5-2 gate: lint + typecheck + 91 files / 362 tests + Next build |
-| 2026-05-08 | `npx vitest run tests/redis/adapter.test.ts` | Passed | Phase 5-2 Task 1 Redis adapter factory + Upstash adapter, 4 tests |
-| 2026-05-08 | `npm run typecheck` | Passed | Phase 5-2 Task 2/3 (vercel.json + env template + docs) + Empty component wiring |
-| 2026-05-08 | `npx vitest run tests/components/Shortcuts.test.tsx` | Passed | Phase 5-2 Task 4 global `?` / `g h` / `n` shortcuts, 4 tests |
-| 2026-05-08 | `npx vitest run tests/components tests/games` | Passed | Phase 5-2 Task 5 responsive pass (Sheet-based RightPanel on <lg, PokerBoard mobile stack, WerewolfBoard grid-cols-1); no UI regressions (22 files / 137 tests) |
-| 2026-05-08 | `npx vitest run tests/lib/client/toast.test.ts tests/components/ErrorBoundary.test.tsx` | Passed | Phase 5-2 Task 6 zustand toast store + ErrorBoundary, 5 tests |
-| 2026-05-08 | `npm run check` | Passed | Phase 5-2 gate: lint + typecheck + 91 files / 362 tests + Next build |
+| 2026-05-08 | `npm run build`(本地 standalone 输出) | Passed | Phase 4 Task 1 `.next-build/standalone/server.js` 生成 |
+| 2026-05-08 | `docker compose build` on `43.156.230.108` | Passed | Phase 4 Task 2 镜像 `colosseum:prod` 构建(3 stage: deps/builder/runner) |
+| 2026-05-08 | `docker compose up -d` + `curl http://43.156.230.108/api/health` | Passed | Phase 4 Task 3+5:栈起,Caddy :80,`{"ok":true,"db":"ok","redis":"ok"}` |
+| 2026-05-08 | `/opt/colosseum/scripts/backup.sh` + `/etc/cron.d/colosseum-backup` | Passed | Phase 4 Task 4 SQLite `.backup` 生成 `arena-YYYY-MM-DD-HHMM.db.gz`,cron 就位 |
 
 ## Open Questions / Blockers
 
