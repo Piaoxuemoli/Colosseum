@@ -49,7 +49,9 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 # Next standalone server (already tree-shaken node_modules subset).
 COPY --from=builder --chown=nextjs:nodejs /app/.next-build/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next-build/static ./.next-build/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# There is no `public/` dir in this repo yet — create an empty one so Next's
+# static middleware doesn't complain if it ever tries to look there.
+RUN mkdir -p ./public && chown nextjs:nodejs ./public
 
 # drizzle-kit + the full drizzle-orm runtime are not included in the standalone
 # bundle because they're never imported from any route; we need them at
