@@ -1,5 +1,6 @@
 import { desc } from 'drizzle-orm'
 import { Card, CardContent } from '@/components/ui/card'
+import { Empty } from '@/components/Empty'
 import { ProfileForm } from '@/components/forms/ProfileForm'
 import { ProfileRowActions } from '@/components/forms/ProfileRowActions'
 import { db } from '@/lib/db/client'
@@ -24,9 +25,10 @@ export default async function ProfilesPage() {
       </div>
 
       {rows.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="p-8 text-sm text-muted-foreground">暂无 Profile。新增一个 provider 后再创建 Agent。</CardContent>
-        </Card>
+        <Empty
+          title="暂无 API Profile"
+          description="Profile 只保存 provider / baseUrl / 模型信息;API Key 只留在当前浏览器 localStorage 里,不会上送到服务端。"
+        />
       ) : (
         <div className="space-y-3">
           {rows.map((profile) => (

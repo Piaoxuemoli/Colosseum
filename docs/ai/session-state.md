@@ -6,9 +6,9 @@
 
 - Active spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
-- Active plan set: Phase 5-2 (Vercel fallback + polish) up next — `docs/superpowers/plans/2026-05-06-phase-5-2-vercel-polish.md`
-- Current phase: Phase 5-1 closed (replay player merged to main)
-- Current task: — (Phase 5-2 not yet started)
+- Active plan set: Phase 5-2 Task 1–6 完成;Task 7 (M8 Vercel 烟测) 挂起等 Vercel 账号。接下来去服务器做 Phase 4 — `docs/superpowers/plans/2026-05-06-phase-4-docker-deploy.md`
+- Current phase: Phase 5-2 Task 1–6 完成(合入 main 后)
+- Current task: Phase 4 Task 1 (Next standalone + .dockerignore) —— 需在带 Docker 的服务器上执行
 
 ## Last Known Status
 
@@ -113,10 +113,25 @@
 | 2026-05-07 | `npm run check` | Passed | Post-merge gate on main: 85 files / 333 tests, lint + typecheck + Next build |
 | 2026-05-07 | `npm test` | Passed | Phase 5-1 replay player (replay-store 8 tests, ReplayControls 8 tests incl. drag-no-seek regression, seatSetup-survives-seek regression) |
 | 2026-05-07 | `npm run check` | Passed | Phase 5-1 post-merge gate on main: 87 files / 349 tests, Next build includes `/matches/:id/replay` route |
+| 2026-05-08 | `npx vitest run tests/redis/adapter.test.ts` | Passed | Phase 5-2 Task 1 Redis adapter factory + Upstash adapter, 4 tests |
+| 2026-05-08 | `npm run typecheck` | Passed | Phase 5-2 Task 2/3 (vercel.json + env template + docs) + Empty component wiring |
+| 2026-05-08 | `npx vitest run tests/components/Shortcuts.test.tsx` | Passed | Phase 5-2 Task 4 global `?` / `g h` / `n` shortcuts, 4 tests |
+| 2026-05-08 | `npx vitest run tests/components tests/games` | Passed | Phase 5-2 Task 5 responsive pass (Sheet-based RightPanel on <lg, PokerBoard mobile stack, WerewolfBoard grid-cols-1); no UI regressions (22 files / 137 tests) |
+| 2026-05-08 | `npx vitest run tests/lib/client/toast.test.ts tests/components/ErrorBoundary.test.tsx` | Passed | Phase 5-2 Task 6 zustand toast store + ErrorBoundary, 5 tests |
+| 2026-05-08 | `npm run check` | Passed | Phase 5-2 gate: lint + typecheck + 91 files / 362 tests + Next build |
+| 2026-05-08 | `npx vitest run tests/redis/adapter.test.ts` | Passed | Phase 5-2 Task 1 Redis adapter factory + Upstash adapter, 4 tests |
+| 2026-05-08 | `npm run typecheck` | Passed | Phase 5-2 Task 2/3 (vercel.json + env template + docs) + Empty component wiring |
+| 2026-05-08 | `npx vitest run tests/components/Shortcuts.test.tsx` | Passed | Phase 5-2 Task 4 global `?` / `g h` / `n` shortcuts, 4 tests |
+| 2026-05-08 | `npx vitest run tests/components tests/games` | Passed | Phase 5-2 Task 5 responsive pass (Sheet-based RightPanel on <lg, PokerBoard mobile stack, WerewolfBoard grid-cols-1); no UI regressions (22 files / 137 tests) |
+| 2026-05-08 | `npx vitest run tests/lib/client/toast.test.ts tests/components/ErrorBoundary.test.tsx` | Passed | Phase 5-2 Task 6 zustand toast store + ErrorBoundary, 5 tests |
+| 2026-05-08 | `npm run check` | Passed | Phase 5-2 gate: lint + typecheck + 91 files / 362 tests + Next build |
 
 ## Open Questions / Blockers
 
-- Docker is not installed on this machine — Phase 4 (Docker Compose + Caddy + Postgres 生产部署) cannot be executed locally; it must run on a box with Docker or against the target VPS `43.156.230.108`.
+- Phase 5-2 Task 7 (M8 Vercel fallback 烟测) 挂起,等用户拿到 Vercel 账号;Supabase / Upstash 实际联通仅能在有账号时做。
+- Docker is not installed on this machine — Phase 4 (Docker Compose + Caddy + Postgres 生产部署) cannot be executed locally; it must run on a box with Docker or against the target VPS (see `old/` 里的服务器信息)。
+- Phase 4 需使用提供的 MiniMax / MiMo API keys(见用户消息),**不要提交到仓库**。
+- 域名审核未通过 — Phase 4 先用服务器裸 IP 做部署冒烟,后续 DNS 指回即可。
 - Phase 1B-4 / 3-3 M6 manual 6-bot Redis/Docker E2E still deferred pending Docker.
 - Real M1 LLM curl was not run because no real `TEST_LLM_*` key was used; mocked SSE path is verified.
 - Default system moderator seed (`db/seeds/default-moderator.ts`) was deferred from Phase 3-3 Task 4 — fold into Phase 4 seeding step.
