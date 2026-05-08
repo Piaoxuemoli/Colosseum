@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { Shortcuts } from '@/components/Shortcuts'
 
 export const metadata: Metadata = {
   title: 'Colosseum',
@@ -19,6 +20,7 @@ export default function RootLayout({
           <Sidebar />
           <main className="min-w-0 flex-1">{children}</main>
         </div>
+        <Shortcuts />
       </body>
     </html>
   )
