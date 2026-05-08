@@ -15,7 +15,13 @@ type Profile = { id: string; displayName: string; providerId: string; model: str
 
 const AVATARS = ['🎭', '🎲', '🃏', '♠️', '♥️', '♦️', '♣️', '🤖', '🐺', '🦊']
 
-export function AgentForm({ gameType = 'poker' }: { gameType?: 'poker' | 'werewolf' }) {
+export function AgentForm({
+  gameType = 'poker',
+  kind = 'player',
+}: {
+  gameType?: 'poker' | 'werewolf'
+  kind?: 'player' | 'moderator'
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -27,7 +33,7 @@ export function AgentForm({ gameType = 'poker' }: { gameType?: 'poker' | 'werewo
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const presets = presetsFor(gameType, 'player')
+  const presets = presetsFor(gameType, kind)
 
   useEffect(() => {
     if (!open) return
@@ -38,7 +44,6 @@ export function AgentForm({ gameType = 'poker' }: { gameType?: 'poker' | 'werewo
       setPresetId(presets[0].id)
       setSystemPrompt(presets[0].prompt)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   function applyPreset(nextId: string) {
@@ -51,7 +56,7 @@ export function AgentForm({ gameType = 'poker' }: { gameType?: 'poker' | 'werewo
     setSubmitting(true)
     setError(null)
     try {
-      await api.post('/api/agents', { displayName, gameType, profileId, systemPrompt, avatarEmoji })
+      await api.post('/api/agents', { displayName, gameType, kind, profileId, systemPrompt, avatarEmoji })
       setOpen(false)
       setDisplayName('')
       setProfileId('')
@@ -66,15 +71,16 @@ export function AgentForm({ gameType = 'poker' }: { gameType?: 'poker' | 'werewo
   }
 
   const selectedPreset = presets.find((p) => p.id === presetId)
+  const tagLabel = `${gameType === 'poker' ? '德扑' : '狼人杀'}${kind === 'moderator' ? '·主持人' : ''}`
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>新增 Agent</Button>
+        <Button>新增 {tagLabel} Agent</Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>新增 {gameType === 'poker' ? '德扑' : '狼人杀'} Agent</DialogTitle>
+          <DialogTitle>新增 {tagLabel} Agent</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
