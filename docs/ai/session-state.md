@@ -6,9 +6,10 @@
 
 - Active spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
-- Active plan set: Phase 5-2 Task 1–6 完成;Task 7 (M8 Vercel 烟测) 挂起等 Vercel 账号。接下来去服务器做 Phase 4 — `docs/superpowers/plans/2026-05-06-phase-4-docker-deploy.md`
-- Current phase: Phase 5-2 Task 1–6 完成(合入 main 后)
-- Current task: Phase 4 Task 1 (Next standalone + .dockerignore) —— 需在带 Docker 的服务器上执行
+- Active plan set: Phase 4 Task 1–5 完成;Phase 4 Task 6 (M7 烟测 + demo 截图) + Phase 5-2 Task 7 (M8 Vercel) 挂起。
+- Current phase: Phase 4 Task 1–5 完成(已部署到 `http://43.156.230.108`)
+- Current task: Phase 4 Task 6 (M7 manual smoke checklist,需用户跑一轮真 LLM 对局)
+- 生产部署:`http://43.156.230.108/`,栈 = nextjs(colosseum:prod) + redis:7-alpine + caddy:2-alpine,SQLite on `/data` 卷。
 
 ## Last Known Status
 
@@ -128,13 +129,13 @@
 
 ## Open Questions / Blockers
 
+- Phase 4 Task 6 (M7 生产烟测 checklist 全绿) 未跑 —— 需用户真机配置 MiniMax/MiMo profile + agent 跑一局 poker 或 werewolf。
 - Phase 5-2 Task 7 (M8 Vercel fallback 烟测) 挂起,等用户拿到 Vercel 账号;Supabase / Upstash 实际联通仅能在有账号时做。
-- Docker is not installed on this machine — Phase 4 (Docker Compose + Caddy + Postgres 生产部署) cannot be executed locally; it must run on a box with Docker or against the target VPS (see `old/` 里的服务器信息)。
-- Phase 4 需使用提供的 MiniMax / MiMo API keys(见用户消息),**不要提交到仓库**。
-- 域名审核未通过 — Phase 4 先用服务器裸 IP 做部署冒烟,后续 DNS 指回即可。
-- Phase 1B-4 / 3-3 M6 manual 6-bot Redis/Docker E2E still deferred pending Docker.
+- 域名审核未通过 — 生产仍用 `http://43.156.230.108` 裸 IP;域名通过后在 `ops/deploy/Caddyfile` 取消 `your-domain.com { … }` 块注释,Caddy 会自动申请 TLS。
+- 旧 `poker-arena` 容器仍在服务器上占 `:3000`,不影响 Colosseum(用 `:80`);需要时可 `docker rm -f poker-arena-poker-arena-1 && docker rmi poker-arena-poker-arena` 清理。
+- Phase 1B-4 / 3-3 M6 manual 6-bot Redis/Docker E2E 未跑;现在服务器已就绪,可以在生产环境重新评估。
 - Real M1 LLM curl was not run because no real `TEST_LLM_*` key was used; mocked SSE path is verified.
-- Default system moderator seed (`db/seeds/default-moderator.ts`) was deferred from Phase 3-3 Task 4 — fold into Phase 4 seeding step.
+- Default system moderator seed (`db/seeds/default-moderator.ts`) still deferred — 服务器首次运行时 `matches` / `agents` 表空,创建 werewolf match 前需先手动建一个 moderator agent(通过 UI)。
 
 ## SDK / Plan Drift Notes
 
