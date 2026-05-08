@@ -9,36 +9,59 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { api } from '@/lib/client/api'
+import { presetsFor } from '@/lib/agent/prompt-presets'
 
 type Profile = { id: string; displayName: string; providerId: string; model: string }
 
 const AVATARS = ['🎭', '🎲', '🃏', '♠️', '♥️', '♦️', '♣️', '🤖', '🐺', '🦊']
 
-export function AgentForm({ gameType = 'poker' }: { gameType?: 'poker' | 'werewolf' }) {
+export function AgentForm({
+  gameType = 'poker',
+  kind = 'player',
+}: {
+  gameType?: 'poker' | 'werewolf'
+  kind?: 'player' | 'moderator'
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [displayName, setDisplayName] = useState('')
   const [profileId, setProfileId] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
+  const [presetId, setPresetId] = useState<string>('')
   const [avatarEmoji, setAvatarEmoji] = useState(AVATARS[2])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const presets = presetsFor(gameType, kind)
+
   useEffect(() => {
     if (!open) return
     void api.get<{ profiles: Profile[] }>('/api/profiles').then((result) => setProfiles(result.profiles))
+    // On open, pre-select the first preset + prefill its prompt so the user
+    // doesn't start with an empty textarea.
+    if (presets.length > 0 && !systemPrompt && !presetId) {
+      setPresetId(presets[0].id)
+      setSystemPrompt(presets[0].prompt)
+    }
   }, [open])
+
+  function applyPreset(nextId: string) {
+    setPresetId(nextId)
+    const preset = presets.find((p) => p.id === nextId)
+    if (preset) setSystemPrompt(preset.prompt)
+  }
 
   async function submit() {
     setSubmitting(true)
     setError(null)
     try {
-      await api.post('/api/agents', { displayName, gameType, profileId, systemPrompt, avatarEmoji })
+      await api.post('/api/agents', { displayName, gameType, kind, profileId, systemPrompt, avatarEmoji })
       setOpen(false)
       setDisplayName('')
       setProfileId('')
       setSystemPrompt('')
+      setPresetId('')
       router.refresh()
     } catch (err) {
       setError(String(err))
@@ -47,14 +70,17 @@ export function AgentForm({ gameType = 'poker' }: { gameType?: 'poker' | 'werewo
     }
   }
 
+  const selectedPreset = presets.find((p) => p.id === presetId)
+  const tagLabel = `${gameType === 'poker' ? '德扑' : '狼人杀'}${kind === 'moderator' ? '·主持人' : ''}`
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>新增 Agent</Button>
+        <Button>新增 {tagLabel} Agent</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>新增 {gameType === 'poker' ? '德扑' : '狼人杀'} Agent</DialogTitle>
+          <DialogTitle>新增 {tagLabel} Agent</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
@@ -93,13 +119,35 @@ export function AgentForm({ gameType = 'poker' }: { gameType?: 'poker' | 'werewo
               </SelectContent>
             </Select>
           </div>
+
+          {presets.length > 0 ? (
+            <div>
+              <Label>预设风格</Label>
+              <Select value={presetId} onValueChange={applyPreset}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选一个 preset 或在下方自由编辑" />
+                </SelectTrigger>
+                <SelectContent>
+                  {presets.map((preset) => (
+                    <SelectItem key={preset.id} value={preset.id}>
+                      {preset.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedPreset ? (
+                <p className="mt-1 text-xs text-muted-foreground">{selectedPreset.description}</p>
+              ) : null}
+            </div>
+          ) : null}
+
           <div>
-            <Label>人设 Prompt</Label>
+            <Label>人设 Prompt(可自由编辑)</Label>
             <Textarea
               value={systemPrompt}
               onChange={(event) => setSystemPrompt(event.target.value)}
-              rows={5}
-              placeholder="你是一个经验丰富的德州扑克玩家，擅长观察对手下注模式..."
+              rows={8}
+              placeholder="先从上方选一个 preset,然后按需要编辑..."
             />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
