@@ -45,6 +45,8 @@ pnpm-debug.log*
 
 # === 私有 / 本地 ===
 *.local
+*.local.md
+docs/dev/llm-api-config.local.md
 temp-init/
 .codebuddy/
 
