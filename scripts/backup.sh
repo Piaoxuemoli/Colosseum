@@ -13,9 +13,17 @@
 set -e
 
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/colosseum}"
-CONTAINER="${CONTAINER:-colosseum-nextjs-1}"
+# Compose names containers as `<project>-<service>-<index>`. The project
+# defaults to the directory name (`deploy`), or respects COMPOSE_PROJECT_NAME
+# in the compose env. We auto-detect by filtering on the service name.
+CONTAINER="${CONTAINER:-$(docker ps --filter name=nextjs --format '{{.Names}}' | head -1)}"
 DB_PATH="${DB_PATH:-/data/arena.db}"
 RETAIN_DAYS="${RETAIN_DAYS:-14}"
+
+if [ -z "$CONTAINER" ]; then
+  echo "[backup] ERROR: no running nextjs container found" >&2
+  exit 1
+fi
 
 mkdir -p "$BACKUP_DIR"
 TS="$(date +%F-%H%M)"
