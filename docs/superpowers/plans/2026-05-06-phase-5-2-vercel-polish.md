@@ -1,5 +1,7 @@
 # Phase 5-2 — Vercel Fallback 部署 + Polish
 
+> **Status (2026-05-08):** Task 1–6 完成并合入 `main`;Task 7 (M8 Vercel 烟测) 挂起,等用户拿到 Vercel 账号后再跑。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** 当云服务器不可用（面试现场 demo 风险兜底），能一条命令把同一份代码部署到 Vercel，DB 切 Supabase，Redis 切 Upstash；另外若干 UX polish（空状态 / 错误提示 / 键盘快捷键 / 移动端 responsive 初版）。
@@ -51,9 +53,13 @@ Colosseum/
 - Create: `lib/redis/upstash-adapter.ts`
 - Create: `tests/redis/adapter.test.ts`
 
-**Context:** 抽一个最小接口：`get(k) / set(k, v, ex?) / del(k) / publish(ch, payload) / subscribe(ch, cb)`。本地/Docker 用 `ioredis`；Vercel 用 Upstash REST + SSE。Pub/Sub 在 Upstash 免费版不支持，用数据库轮询兜底（delay 1-2s 可接受于 fallback 场景）。
+**Context:** 抽一个最小接口：`get(k) / set(k, v, ex?) / del(k) / publish(ch, payload) / subscribe(ch, cb)`。本地/Docker 用 `ioredis`；Vercel 用 Upstash REST + SSE。Pub/Sub 在 Upstash 免费版不支持,用数据库轮询兜底(delay 1-2s 可接受于 fallback 场景)。
 
-- [ ] **Step 1: 接口**
+- [x] **Step 1: 接口**
+- [x] **Step 2: upstash-adapter**
+- [x] **Step 3: 安装**
+- [x] **Step 4: 冒烟测试**
+- [x] **Step 5: Commit**
 
 ```typescript
 // lib/redis/index.ts
@@ -568,11 +574,11 @@ git commit -m "docs(p5-2): M8 Vercel + polish checklist"
 
 ## Done criteria (Phase 5-2 / M8)
 
-- [ ] Redis adapter 支持 node-redis + Upstash 切换
-- [ ] `vercel.json` + `.env.vercel.example` + `docs/deploy/vercel.md`
-- [ ] Vercel 部署冒烟通过
-- [ ] Empty / Shortcuts / ErrorBoundary / 响应式全部落地
-- [ ] M8 checklist 全绿
-- [ ] lint / tsc / vitest 全绿
+- [x] Redis adapter 支持 node-redis + Upstash 切换
+- [x] `vercel.json` + `.env.vercel.example` + `docs/deploy/vercel.md`
+- [ ] Vercel 部署冒烟通过(M8,等 Vercel 账号)
+- [x] Empty / Shortcuts / ErrorBoundary / 响应式全部落地
+- [ ] M8 checklist 全绿(等 Vercel 账号)
+- [x] lint / tsc / vitest 全绿(npm run check: 91 files / 362 tests)
 
 Colosseum 项目进入 **完整可演示 + 双线部署 + 基础 UX polish** 状态。
