@@ -39,7 +39,7 @@ export function WerewolfMatchSetupForm() {
   const [selected, setSelected] = useState<string[]>([])
   const [moderatorId, setModeratorId] = useState<string>('')
   const [keyStatus, setKeyStatus] = useState<Record<string, boolean>>({})
-  const [agentTimeoutMs, setAgentTimeoutMs] = useState(60_000)
+  const [agentTimeoutMs, setAgentTimeoutMs] = useState(180_000)
   const [minActionIntervalMs, setMinActionIntervalMs] = useState(1_000)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

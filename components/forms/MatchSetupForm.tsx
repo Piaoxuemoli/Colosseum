@@ -29,7 +29,7 @@ export function MatchSetupForm() {
   const [smallBlind, setSmallBlind] = useState(2)
   const [bigBlind, setBigBlind] = useState(4)
   const [startingChips, setStartingChips] = useState(200)
-  const [agentTimeoutMs, setAgentTimeoutMs] = useState(60_000)
+  const [agentTimeoutMs, setAgentTimeoutMs] = useState(180_000)
   const [minActionIntervalMs, setMinActionIntervalMs] = useState(1_000)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

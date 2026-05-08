@@ -34,7 +34,7 @@ export type LlmRuntimeResult = {
 export async function runDecision(input: LlmRuntimeInput): Promise<LlmRuntimeResult> {
   if (process.env.M4_MOCK_LLM === '1') return runMockDecision(input)
 
-  const { profile, agent, userPrompt, timeoutMs = 60_000, abortSignal, onThinkingDelta } = input
+  const { profile, agent, userPrompt, timeoutMs = 180_000, abortSignal, onThinkingDelta } = input
   const parser = new LlmStreamParser()
   const timeoutController = new AbortController()
   const signal = abortSignal ? mergeSignals(abortSignal, timeoutController.signal) : timeoutController.signal
