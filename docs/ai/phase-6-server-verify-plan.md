@@ -19,11 +19,11 @@ Phase 6 Task 1–4 已合入 `main`:
 
 ## 进度
 
-- [x] Step 1: git pull on server, rebuild `nextjs` container
+- [x] Step 1: git pull on server, rebuild `nextjs` container(2 轮:一次同步 Phase 6,一次修掉 AI SDK 版本错位)
 - [x] Step 2: scp `docs/dev/llm-api-config.local.md` 到服务器
-- [x] Step 3: `GET /api/health` — 服务存活
+- [x] Step 3: `GET /api/health` → `{"ok":true,"db":"ok","redis":"ok"}`
 - [x] Step 4: 页面 HTML 200(/、/agents、/profiles、/matches/new)
-- [x] Step 5: `POST /api/profiles/test` × 3(Doubao / MiniMax / MiMo),记录结果到本文件"结果"段
+- [x] Step 5: `POST /api/profiles/test` × 3(Doubao / MiniMax / MiMo),见"结果"段
 - [ ] Step 6: 用户在 UI 上跑一次真实 poker 或 werewolf 对局,确认端到端
 - [ ] **Step 7(清理,必做)**: 服务器删 `docs/dev/llm-api-config.local.md`
 - [ ] **Step 8(清理)**: 服务器的 git working tree 不会 track 这个文件(`.gitignore` 已拦),但如果 `git stash` 或意外 add 过需要 reset
@@ -31,23 +31,34 @@ Phase 6 Task 1–4 已合入 `main`:
 
 ## 结果
 
-(Step 5 跑完后回填本段)
-
 ### /api/health
 
-记录:
+```
+{"ok":true,"db":"ok","redis":"ok"}
+```
 
 ### 页面 HTML
 
-记录:
+| 路径 | 状态 |
+|---|---|
+| `/` | 200 |
+| `/agents` | 200 |
+| `/profiles` | 200 |
+| `/matches/new` | 200 |
 
-### /api/profiles/test
+### /api/profiles/test(2026-05-08 实测)
 
 | Provider | Base URL | Model | 结果 | 延迟/错误 |
 |---|---|---|---|---|
-| Doubao | `https://ark.cn-beijing.volces.com/api/v3` | `doubao-seed-2-0-pro-260215` | | |
-| MiniMax | `https://api.minimaxi.com/v1` | (待确认) | | |
-| MiMo | `https://token-plan-cn.xiaomimimo.com/v1` | (待确认) | | |
+| Doubao | `https://ark.cn-beijing.volces.com/api/v3` | `doubao-seed-2-0-pro-260215` | ✅ ok | 3538ms,sample `"ok"` |
+| MiniMax | `https://api.minimaxi.com/v1` | ~~`MiniMax-Text-01`~~ → `MiniMax-M2.7` | ✅ ok | 7260ms,sample 首个 `<think>` token(被 `max_tokens=8` 截) |
+| MiMo | `https://token-plan-cn.xiaomimimo.com/v1` | ~~(空)~~ → `mimo-v2-pro` | ✅ ok | 1842ms,sample 空(思考模式,`max_tokens=8` 未到输出阶段) |
+
+**坑**:Phase 6 Task 1 第一版 `profile-test` 用了 AI SDK 的 `generateText`。`ai@5` 要 `LanguageModelV2`,而 `@ai-sdk/openai-compatible@2.x` 返回 `LanguageModelV3`,运行时抛 `Unsupported model version v3`。修掉:probe 改成直接 `fetch(baseUrl + "/chat/completions")`,不走 AI SDK。commit `ec24547`。
+
+**MiniMax-Text-01** 失败是因为**当前 token plan 不包含该模型**,不是 key 坏;改成 `MiniMax-M2.7` 就通了。真正可用的模型列表:`curl -H "authorization: Bearer <key>" https://api.minimaxi.com/v1/models`。
+
+**MiMo** 初始试的 `mimo-plan` 是我猜的,错了;真列表:`curl -H "authorization: Bearer <key>" https://token-plan-cn.xiaomimimo.com/v1/models` 返回 `mimo-v2-pro / mimo-v2.5-pro / mimo-v2-omni` 等。
 
 ## 清理清单(测完后必做)
 
