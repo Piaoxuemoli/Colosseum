@@ -13,6 +13,8 @@
 # Note: no Postgres container — we ship SQLite in prod to match the dev schema.
 # Swap this out in a later phase once lib/db/schema.pg.ts exists.
 
+name: colosseum
+
 services:
   nextjs:
     image: colosseum:prod
