@@ -1,0 +1,64 @@
+# Colosseum production stack
+#
+# - nextjs : Next.js app (standalone build), SQLite on /data volume
+# - redis  : ioredis-backed match state / pub-sub / locks / keyring
+# - caddy  : reverse proxy on :80 (and :443 when a domain is added);
+#            tuned for long-lived SSE streams (/api/matches/*/stream)
+#
+# Usage:
+#   cd /opt/colosseum/ops/deploy
+#   cp .env.example .env && $EDITOR .env
+#   docker compose up -d --build
+#
+# Note: no Postgres container — we ship SQLite in prod to match the dev schema.
+# Swap this out in a later phase once lib/db/schema.pg.ts exists.
+
+services:
+  nextjs:
+    image: colosseum:prod
+    build:
+      context: ../..
+      dockerfile: ops/deploy/Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DB_DRIVER=sqlite
+      - SQLITE_PATH=/data/arena.db
+      # DATABASE_URL is required by the env schema even when unused.
+      - DATABASE_URL=postgres://unused:unused@localhost/unused
+      - REDIS_URL=redis://redis:6379
+      - BASE_URL=${BASE_URL}
+      - MATCH_TOKEN_SECRET=${MATCH_TOKEN_SECRET}
+      - LOG_LEVEL=info
+      - SYSTEM_MODERATOR_BASE_URL=${SYSTEM_MODERATOR_BASE_URL}
+      - SYSTEM_MODERATOR_MODEL=${SYSTEM_MODERATOR_MODEL}
+    volumes:
+      - arena_data:/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - nextjs
+    restart: unless-stopped
+
+volumes:
+  arena_data:
+  redis_data:
+  caddy_data:
+  caddy_config:

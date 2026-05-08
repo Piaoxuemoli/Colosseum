@@ -1,0 +1,10 @@
+# /etc/cron.d/colosseum-backup — copy into place with:
+#   sudo install -m 644 ops/deploy/cron.d/colosseum-backup /etc/cron.d/colosseum-backup
+#
+# Runs the SQLite snapshot every day at 03:07 local time (spread off the
+# stroke-of-hour to dodge noisy :00 contention).
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+7 3 * * * root /opt/colosseum/scripts/backup.sh >> /var/log/colosseum-backup.log 2>&1
