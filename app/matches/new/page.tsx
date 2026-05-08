@@ -1,4 +1,4 @@
-import { MatchSetupForm } from '@/components/forms/MatchSetupForm'
+import { NewMatchTabs } from '@/components/forms/NewMatchTabs'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,10 +9,10 @@ export default function NewMatchPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">Launch Control</p>
         <h1 className="mt-3 text-4xl font-black tracking-tight text-white">开始新对局</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          选择 6 位德扑 Agent，配置盲注和节奏参数，然后进入观战页。
+          选择游戏类型、参赛 Agent 和对局参数,一键开局。
         </p>
       </div>
-      <MatchSetupForm />
+      <NewMatchTabs />
     </div>
   )
 }
