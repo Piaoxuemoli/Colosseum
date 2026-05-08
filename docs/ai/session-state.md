@@ -139,7 +139,7 @@
 
 - `next lint` is deprecated and failed with ESLint 10 option errors. Project now uses `eslint .` with `eslint.config.mjs`.
 - Test code should use `vi.stubEnv('NODE_ENV', 'test')`; assigning `process.env.NODE_ENV` directly fails typecheck because it is readonly.
-- `@ai-sdk/openai-compatible` / `@ai-sdk/anthropic` currently return provider v3 model types while `ai@5` exposes a v2 `LanguageModel` type. `lib/llm/provider-factory.ts` centralizes the temporary `unknown` bridge until dependencies are aligned.
+- ~~`@ai-sdk/openai-compatible` / `@ai-sdk/anthropic` currently return provider v3 model types while `ai@5` exposes a v2 `LanguageModel` type.~~ **Resolved 2026-05-08**:downgraded `@ai-sdk/openai-compatible` to `^1.0.39` 和 `@ai-sdk/anthropic` 到 `^2.0.79`(两者都 pin `@ai-sdk/provider@2.x`,和 `ai@5` 匹配)。不要在没同时升 `ai` 到 6 的情况下 bump 这两个 provider 到 v2/v3。`lib/llm/provider-factory.ts` 的 `as unknown` 胶水代码已删除。
 
 ## Resume Checklist
 

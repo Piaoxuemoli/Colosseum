@@ -25,8 +25,8 @@
   },
   "dependencies": {
     "@a2a-js/sdk": "^0.3.13",
-    "@ai-sdk/anthropic": "^3.0.75",
-    "@ai-sdk/openai-compatible": "^2.0.46",
+    "@ai-sdk/anthropic": "^2.0.79",
+    "@ai-sdk/openai-compatible": "^1.0.39",
     "@floating-ui/react": "^0.27.19",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
