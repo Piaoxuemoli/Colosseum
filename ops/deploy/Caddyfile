@@ -1,0 +1,44 @@
+# Caddy reverse-proxy config for Colosseum.
+#
+# No domain yet (pending ICP review) — bind to :80 on the public IP. When a
+# domain is ready, uncomment the `your-domain.com { … }` block below and
+# remove / keep the :80 block depending on whether you want HTTP fallback.
+
+:80 {
+    encode gzip
+
+    # SSE routes need streaming-friendly timeouts and `flush_interval -1`
+    # so Caddy doesn't buffer the event-stream.
+    @sse path /api/matches/*/stream /api/agents/*/message/stream
+    handle @sse {
+        reverse_proxy nextjs:3000 {
+            flush_interval -1
+            transport http {
+                read_timeout  2h
+                write_timeout 2h
+            }
+        }
+    }
+
+    # Default: plain reverse proxy to the Next standalone server.
+    reverse_proxy nextjs:3000
+}
+
+# Enable after the domain clears ICP review. Caddy will auto-provision
+# Let's Encrypt certs. Keep :80 block above if you also want HTTP.
+# your-domain.com {
+#     encode gzip
+#
+#     @sse path /api/matches/*/stream /api/agents/*/message/stream
+#     handle @sse {
+#         reverse_proxy nextjs:3000 {
+#             flush_interval -1
+#             transport http {
+#                 read_timeout  2h
+#                 write_timeout 2h
+#             }
+#         }
+#     }
+#
+#     reverse_proxy nextjs:3000
+# }
