@@ -21,9 +21,12 @@ export const gameEventSchema = z.object({
 export type GameEvent = z.infer<typeof gameEventSchema>
 
 export const matchConfigSchema = z.object({
-  agentTimeoutMs: z.number().int().nonnegative().default(60_000),
+  // Reasoning models (MiniMax-M2.7, DeepSeek-R1, mimo-v2.5-pro …) can
+  // easily take 30-90s to finish a hand's thinking + decision over a slow
+  // API. 3-minute ceiling gives room without burying truly hung requests.
+  agentTimeoutMs: z.number().int().nonnegative().default(180_000),
   minActionIntervalMs: z.number().int().nonnegative().default(1_000),
-  tickConcurrencyLockMs: z.number().int().positive().default(60_000),
+  tickConcurrencyLockMs: z.number().int().positive().default(180_000),
   maxConsecutiveErrors: z.number().int().positive().default(3),
 })
 export type MatchConfig = z.infer<typeof matchConfigSchema>

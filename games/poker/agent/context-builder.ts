@@ -20,9 +20,23 @@ export class PokerPlayerContextBuilder implements PlayerContextBuilder {
 Game: 6-max fixed-limit Texas hold'em.
 Small blind: ${state.smallBlind}; big blind: ${state.bigBlind}.
 
-Return exactly:
-<thinking>brief analysis</thinking>
-<action>{"type":"fold|check|call|bet|raise|allIn","amount":0}</action>
+Output format (STRICT — the parser depends on this):
+
+  <thinking>
+  brief reasoning in Chinese, any length you like
+  </thinking>
+  <action>
+  {"type":"fold|check|call|bet|raise|allIn","amount":0}
+  </action>
+
+Your final <action> block MUST be a valid JSON object with a string "type"
+field matching one of the legal actions listed below. "amount" is optional
+for fold/check/call and required for bet/raise/allIn.
+
+If your model natively emits its own reasoning tag (e.g. <think>...</think>),
+that is fine — the parser accepts both <think> and <thinking>. But you
+MUST still emit an action decision at the end. The cleanest way is to
+always close the reasoning tag and then open <action>.
 
 ${input.memoryContext.semanticSection}
 ${input.memoryContext.episodicSection}`
