@@ -23,6 +23,16 @@ RUN apk add --no-cache libc6-compat python3 make g++ sqlite
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Next.js "Collecting page data" evaluates route modules at build time; our
+# `loadEnv()` throws on missing env. Supply harmless placeholders here so the
+# build passes. Real values are injected at runtime by docker-compose.
+ENV NODE_ENV=production
+ENV BASE_URL=http://localhost
+ENV DB_DRIVER=sqlite
+ENV SQLITE_PATH=/tmp/build.db
+ENV DATABASE_URL=postgres://unused:unused@localhost/unused
+ENV REDIS_URL=redis://localhost:6379
+ENV MATCH_TOKEN_SECRET=build-time-placeholder-not-used-at-runtime
 # Build the Next standalone server + static chunks.
 RUN npm run build
 
