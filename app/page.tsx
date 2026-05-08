@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Empty } from '@/components/Empty'
 import { db } from '@/lib/db/client'
 import { matches } from '@/lib/db/schema.sqlite'
 
@@ -63,11 +64,11 @@ export default async function Lobby() {
         </div>
 
         {rows.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="p-8 text-sm text-muted-foreground">
-              暂无对局。先创建 API Profile 和 Agent，然后启动一桌 6 人德扑比赛。
-            </CardContent>
-          </Card>
+          <Empty
+            title="暂无对局"
+            description="先创建 API Profile 和 Agent，然后启动一桌 6 人德扑或一局 9 人狼人杀。"
+            cta={{ label: '开始新对局', href: '/matches/new' }}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {rows.map((match) => {

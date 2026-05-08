@@ -3,6 +3,7 @@ import { AgentForm } from '@/components/forms/AgentForm'
 import { AgentRowActions } from '@/components/forms/AgentRowActions'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Empty } from '@/components/Empty'
 import { db } from '@/lib/db/client'
 import { agents, apiProfiles } from '@/lib/db/schema.sqlite'
 
@@ -37,11 +38,11 @@ export default async function AgentsPage() {
       </div>
 
       {rows.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="p-8 text-sm text-muted-foreground">
-            暂无 Agent。先去 Profiles 页创建 API Profile，再回来添加 6 位德扑选手。
-          </CardContent>
-        </Card>
+        <Empty
+          title="暂无 Agent"
+          description="先去 Profiles 页创建 API Profile，再回来添加 6 位德扑选手或 9 位狼人杀玩家。"
+          cta={{ label: '去创建 Profile', href: '/profiles' }}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {rows.map((agent) => (
