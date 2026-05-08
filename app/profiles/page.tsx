@@ -41,7 +41,12 @@ export default async function ProfilesPage() {
                   </div>
                   <div className="mt-1 truncate font-mono text-xs text-cyan-100/65">{profile.baseUrl}</div>
                 </div>
-                <ProfileRowActions profileId={profile.id} />
+                <ProfileRowActions
+                  profileId={profile.id}
+                  providerId={profile.providerId}
+                  baseUrl={profile.baseUrl}
+                  model={profile.model}
+                />
               </CardContent>
             </Card>
           ))}
