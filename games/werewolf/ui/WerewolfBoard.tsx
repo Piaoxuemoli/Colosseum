@@ -32,7 +32,7 @@ export function WerewolfBoard({
 
   return (
     <div
-      className="grid gap-4 lg:grid-cols-[1fr_2fr_1fr]"
+      className="grid gap-4 grid-cols-1 lg:grid-cols-[1fr_2fr_1fr]"
       data-testid="werewolf-board"
     >
       {/* Left column — moderator + left half of seats */}
