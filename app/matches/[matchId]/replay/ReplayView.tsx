@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { RightPanel } from '@/components/match/RightPanel'
+import { ReplaySummaryPanel } from '@/components/match/ReplaySummaryPanel'
 import { ReplayControls } from '@/components/match/ReplayControls'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
@@ -29,6 +30,7 @@ export function ReplayView({
   gameType,
   initialPlayers,
   events,
+  initialChips,
   totalEvents,
 }: Props) {
   const load = useReplayStore((s) => s.load)
@@ -37,9 +39,13 @@ export function ReplayView({
   const players = useMatchViewStore((s) => s.players)
   const communityCards = useMatchViewStore((s) => s.communityCards)
   const pot = useMatchViewStore((s) => s.pot)
+  const streetPots = useMatchViewStore((s) => s.streetPots)
+  const sidePots = useMatchViewStore((s) => s.sidePots)
   const phase = useMatchViewStore((s) => s.phase)
   const currentActor = useMatchViewStore((s) => s.currentActor)
   const dealerIndex = useMatchViewStore((s) => s.dealerIndex)
+  const smallBlindIndex = useMatchViewStore((s) => s.smallBlindIndex)
+  const bigBlindIndex = useMatchViewStore((s) => s.bigBlindIndex)
   const thinkingByAgent = useMatchViewStore((s) => s.thinkingByAgent)
   const werewolfDay = useMatchViewStore((s) => s.werewolf.day)
   const werewolfPhase = useMatchViewStore((s) => s.werewolf.phase)
@@ -96,14 +102,25 @@ export function ReplayView({
             phase={phase}
             currentActor={currentActor}
             dealerIndex={dealerIndex}
+            smallBlindIndex={smallBlindIndex}
+            bigBlindIndex={bigBlindIndex}
+            streetPots={streetPots}
+            sidePots={sidePots}
             thinkingByAgent={thinkingByAgent}
           />
         ) : (
           <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />
         )}
+
+        <ReplaySummaryPanel
+          gameType={gameType}
+          players={players.length > 0 ? players : initialPlayers}
+          events={events}
+          initialChips={initialChips}
+        />
       </main>
 
-      <RightPanel matchId={matchId} />
+      <RightPanel matchId={matchId} gameType={gameType} />
       <ReplayControls />
     </div>
   )
