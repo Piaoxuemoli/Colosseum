@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { FinishAfterHandButton } from '@/components/match/FinishAfterHandButton'
 import { RightPanel } from '@/components/match/RightPanel'
 import { RankingPanel } from '@/components/match/RankingPanel'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
@@ -41,9 +42,13 @@ export function SpectatorView({
   const players = useMatchViewStore((state) => state.players)
   const communityCards = useMatchViewStore((state) => state.communityCards)
   const pot = useMatchViewStore((state) => state.pot)
+  const streetPots = useMatchViewStore((state) => state.streetPots)
+  const sidePots = useMatchViewStore((state) => state.sidePots)
   const phase = useMatchViewStore((state) => state.phase)
   const currentActor = useMatchViewStore((state) => state.currentActor)
   const dealerIndex = useMatchViewStore((state) => state.dealerIndex)
+  const smallBlindIndex = useMatchViewStore((state) => state.smallBlindIndex)
+  const bigBlindIndex = useMatchViewStore((state) => state.bigBlindIndex)
   const thinkingByAgent = useMatchViewStore((state) => state.thinkingByAgent)
   const matchComplete = useMatchViewStore((state) => state.matchComplete)
   const winnerAgentId = useMatchViewStore((state) => state.winnerAgentId)
@@ -110,7 +115,7 @@ export function SpectatorView({
           <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />
         </main>
 
-        <RightPanel matchId={matchId} />
+        <RightPanel matchId={matchId} gameType={gameType} />
         <WerewolfResultPanel players={werewolfPlayers} />
       </div>
     )
@@ -133,6 +138,7 @@ export function SpectatorView({
             <Badge variant="outline">{phase}</Badge>
             <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
             {matchComplete ? <Badge>对局结束</Badge> : null}
+            <FinishAfterHandButton matchId={matchId} status={status} />
             {status !== 'running' ? (
               <Link
                 href={`/matches/${matchId}/replay`}
@@ -151,6 +157,10 @@ export function SpectatorView({
           phase={phase}
           currentActor={currentActor}
           dealerIndex={dealerIndex}
+          smallBlindIndex={smallBlindIndex}
+          bigBlindIndex={bigBlindIndex}
+          streetPots={streetPots}
+          sidePots={sidePots}
           thinkingByAgent={thinkingByAgent}
         />
 
@@ -162,7 +172,7 @@ export function SpectatorView({
         ) : null}
       </main>
 
-      <RightPanel matchId={matchId} />
+      <RightPanel matchId={matchId} gameType={gameType} />
       <RankingPanel initialChips={initialChips} />
     </div>
   )

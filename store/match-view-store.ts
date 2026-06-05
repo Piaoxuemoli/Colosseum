@@ -22,6 +22,18 @@ export type ChipSnapshot = {
   chips: Record<string, number>
 }
 
+export type PokerStreetPots = {
+  preflop: number
+  flop: number
+  turn: number
+  river: number
+}
+
+export type PokerSidePot = {
+  amount: number
+  eligiblePlayerIds: string[]
+}
+
 export type WerewolfSpeechEntry = {
   day: number
   agentId: string
@@ -62,7 +74,12 @@ export type MatchViewState = {
   players: PokerUiPlayer[]
   communityCards: CardVisual[]
   pot: number
+  streetPots: PokerStreetPots
+  sidePots: PokerSidePot[]
   dealerIndex: number
+  smallBlindIndex: number
+  bigBlindIndex: number
+  stopRequested: boolean
   status: 'waiting' | 'live' | 'settled'
   matchComplete: boolean
   winnerAgentId: string | null
@@ -102,7 +119,12 @@ const initialState = {
   players: [] as PokerUiPlayer[],
   communityCards: [] as CardVisual[],
   pot: 0,
+  streetPots: { preflop: 0, flop: 0, turn: 0, river: 0 } as PokerStreetPots,
+  sidePots: [] as PokerSidePot[],
   dealerIndex: 0,
+  smallBlindIndex: 1,
+  bigBlindIndex: 2,
+  stopRequested: false,
   status: 'waiting' as const,
   matchComplete: false,
   winnerAgentId: null as string | null,
@@ -121,6 +143,78 @@ function actionContribution(action: Record<string, unknown>, player: PokerUiPlay
   if (typeof action.amount === 'number') return action.amount
   if (typeof action.toAmount === 'number') return Math.max(0, action.toAmount - player.currentBet)
   return 0
+}
+
+function numberOr(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function stringOrNull(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function parseStreetPots(value: unknown, fallback: PokerStreetPots): PokerStreetPots {
+  const raw = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+  return {
+    preflop: numberOr(raw.preflop, fallback.preflop),
+    flop: numberOr(raw.flop, fallback.flop),
+    turn: numberOr(raw.turn, fallback.turn),
+    river: numberOr(raw.river, fallback.river),
+  }
+}
+
+function parseSidePots(value: unknown): PokerSidePot[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object') return []
+    const raw = item as Record<string, unknown>
+    const eligiblePlayerIds = Array.isArray(raw.eligiblePlayerIds)
+      ? raw.eligiblePlayerIds.filter((id): id is string => typeof id === 'string')
+      : []
+    return [{ amount: numberOr(raw.amount, 0), eligiblePlayerIds }]
+  })
+}
+
+function parseCards(value: unknown): CardVisual[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object') return []
+    const raw = item as Record<string, unknown>
+    if (typeof raw.rank !== 'string' || typeof raw.suit !== 'string') return []
+    return [{ rank: raw.rank, suit: raw.suit }]
+  })
+}
+
+function playersFromPublicState(payload: Record<string, unknown>, currentPlayers: PokerUiPlayer[]): PokerUiPlayer[] {
+  if (!Array.isArray(payload.players)) return currentPlayers
+  return payload.players.flatMap((item) => {
+    if (!item || typeof item !== 'object') return []
+    const raw = item as Record<string, unknown>
+    const agentId = typeof raw.id === 'string' ? raw.id : null
+    if (!agentId) return []
+    const existing = currentPlayers.find((player) => player.agentId === agentId)
+    const statusRaw = raw.status
+    const status =
+      statusRaw === 'active' ||
+      statusRaw === 'folded' ||
+      statusRaw === 'allIn' ||
+      statusRaw === 'eliminated' ||
+      statusRaw === 'sittingOut'
+        ? statusRaw
+        : (existing?.status ?? 'active')
+    return [
+      {
+        agentId,
+        displayName: existing?.displayName ?? agentId,
+        avatarEmoji: existing?.avatarEmoji ?? '🃏',
+        seatIndex: numberOr(raw.seatIndex, existing?.seatIndex ?? 0),
+        chips: numberOr(raw.chips, existing?.chips ?? 0),
+        currentBet: numberOr(raw.currentBet, existing?.currentBet ?? 0),
+        status,
+        holeCards: parseCards(raw.holeCards),
+      },
+    ]
+  })
 }
 
 export const useMatchViewStore = create<MatchViewState>((set) => ({
@@ -149,6 +243,12 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
       let currentActor = state.currentActor
       let communityCards = state.communityCards
       let pot = state.pot
+      let streetPots = state.streetPots
+      let sidePots = state.sidePots
+      let dealerIndex = state.dealerIndex
+      let smallBlindIndex = state.smallBlindIndex
+      let bigBlindIndex = state.bigBlindIndex
+      let stopRequested = state.stopRequested
       let matchComplete = state.matchComplete
       let winnerAgentId = state.winnerAgentId
       let thinkingByAgent = state.thinkingByAgent
@@ -167,6 +267,24 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           phase = 'preflop'
           status = 'live'
           break
+        case 'poker/state': {
+          phase = typeof event.payload.phase === 'string' ? event.payload.phase : phase
+          handNumber = numberOr(event.payload.handNumber, handNumber)
+          currentActor = stringOrNull(event.payload.currentActor)
+          dealerIndex = numberOr(event.payload.dealerIndex, dealerIndex)
+          smallBlindIndex = numberOr(event.payload.smallBlindIndex, smallBlindIndex)
+          bigBlindIndex = numberOr(event.payload.bigBlindIndex, bigBlindIndex)
+          communityCards = parseCards(event.payload.communityCards)
+          pot = numberOr(event.payload.pot, pot)
+          streetPots = parseStreetPots(event.payload.streetPots, streetPots)
+          sidePots = parseSidePots(event.payload.sidePots)
+          stopRequested = Boolean(event.payload.stopRequested)
+          matchComplete = Boolean(event.payload.matchComplete)
+          if (matchComplete) status = 'settled'
+          const snapshotPlayers = playersFromPublicState(event.payload, players)
+          players.splice(0, players.length, ...snapshotPlayers)
+          break
+        }
         case 'poker/deal-flop':
           phase = 'flop'
           communityCards = [...communityCards, ...cardsFromPayload(event.payload)]
@@ -309,6 +427,12 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
         players,
         communityCards,
         pot,
+        streetPots,
+        sidePots,
+        dealerIndex,
+        smallBlindIndex,
+        bigBlindIndex,
+        stopRequested,
         status,
         matchComplete,
         winnerAgentId,
