@@ -95,6 +95,12 @@ describe('M4: API end-to-end match', () => {
     expect(createRes.status).toBe(201)
     const { matchId } = (await createRes.json()) as { matchId: string }
 
+    const { POST: endPost } = await import('@/app/api/matches/[matchId]/end/route')
+    const endRes = await endPost(new Request('http://localhost/api/matches/x/end', { method: 'POST' }), {
+      params: Promise.resolve({ matchId }),
+    })
+    expect(endRes.status).toBe(200)
+
     const { POST: tickPost } = await import('@/app/api/matches/[matchId]/tick/route')
     for (let i = 0; i < 500; i++) {
       const res = await tickPost(new Request('http://localhost/api/matches/x/tick', { method: 'POST' }), {

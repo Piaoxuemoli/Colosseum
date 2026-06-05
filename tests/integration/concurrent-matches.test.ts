@@ -141,6 +141,16 @@ describe('M5: concurrent matches isolation', () => {
 
     expect(idA).not.toBe(idB)
 
+    const { POST: requestEnd } = await import('@/app/api/matches/[matchId]/end/route')
+    await Promise.all([
+      requestEnd(new Request('http://localhost/api/matches/a/end', { method: 'POST' }), {
+        params: Promise.resolve({ matchId: idA }),
+      }),
+      requestEnd(new Request('http://localhost/api/matches/b/end', { method: 'POST' }), {
+        params: Promise.resolve({ matchId: idB }),
+      }),
+    ])
+
     await Promise.all([
       runMatchToCompletion(idA, { maxTicks: 500, intervalMs: 0 }),
       runMatchToCompletion(idB, { maxTicks: 500, intervalMs: 0 }),

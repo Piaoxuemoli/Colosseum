@@ -108,6 +108,12 @@ describe('M4 smoke (mock LLM)', () => {
       keyring: { [profile.id]: 'sk-mock' },
     })
 
+    const { POST: requestEnd } = await import('@/app/api/matches/[matchId]/end/route')
+    const endResponse = await requestEnd(new Request('http://localhost/api/matches/x/end', { method: 'POST' }), {
+      params: Promise.resolve({ matchId }),
+    })
+    expect(endResponse.status).toBe(200)
+
     await runMatchToCompletion(matchId, { maxTicks: 500, intervalMs: 0 })
 
     const { findMatchById } = await import('@/lib/db/queries/matches')

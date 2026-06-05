@@ -10,6 +10,7 @@ export default [
       '.next-build/**',
       'dist/**',
       'build/**',
+      '.remember/**',
       'next-env.d.ts',
     ],
   },

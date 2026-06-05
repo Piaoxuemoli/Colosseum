@@ -120,6 +120,41 @@ describe('Matches API', () => {
     expect(body.eventCount).toBeGreaterThanOrEqual(1)
   })
 
+  it('creates an initial public poker state event for spectator hydration', async () => {
+    const { listMatchEvents } = await import('@/lib/db/queries/events')
+    const events = await listMatchEvents(matchId)
+    const stateEvent = events.find((event) => event.kind === 'poker/state')
+
+    expect(stateEvent).toBeDefined()
+    expect(stateEvent?.payload.handNumber).toBe(1)
+    expect(stateEvent?.payload.currentActor).toEqual(expect.any(String))
+    expect(stateEvent?.payload.players).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.any(String),
+          holeCards: expect.arrayContaining([expect.objectContaining({ rank: expect.any(String), suit: expect.any(String) })]),
+        }),
+      ]),
+    )
+  })
+
+  it('POST /api/matches/:id/end requests finish after the current hand', async () => {
+    const { POST } = await import('@/app/api/matches/[matchId]/end/route')
+    const res = await POST(new Request('http://localhost/api/matches/x/end', { method: 'POST' }), {
+      params: Promise.resolve({ matchId }),
+    })
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { ok: boolean; stopRequested: boolean }
+    expect(body).toEqual({ ok: true, stopRequested: true })
+
+    const { listMatchEvents } = await import('@/lib/db/queries/events')
+    const events = await listMatchEvents(matchId)
+    expect(events.some((event) => event.kind === 'poker/stop-requested')).toBe(true)
+    const latestState = events.filter((event) => event.kind === 'poker/state').at(-1)
+    expect(latestState?.payload.stopRequested).toBe(true)
+  })
+
   it('POST rejects invalid agent count', async () => {
     const { POST } = await import('@/app/api/matches/route')
     const res = await POST(

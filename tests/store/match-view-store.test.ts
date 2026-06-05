@@ -69,6 +69,97 @@ describe('match-view-store', () => {
     expect(state.players[0].chips).toBe(190)
   })
 
+  it('hydrates poker spectator state from an authoritative state event', () => {
+    useMatchViewStore.getState().init({
+      matchId: 'm',
+      players: [
+        {
+          agentId: 'agt_1',
+          displayName: 'Alice',
+          avatarEmoji: 'A',
+          seatIndex: 0,
+          chips: 200,
+          currentBet: 0,
+          status: 'active',
+          holeCards: [],
+        },
+        {
+          agentId: 'agt_2',
+          displayName: 'Bob',
+          avatarEmoji: 'B',
+          seatIndex: 1,
+          chips: 200,
+          currentBet: 0,
+          status: 'active',
+          holeCards: [],
+        },
+      ],
+    })
+
+    useMatchViewStore.getState().ingestEvent(
+      event({
+        kind: 'poker/state',
+        payload: {
+          phase: 'flop',
+          handNumber: 3,
+          currentActor: 'agt_2',
+          dealerIndex: 0,
+          smallBlindIndex: 1,
+          bigBlindIndex: 0,
+          communityCards: [
+            { rank: 'A', suit: 'spades' },
+            { rank: 'K', suit: 'hearts' },
+            { rank: '2', suit: 'clubs' },
+          ],
+          pot: 18,
+          streetPots: { preflop: 12, flop: 6, turn: 0, river: 0 },
+          sidePots: [{ amount: 6, eligiblePlayerIds: ['agt_1', 'agt_2'] }],
+          stopRequested: true,
+          players: [
+            {
+              id: 'agt_1',
+              seatIndex: 0,
+              chips: 188,
+              currentBet: 0,
+              status: 'active',
+              holeCards: [
+                { rank: 'Q', suit: 'diamonds' },
+                { rank: 'Q', suit: 'clubs' },
+              ],
+            },
+            {
+              id: 'agt_2',
+              seatIndex: 1,
+              chips: 194,
+              currentBet: 6,
+              status: 'active',
+              holeCards: [
+                { rank: '9', suit: 'spades' },
+                { rank: '8', suit: 'spades' },
+              ],
+            },
+          ],
+        },
+      }),
+    )
+
+    const state = useMatchViewStore.getState()
+    expect(state.phase).toBe('flop')
+    expect(state.handNumber).toBe(3)
+    expect(state.currentActor).toBe('agt_2')
+    expect(state.dealerIndex).toBe(0)
+    expect(state.smallBlindIndex).toBe(1)
+    expect(state.bigBlindIndex).toBe(0)
+    expect(state.pot).toBe(18)
+    expect(state.streetPots.flop).toBe(6)
+    expect(state.sidePots[0].amount).toBe(6)
+    expect(state.stopRequested).toBe(true)
+    expect(state.communityCards).toHaveLength(3)
+    expect(state.players[0].displayName).toBe('Alice')
+    expect(state.players[0].holeCards[0]).toEqual({ rank: 'Q', suit: 'diamonds' })
+    expect(state.players[1].currentBet).toBe(6)
+  })
+
   it('records explicit chip snapshots', () => {
     const store = useMatchViewStore.getState()
     store.recordHandSnapshot(1, { a: 100, b: 150 })
