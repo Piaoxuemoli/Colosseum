@@ -128,7 +128,7 @@ def build_image_content(
     max_files: int = 6,
     max_size_mb: int = 20,
 ) -> list[dict[str, Any]]:
-    """Build list of image content blocks for API call.
+    """Build list of image content blocks for Anthropic API call.
 
     Args:
         image_path: Single local file path
@@ -198,6 +198,94 @@ def build_image_content(
                 "type": "image",
                 "source": {
                     "type": "url",
+                    "url": url,
+                },
+            })
+
+    if not content:
+        raise ValueError(
+            "At least one image required: provide image_path, image_url, "
+            "image_paths, or image_urls"
+        )
+
+    if len(content) > max_files:
+        raise ValueError(
+            f"Too many images: {len(content)} (max: {max_files})"
+        )
+
+    return content
+
+
+def build_image_content_oai(
+    image_path: str | None = None,
+    image_url: str | None = None,
+    image_paths: list[str] | None = None,
+    image_urls: list[str] | None = None,
+    max_files: int = 6,
+    max_size_mb: int = 20,
+) -> list[dict[str, Any]]:
+    """Build list of image content blocks for OpenAI-compatible API call.
+
+    Args:
+        image_path: Single local file path
+        image_url: Single remote URL
+        image_paths: List of local file paths
+        image_urls: List of remote URLs
+        max_files: Maximum number of files allowed
+        max_size_mb: Maximum file size in MB
+
+    Returns:
+        List of content blocks for OpenAI-compatible API
+
+    Raises:
+        ValueError: If no images provided or too many images
+    """
+    content: list[dict[str, Any]] = []
+
+    # Process single local file
+    if image_path:
+        path = validate_local_file(image_path, max_size_mb)
+        data_url = file_to_base64(path)
+        content.append({
+            "type": "image_url",
+            "image_url": {
+                "url": data_url,
+            },
+        })
+
+    # Process multiple local files
+    if image_paths:
+        if not isinstance(image_paths, (list, tuple)):
+            raise ValueError("image_paths must be a list")
+        for path_str in image_paths:
+            path = validate_local_file(path_str, max_size_mb)
+            data_url = file_to_base64(path)
+            content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": data_url,
+                },
+            })
+
+    # Process single URL
+    if image_url:
+        url = validate_url(image_url)
+        content.append({
+            "type": "image_url",
+            "image_url": {
+                "url": url,
+            },
+        })
+
+    # Process multiple URLs
+    if image_urls:
+        if not isinstance(image_urls, (list, tuple)):
+            raise ValueError("image_urls must be a list")
+        for url_str in image_urls:
+            url = validate_url(url_str)
+            content.append({
+                "type": "image_url",
+                "image_url": {
                     "url": url,
                 },
             })
