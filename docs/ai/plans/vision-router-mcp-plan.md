@@ -1,5 +1,7 @@
 # Vision Router MCP Server 实施计划
 
+## 状态: ✅ 已完成
+
 ## 目标
 
 创建一个简化版的 MCP Server，基于 [mimo-media-recognition-mcp](https://github.com/congxxx/mimo-media-recognition-mcp) 设计，仅支持图片分析功能。用于在 Claude Code 中自动路由视觉任务到 MIMO 多模态模型，避免主模型因不支持多模态而崩溃。

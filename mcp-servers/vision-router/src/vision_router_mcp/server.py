@@ -3,17 +3,18 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from typing import Any
 
-import anthropic
+import httpx
 from mcp.server.fastmcp import FastMCP
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from .config import get_config_summary, load_config
 from .models import ErrorType, ImageInput
 from .utils import (
-    build_image_content,
+    build_image_content_oai,
     format_error_response,
     format_success_response,
 )
@@ -41,6 +42,24 @@ Rules:
 5. For scene, describe the setting, environment, or context
 6. For details, note colors, styles, emotions, actions, or other relevant observations
 7. If multiple images are provided, analyze them as a related set"""
+
+
+def build_chat_completions_url(api_base: str) -> str:
+    """Build the complete chat completions URL.
+
+    Args:
+        api_base: Base API URL
+
+    Returns:
+        Complete URL for chat completions endpoint
+    """
+    api_base = api_base.rstrip("/")
+    if api_base.endswith("/chat/completions"):
+        return api_base
+    # Remove /anthropic suffix if present
+    if api_base.endswith("/anthropic"):
+        api_base = api_base[:-len("/anthropic")]
+    return f"{api_base}/v1/chat/completions"
 
 
 def parse_analysis_response(response_text: str) -> dict[str, Any]:
@@ -122,72 +141,116 @@ async def call_mimo_api(
     system_prompt: str | None,
     temperature: float,
     max_tokens: int,
-) -> tuple[dict[str, Any], int]:
-    """Call MIMO API with retry logic.
+    enable_web_search: bool = False,
+) -> tuple[dict[str, Any], int, list[dict[str, Any]] | None]:
+    """Call MIMO API with retry logic using OpenAI-compatible format.
 
     Args:
-        image_content: List of image content blocks
+        image_content: List of image content blocks (OpenAI format)
         prompt: User's analysis prompt
         system_prompt: Optional system prompt override
         temperature: Randomness parameter
         max_tokens: Maximum response length
+        enable_web_search: Whether to enable web search
 
     Returns:
-        Tuple of (parsed analysis, tokens used)
+        Tuple of (parsed analysis, tokens used, citations)
 
     Raises:
-        anthropic.APIError: If API call fails after retries
+        httpx.HTTPError: If API call fails after retries
     """
     config = load_config()
+    endpoint = build_chat_completions_url(config.api_base)
 
-    # Build the client with proxy support if configured
-    client_kwargs: dict[str, Any] = {
-        "api_key": config.api_key,
-        "base_url": config.api_base,
+    # Build messages
+    messages: list[dict[str, Any]] = []
+
+    # Add system prompt
+    sys_prompt = system_prompt if system_prompt else ANALYSIS_SYSTEM_PROMPT
+    messages.append({"role": "system", "content": sys_prompt})
+
+    # Build user message content
+    content: list[dict[str, Any]] = []
+
+    # Add image content
+    for img in image_content:
+        content.append(img)
+
+    # Add text prompt
+    content.append({"type": "text", "text": prompt})
+
+    messages.append({"role": "user", "content": content})
+
+    # Build request payload
+    payload: dict[str, Any] = {
+        "model": config.model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": False,
+        "thinking": {"type": "disabled"},  # Disable thinking mode for faster responses
+    }
+
+    # Add web search tool if enabled
+    # Note: Web search requires webSearchEnabled=true in MIMO account settings
+    # If web search is not enabled, the API will return a 400 error
+    if enable_web_search:
+        payload["tools"] = [
+            {
+                "type": "web_search",
+                "max_keyword": 3,
+                "force_search": True,
+                "limit": 3,
+            }
+        ]
+
+    # Build headers
+    headers = {
+        "api-key": config.api_key,
+        "Content-Type": "application/json",
     }
 
     # Add proxy if configured
-    import os
     http_proxy = os.getenv("HTTP_PROXY") or os.getenv("http_proxy")
     https_proxy = os.getenv("HTTPS_PROXY") or os.getenv("https_proxy")
-    if http_proxy or https_proxy:
-        import httpx
-        proxy = https_proxy or http_proxy
-        client_kwargs["http_client"] = httpx.AsyncClient(proxy=proxy)
-
-    client = anthropic.AsyncAnthropic(**client_kwargs)
-
-    # Build message content
-    content = image_content.copy()
-    content.append({"type": "text", "text": prompt})
-
-    # Use provided system prompt or default
-    sys_prompt = system_prompt if system_prompt else ANALYSIS_SYSTEM_PROMPT
+    proxy = https_proxy or http_proxy
 
     # Call the API
-    response = await client.messages.create(
-        model=config.model,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        system=sys_prompt,
-        messages=[{"role": "user", "content": content}],
-    )
+    async with httpx.AsyncClient(
+        timeout=180.0,
+        proxy=proxy if proxy else None,
+    ) as client:
+        response = await client.post(endpoint, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
 
-    # Extract response text
-    response_text = ""
-    for block in response.content:
-        if block.type == "text":
-            response_text += block.text
+    # Extract response
+    choice = data["choices"][0]
+    message = choice["message"]
+    response_text = message.get("content", "")
+
+    # If content is empty, try reasoning_content (for thinking mode)
+    if not response_text and "reasoning_content" in message:
+        response_text = message["reasoning_content"]
+
+    # Extract citations if present (from web search)
+    citations = None
+    if "annotations" in message:
+        citations = [
+            ann for ann in message["annotations"]
+            if ann.get("type") == "url_citation"
+        ]
 
     # Parse the response
     analysis = parse_analysis_response(response_text)
 
     # Get token usage
     tokens_used = 0
-    if hasattr(response, "usage") and response.usage:
-        tokens_used = response.usage.input_tokens + response.usage.output_tokens
+    if "usage" in data:
+        usage = data["usage"]
+        tokens_used = usage.get("total_tokens", 0)
 
-    return analysis, tokens_used
+    return analysis, tokens_used, citations
 
 
 @mcp.tool()
@@ -200,6 +263,7 @@ async def understand_image(
     system_prompt: str | None = None,
     temperature: float = 0.2,
     max_tokens: int = 12000,
+    enable_web_search: bool = False,
 ) -> str:
     """
     Analyze images using MIMO multimodal model.
@@ -216,6 +280,7 @@ async def understand_image(
         system_prompt: Optional system prompt override
         temperature: Randomness (0-2), default: 0.2
         max_tokens: Maximum response length, default: 12000
+        enable_web_search: Enable web search for additional context, default: false
 
     Returns:
         JSON string with structured analysis result
@@ -248,8 +313,8 @@ async def understand_image(
                 ErrorType.VALIDATION_ERROR,
             ))
 
-        # Build image content for API
-        image_content = build_image_content(
+        # Build image content for API (OpenAI format)
+        image_content = build_image_content_oai(
             image_path=image_path,
             image_url=image_url,
             image_paths=image_paths,
@@ -262,25 +327,32 @@ async def understand_image(
         image_count = len(image_content)
 
         # Call the API
-        analysis, tokens_used = await call_mimo_api(
+        analysis, tokens_used, citations = await call_mimo_api(
             image_content=image_content,
             prompt=prompt,
             system_prompt=system_prompt,
             temperature=temperature,
             max_tokens=max_tokens,
+            enable_web_search=enable_web_search,
         )
 
         # Calculate processing time
         processing_time_ms = int((time.time() - start_time) * 1000)
 
         # Format success response
-        return json.dumps(format_success_response(
+        result = format_success_response(
             analysis=analysis,
             model=config.model,
             processing_time_ms=processing_time_ms,
             tokens_used=tokens_used,
             image_count=image_count,
-        ))
+        )
+
+        # Add citations if present
+        if citations:
+            result["citations"] = citations
+
+        return json.dumps(result)
 
     except Exception as e:
         return json.dumps(format_error_response(e))
