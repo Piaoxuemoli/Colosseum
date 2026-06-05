@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { api } from '@/lib/client/api'
-import { keyring, uploadKeysForMatch } from '@/lib/client/keyring'
+import { keyring } from '@/lib/client/keyring'
 
 /**
  * Werewolf match setup: 6 player agents + 1 moderator agent.
@@ -42,6 +42,7 @@ export function WerewolfMatchSetupForm() {
   const [agentTimeoutMs, setAgentTimeoutMs] = useState(180_000)
   const [minActionIntervalMs, setMinActionIntervalMs] = useState(1_000)
   const [submitting, setSubmitting] = useState(false)
+  const [navigating, setNavigating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -113,10 +114,7 @@ export function WerewolfMatchSetupForm() {
         config: { agentTimeoutMs, minActionIntervalMs },
         keyring: keyringPayload,
       })
-      await uploadKeysForMatch(
-        result.matchId,
-        Object.entries(keyringPayload).map(([profileId, apiKey]) => ({ profileId, apiKey })),
-      )
+      setNavigating(true)
       router.push(`/matches/${result.matchId}`)
     } catch (err) {
       setError(String(err))
@@ -125,7 +123,7 @@ export function WerewolfMatchSetupForm() {
     }
   }
 
-  const canSubmit = selected.length === 6 && !!moderatorId && !submitting
+  const canSubmit = selected.length === 6 && !!moderatorId && !submitting && !navigating
 
   return (
     <div className="space-y-8">
@@ -231,7 +229,7 @@ export function WerewolfMatchSetupForm() {
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button size="lg" onClick={submit} disabled={!canSubmit}>
-        {submitting ? '创建中...' : '开始对局'}
+        {navigating ? '进入观战...' : submitting ? '创建中...' : '开始对局'}
       </Button>
     </div>
   )

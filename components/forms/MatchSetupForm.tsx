@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { api } from '@/lib/client/api'
-import { keyring, uploadKeysForMatch } from '@/lib/client/keyring'
+import { keyring } from '@/lib/client/keyring'
 
 type Agent = {
   id: string
@@ -32,6 +32,7 @@ export function MatchSetupForm() {
   const [agentTimeoutMs, setAgentTimeoutMs] = useState(180_000)
   const [minActionIntervalMs, setMinActionIntervalMs] = useState(1_000)
   const [submitting, setSubmitting] = useState(false)
+  const [navigating, setNavigating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -93,10 +94,7 @@ export function MatchSetupForm() {
         config: { agentTimeoutMs, minActionIntervalMs },
         keyring: keyringPayload,
       })
-      await uploadKeysForMatch(
-        result.matchId,
-        Object.entries(keyringPayload).map(([profileId, apiKey]) => ({ profileId, apiKey })),
-      )
+      setNavigating(true)
       router.push(`/matches/${result.matchId}`)
     } catch (err) {
       setError(String(err))
@@ -191,8 +189,8 @@ export function MatchSetupForm() {
       </section>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <Button size="lg" onClick={submit} disabled={submitting || selected.length !== 6}>
-        {submitting ? '创建中...' : '开始对局'}
+      <Button size="lg" onClick={submit} disabled={submitting || navigating || selected.length !== 6}>
+        {navigating ? '进入观战...' : submitting ? '创建中...' : '开始对局'}
       </Button>
     </div>
   )
