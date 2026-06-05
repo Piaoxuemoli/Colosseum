@@ -1,5 +1,7 @@
 import type { GameEngine } from '@/lib/engine/contracts'
+import type { ApplyActionResult, BoundaryKind } from '@/lib/engine/contracts'
 import type { MemoryContextSnapshot, MemoryModule } from '@/lib/memory/contracts'
+import type { GameEvent } from './types'
 import type { GameType } from './types'
 
 export type GameModule = {
@@ -10,6 +12,9 @@ export type GameModule = {
   responseParser: ResponseParser
   botStrategy: BotStrategy
   moderatorContextBuilder?: ModeratorContextBuilder
+  publicStateEvent?: (state: unknown) => GameEvent
+  continueAfterBoundary?: (state: unknown, boundary: BoundaryKind) => ApplyActionResult<unknown> | null
+  requestStopAfterHand?: (state: unknown) => unknown
 }
 
 export interface PlayerContextBuilder {

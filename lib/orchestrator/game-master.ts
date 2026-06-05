@@ -1,4 +1,4 @@
-import type { GameType } from '@/lib/core/types'
+import type { GameEvent, GameType } from '@/lib/core/types'
 import { requestAgentDecisionToy } from '@/lib/a2a-core/client'
 import { appendEvents, nextSeq } from '@/lib/db/queries/events'
 import { recordAgentError } from '@/lib/db/queries/errors'
@@ -80,6 +80,7 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     }
 
     const { nextState, events } = game.engine.applyAction(state, actorId, action)
+    const boundary = game.engine.boundary(state, nextState)
 
     const augmentedEvents = [...events]
     if (match.gameType === 'werewolf') {
@@ -100,8 +101,17 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     // Emit a terminal werewolf/game-end event BEFORE finalize so the SSE
     // consumer can reveal roles. Without this, the UI result panel never
     // opens because it waits for ww.winner to be populated by this event.
-    const isTerminalTransition =
-      game.engine.boundary(state, nextState) === 'match-end'
+    if (game.publicStateEvent) {
+      augmentedEvents.push({
+        ...game.publicStateEvent(nextState),
+        id: newEventId(),
+        matchId: '',
+        seq: 0,
+      })
+    }
+
+    const nextStateMatchComplete = (nextState as { matchComplete?: boolean }).matchComplete === true
+    const isTerminalTransition = boundary === 'match-end' || nextStateMatchComplete
     if (isTerminalTransition && match.gameType === 'werewolf') {
       const ws = nextState as WerewolfState
       augmentedEvents.push({
@@ -123,24 +133,61 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     }
 
     let seq = await nextSeq(matchId)
-    const finalEvents = augmentedEvents.map((event) => ({ ...event, matchId, seq: seq++ }))
-    await appendEvents(finalEvents)
+    async function appendAndPublish(eventsToAppend: GameEvent[]): Promise<GameEvent[]> {
+      const finalEvents = eventsToAppend.map((event) => ({ ...event, matchId, seq: seq++ }))
+      await appendEvents(finalEvents)
 
-    for (const event of finalEvents) {
-      if (event.visibility === 'public') {
-        await publishSse(matchId, { kind: 'event', event })
+      for (const event of finalEvents) {
+        if (event.visibility === 'public') {
+          await publishSse(matchId, { kind: 'event', event })
+        }
       }
+
+      return finalEvents
     }
 
-    await redis.set(keys.matchState(matchId), JSON.stringify(nextState), 'EX', 24 * 60 * 60)
+    await appendAndPublish(augmentedEvents)
 
     if (isTerminalTransition) {
+      await redis.set(keys.matchState(matchId), JSON.stringify(nextState), 'EX', 24 * 60 * 60)
       await finalizeMatch(matchId)
       await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
       inc('tick.count', 1, { gameType, outcome: 'match-end' })
       observe('tick.duration_ms', performance.now() - tickStart, { gameType })
       return { done: true }
     }
+
+    if (boundary === 'hand-end' && game.continueAfterBoundary) {
+      const continuation = game.continueAfterBoundary(nextState, 'hand-end')
+      if (continuation) {
+        await appendAndPublish(
+          continuation.events.map((event) => ({
+            ...event,
+            id: newEventId(),
+            matchId: '',
+            seq: 0,
+          })),
+        )
+        await redis.set(keys.matchState(matchId), JSON.stringify(continuation.nextState), 'EX', 24 * 60 * 60)
+
+        const continuationTerminal =
+          game.engine.boundary(nextState, continuation.nextState) === 'match-end' ||
+          (continuation.nextState as { matchComplete?: boolean }).matchComplete === true
+        if (continuationTerminal) {
+          await finalizeMatch(matchId)
+          await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
+          inc('tick.count', 1, { gameType, outcome: 'match-end' })
+          observe('tick.duration_ms', performance.now() - tickStart, { gameType })
+          return { done: true }
+        }
+
+        inc('tick.count', 1, { gameType, outcome: 'continue' })
+        observe('tick.duration_ms', performance.now() - tickStart, { gameType })
+        return { done: false }
+      }
+    }
+
+    await redis.set(keys.matchState(matchId), JSON.stringify(nextState), 'EX', 24 * 60 * 60)
 
     inc('tick.count', 1, { gameType, outcome: 'continue' })
     observe('tick.duration_ms', performance.now() - tickStart, { gameType })
