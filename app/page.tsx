@@ -1,9 +1,9 @@
 import { desc } from 'drizzle-orm'
-import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Empty } from '@/components/Empty'
+import { PendingLink } from '@/components/navigation/PendingLink'
 import { db } from '@/lib/db/client'
 import { matches } from '@/lib/db/schema.sqlite'
 
@@ -30,7 +30,9 @@ export default async function Lobby() {
           </p>
         </div>
         <Button asChild size="lg">
-          <Link href="/matches/new">开始新对局</Link>
+          <PendingLink href="/matches/new" pendingClassName="opacity-80">
+            开始新对局
+          </PendingLink>
         </Button>
       </div>
 
@@ -58,16 +60,15 @@ export default async function Lobby() {
       <section className="mt-10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">最近对局</h2>
-          <Link className="text-sm text-cyan-200 hover:text-cyan-100" href="/agents">
+          <PendingLink className="text-sm text-cyan-200 transition hover:text-cyan-100 active:text-cyan-50" href="/agents">
             管理 Agents
-          </Link>
+          </PendingLink>
         </div>
 
         {rows.length === 0 ? (
           <Empty
             title="暂无对局"
             description="先创建 API Profile 和 Agent，然后启动一桌 6 人德扑或一局 9 人狼人杀。"
-            cta={{ label: '开始新对局', href: '/matches/new' }}
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -78,8 +79,12 @@ export default async function Lobby() {
                 match.status === 'aborted_by_errors'
               return (
                 <div key={match.id} className="relative">
-                  <Link href={`/matches/${match.id}`} className="block">
-                    <Card className="h-full transition hover:border-cyan-300/40 hover:bg-cyan-300/5">
+                  <PendingLink
+                    href={`/matches/${match.id}`}
+                    className="block"
+                    pendingClassName="opacity-80"
+                  >
+                    <Card className="h-full transition duration-150 ease-out hover:border-cyan-300/40 hover:bg-cyan-300/5 active:translate-y-px">
                       <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-base">
                           {match.gameType === 'poker' ? '德州扑克' : '狼人杀'}
@@ -94,14 +99,14 @@ export default async function Lobby() {
                         <div className="font-mono text-xs text-cyan-100/70">{match.id}</div>
                       </CardContent>
                     </Card>
-                  </Link>
+                  </PendingLink>
                   {settled ? (
-                    <Link
+                    <PendingLink
                       href={`/matches/${match.id}/replay`}
                       className="absolute bottom-3 right-3 rounded-md border border-emerald-400/40 bg-emerald-400/10 px-2 py-1 text-xs font-semibold text-emerald-200 hover:bg-emerald-400/20"
                     >
-                      回放 →
-                    </Link>
+                      回放
+                    </PendingLink>
                   ) : null}
                 </div>
               )

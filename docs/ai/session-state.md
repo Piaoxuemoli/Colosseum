@@ -23,8 +23,12 @@
 - 2026-06-05 生产部署时修复 `ops/deploy/entrypoint.sh` CRLF 行尾导致 Alpine 报 `/entrypoint.sh: not found` 的问题；新增 `.gitattributes` 强制 `*.sh` LF 和 `tests/deploy/entrypoint-line-endings.test.ts` 回归测试。
 - 2026-06-05 按用户要求，项目校验改为只在生产服务器执行：服务器主机无 Node，使用临时 `node:22-alpine` Docker 容器挂载 `/opt/colosseum` 跑 lint/typecheck/test/build。
 - 2026-06-05 生产对局数据已清理并重启：备份 `/var/backups/colosseum/pre-clean-20260605-192227.db.gz`；保留 `api_profiles=1`、`agents=6`；清空 `matches/match_participants/game_events/agent_errors/working_memory/episodic_memory/semantic_memory`；Redis `DBSIZE=0`；`/api/matches` 返回空数组。
-- 2026-06-05 德扑正式上线修复已部署：默认对局改为持续桌，破产玩家下一手自动 rebuy 到初始筹码，只有 stop-after-hand 才完成比赛；`/end` 请求改用独立 Redis stop flag，避免被并发 tick 覆盖。
+- 2026-06-05 德扑正式上线修复曾部署为持续桌 + 破产 rebuy；该 rebuy 语义已被 2026-06-05 后续澄清取代。`/end` 请求改用独立 Redis stop flag，避免被并发 tick 覆盖，此 race 修复保留。
 - 2026-06-05 正式上线前生产数据再次清理并重启：备份 `/var/backups/colosseum/pre-launch-20260605-210821.db.gz`；保留 `api_profiles=1`、`agents=6`；清空所有对局/事件/错误/记忆表；Redis `DBSIZE=0`；`/api/matches` 返回空数组。
+- 2026-06-05 德扑持续桌语义按用户澄清调整：不再 rebuy；筹码归零的玩家保持 `eliminated`、无手牌、不可行动；当仅剩 1 名有筹码玩家时自然 `completed`。
+- 2026-06-05 仓库旧 Vitest/组件/集成测试体系已按用户要求清理，`npm run check` 收敛为 `lint && typecheck && build`；`npm test` 为测试体系重构期间的占位提示。测试专用 dev 依赖 Playwright/Vitest/Testing Library/jsdom 已移除并同步 lockfile。
+- 2026-06-05 前端交互修复已部署：新增 pending 导航反馈和按钮按压反馈；创建对局去掉重复 `/api/matches/:id/keys` 上传，创建成功后立即进入“进入观战...”状态并跳转；大厅只保留一个“开始新对局”入口；侧栏左下角由过期 Phase 文案改为正式上线状态。
+- 2026-06-05 生产最终清理并重启：备份 `/var/backups/colosseum/pre-final-launch-20260605-215416.db.gz`；保留 `api_profiles=1`、`agents=6`；清空对局/事件/错误/记忆表；Redis `DBSIZE=0`；`/api/matches` 返回空数组，健康检查 `{"ok":true,"db":"ok","redis":"ok"}`。
 - Docker is available locally as of 2026-06-05 `npm run doctor`; production smoke can still use the server Docker stack for parity.
 
 ## Validation Log
@@ -145,6 +149,12 @@
 | 2026-06-05 | Production poker smoke `match_66de66df-813f-4d51-85a5-a43bd3be5e61` | Passed | 未请求结束时推进到第 2 手且仍 running；请求 finish-after-hand 后 completed，最终 public events=50 |
 | 2026-06-05 | Server-only full gate via Docker on `43.156.230.108` | Passed | `npm run lint`、`npm run typecheck`、`npm test`(97 files / 400 tests)、`npm run build` 全通过；仍有 Radix Dialog Description warning、Next ESLint plugin warning 和 npm update notice |
 | 2026-06-05 | Production pre-launch cleanup + restart | Passed | 备份 `/var/backups/colosseum/pre-launch-20260605-210821.db.gz`；清空对局/事件/错误/记忆，保留 `api_profiles=1`、`agents=6`；Redis `DBSIZE=0`；健康检查 `{"ok":true,"db":"ok","redis":"ok"}` |
+| 2026-06-05 | Red/green on server: `npx vitest run games/poker/engine/__tests__/poker-engine.test.ts` | Passed | 先确认“只剩一名有筹码玩家时应结束而非 rebuy”的回归在生产工作树失败，再修复后 17 tests passed；随后按用户要求删除旧测试体系 |
+| 2026-06-05 | Server-only core gate via Docker on `43.156.230.108` | Passed | 测试体系清理后通过 `npm run lint`、`npm run typecheck`、`npm run build`；build 仍有 Next ESLint plugin warning 和 npm update notice |
+| 2026-06-05 | `docker compose -f ops/deploy/docker-compose.yml up -d --build` on `43.156.230.108` | Passed | 镜像 `colosseum:prod` 重建，`nextjs` 新容器启动，`/api/health` 返回 `{"ok":true,"db":"ok","redis":"ok"}` |
+| 2026-06-05 | Production frontend smoke | Passed | `/` HTML 不再包含侧栏 `Launch table` 新对局导航；侧栏状态更新为“正式上线”；RSC payload 中文本会重复出现，不用于可见按钮数精确判断 |
+| 2026-06-05 | Production poker elimination smoke `match_1cc5c78d-b54d-4179-b642-803ea1d215c4` | Passed | 低筹码德扑推进到第 74 手：4 个 `eliminated` 玩家均 `chips=0` 且 `holeCards=[]`，剩 2 名有筹码玩家继续运行，验证破产玩家未 rebuy |
+| 2026-06-05 | Production final cleanup + restart | Passed | 备份 `/var/backups/colosseum/pre-final-launch-20260605-215416.db.gz`；清空对局/事件/错误/记忆，保留 `api_profiles=1`、`agents=6`；Redis `DBSIZE=0`；`/api/matches` 返回 `[]` |
 
 ## Open Questions / Blockers
 

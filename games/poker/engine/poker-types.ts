@@ -52,7 +52,6 @@ export interface PokerConfig {
 export interface PokerState {
   phase: PokerPhase
   handNumber: number
-  startingChips: number
   dealerIndex: number
   smallBlindIndex: number
   bigBlindIndex: number
@@ -75,7 +74,6 @@ export interface PokerState {
 export interface PokerPublicState {
   phase: PokerPhase
   handNumber: number
-  startingChips: number
   dealerIndex: number
   smallBlindIndex: number
   bigBlindIndex: number

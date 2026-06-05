@@ -44,7 +44,6 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     const state: PokerState = {
       phase: 'preflop',
       handNumber: 1,
-      startingChips: config.startingChips,
       dealerIndex,
       smallBlindIndex,
       bigBlindIndex,
@@ -75,7 +74,6 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     return {
       phase: state.phase,
       handNumber: state.handNumber,
-      startingChips: state.startingChips,
       dealerIndex: state.dealerIndex,
       smallBlindIndex: state.smallBlindIndex,
       bigBlindIndex: state.bigBlindIndex,
@@ -124,6 +122,23 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
             kind: 'poker/match-end',
             actorAgentId: null,
             payload: { winnerId: this.chipLeaderId(next) },
+          }),
+          this.makePublicStateEvent(next),
+        ],
+      }
+    }
+
+    const playersWithChips = next.players.filter((player) => player.chips > 0)
+    if (playersWithChips.length <= 1) {
+      next.currentActor = null
+      next.matchComplete = true
+      return {
+        nextState: next,
+        events: [
+          this.makeEvent({
+            kind: 'poker/match-end',
+            actorAgentId: null,
+            payload: { winnerId: playersWithChips[0]?.id ?? null },
           }),
           this.makePublicStateEvent(next),
         ],
@@ -496,6 +511,19 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       if (player.chips === 0 && player.status !== 'sittingOut') player.status = 'eliminated'
     }
 
+    const playersWithChips = state.players.filter((player) => player.chips > 0)
+    if (playersWithChips.length <= 1) {
+      state.currentActor = null
+      state.matchComplete = true
+      events.push(
+        this.makeEvent({
+          kind: 'poker/match-end',
+          actorAgentId: null,
+          payload: { winnerId: playersWithChips[0]?.id ?? null },
+        }),
+      )
+    }
+
     return events
   }
 
@@ -524,7 +552,6 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     state.deck = shuffleDeck(createDeck())
 
     for (const player of state.players) {
-      if (player.chips <= 0 && player.status !== 'sittingOut') player.chips = state.startingChips
       player.currentBet = 0
       player.totalCommitted = 0
       player.hasActedThisStreet = false
