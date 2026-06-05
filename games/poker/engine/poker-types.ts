@@ -30,6 +30,11 @@ export interface PokerPlayerState {
   hasActedThisStreet: boolean
 }
 
+export interface PokerSidePotState {
+  amount: number
+  eligiblePlayerIds: string[]
+}
+
 export interface PokerActionRecord {
   seq: number
   phase: Exclude<PokerPhase, 'waiting' | 'handComplete'>
@@ -48,6 +53,8 @@ export interface PokerState {
   phase: PokerPhase
   handNumber: number
   dealerIndex: number
+  smallBlindIndex: number
+  bigBlindIndex: number
   players: PokerPlayerState[]
   communityCards: Card[]
   currentActor: string | null
@@ -55,7 +62,30 @@ export interface PokerState {
   betsThisStreet: number
   smallBlind: number
   bigBlind: number
+  pot: number
+  streetPots: Record<Exclude<PokerPhase, 'waiting' | 'showdown' | 'handComplete'>, number>
+  sidePots: PokerSidePotState[]
+  stopRequested: boolean
   handComplete: boolean
   matchComplete: boolean
   deck: Card[]
+}
+
+export interface PokerPublicState {
+  phase: PokerPhase
+  handNumber: number
+  dealerIndex: number
+  smallBlindIndex: number
+  bigBlindIndex: number
+  currentActor: string | null
+  communityCards: Card[]
+  players: Array<Omit<PokerPlayerState, 'totalCommitted' | 'hasActedThisStreet'>>
+  pot: number
+  streetPots: PokerState['streetPots']
+  sidePots: PokerSidePotState[]
+  smallBlind: number
+  bigBlind: number
+  stopRequested: boolean
+  handComplete: boolean
+  matchComplete: boolean
 }

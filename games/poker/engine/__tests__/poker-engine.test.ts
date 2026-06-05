@@ -21,6 +21,10 @@ describe('PokerEngine.createInitialState', () => {
     expect(state.handNumber).toBe(1)
     expect(state.communityCards.length).toBe(0)
     expect(state.players.every((player) => player.holeCards.length === 2)).toBe(true)
+    expect(state.pot).toBe(defaultConfig.smallBlind + defaultConfig.bigBlind)
+    expect(state.streetPots.preflop).toBe(defaultConfig.smallBlind + defaultConfig.bigBlind)
+    expect(state.smallBlindIndex).toBe((state.dealerIndex + 1) % 6)
+    expect(state.bigBlindIndex).toBe((state.dealerIndex + 2) % 6)
   })
 
   it('currentActor is UTG preflop', () => {
@@ -36,6 +40,25 @@ describe('PokerEngine.createInitialState', () => {
   it('throws if fewer than 2 players', () => {
     const engine = new PokerEngine()
     expect(() => engine.createInitialState(defaultConfig, ['a'])).toThrow(/at least 2/)
+  })
+})
+
+describe('PokerEngine public state', () => {
+  it('exposes full spectator state including hole cards, blinds, actor, and pots', () => {
+    const engine = new PokerEngine()
+    const state = engine.createInitialState(defaultConfig, ['a', 'b', 'c', 'd', 'e', 'f'])
+
+    const snapshot = engine.createPublicState(state)
+
+    expect(snapshot.handNumber).toBe(1)
+    expect(snapshot.phase).toBe('preflop')
+    expect(snapshot.currentActor).toBe(state.currentActor)
+    expect(snapshot.dealerIndex).toBe(state.dealerIndex)
+    expect(snapshot.smallBlindIndex).toBe(state.smallBlindIndex)
+    expect(snapshot.bigBlindIndex).toBe(state.bigBlindIndex)
+    expect(snapshot.pot).toBe(defaultConfig.smallBlind + defaultConfig.bigBlind)
+    expect(snapshot.streetPots.preflop).toBe(defaultConfig.smallBlind + defaultConfig.bigBlind)
+    expect(snapshot.players.every((player) => player.holeCards.length === 2)).toBe(true)
   })
 })
 
@@ -190,5 +213,45 @@ describe('PokerEngine settlement', () => {
     expect(survivor).toBeDefined()
     expect(totalNow).toBe(totalInitial)
     expect(survivor!.chips).toBeGreaterThan(defaultConfig.startingChips)
+  })
+})
+
+describe('PokerEngine hand continuation', () => {
+  function foldToHandEnd(engine: PokerEngine) {
+    let state = engine.createInitialState(defaultConfig, ['a', 'b', 'c', 'd', 'e', 'f'])
+
+    for (let i = 0; i < 5; i++) {
+      const actor = engine.currentActor(state)
+      if (!actor) break
+      state = engine.applyAction(state, actor, { type: 'fold' }).nextState
+    }
+
+    expect(state.handComplete).toBe(true)
+    return state
+  }
+
+  it('starts the next hand after a hand ends when multiple players still have chips', () => {
+    const engine = new PokerEngine()
+    const ended = foldToHandEnd(engine)
+
+    const { nextState, events } = engine.continueAfterHand(ended)
+
+    expect(nextState.matchComplete).toBe(false)
+    expect(nextState.handComplete).toBe(false)
+    expect(nextState.handNumber).toBe(ended.handNumber + 1)
+    expect(nextState.phase).toBe('preflop')
+    expect(nextState.communityCards).toHaveLength(0)
+    expect(nextState.players.every((player) => player.holeCards.length === 2 || player.status === 'eliminated')).toBe(true)
+    expect(events.some((event) => event.kind === 'poker/hand-start')).toBe(true)
+  })
+
+  it('ends the match after the current hand when stop is requested', () => {
+    const engine = new PokerEngine()
+    const ended = { ...foldToHandEnd(engine), stopRequested: true }
+
+    const { nextState, events } = engine.continueAfterHand(ended)
+
+    expect(nextState.matchComplete).toBe(true)
+    expect(events.some((event) => event.kind === 'poker/match-end')).toBe(true)
   })
 })

@@ -5,7 +5,9 @@ import { createDeck, shuffleDeck } from './card'
 import { dealCards } from './deck'
 import { evaluateHand } from './evaluator'
 import { calculateSidePots } from './pot-manager'
-import type { PokerAction, PokerConfig, PokerPlayerState, PokerState } from './poker-types'
+import type { PokerAction, PokerConfig, PokerPlayerState, PokerPublicState, PokerState } from './poker-types'
+
+type BettingStreet = keyof PokerState['streetPots']
 
 export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerConfig> {
   createInitialState(config: PokerConfig, agentIds: string[]): PokerState {
@@ -31,17 +33,20 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       remaining = result.remaining
     }
 
-    const smallBlindIndex = (dealerIndex + 1) % players.length
-    const bigBlindIndex = (dealerIndex + 2) % players.length
+    const smallBlindIndex = this.smallBlindIndexFor(players, dealerIndex)
+    const bigBlindIndex = this.bigBlindIndexFor(players, dealerIndex)
     this.postBlind(players[smallBlindIndex], config.smallBlind)
     this.postBlind(players[bigBlindIndex], config.bigBlind)
 
-    const underTheGunIndex = (dealerIndex + 3) % players.length
+    const underTheGunIndex =
+      players.length === 2 ? dealerIndex : this.nextActiveIndex(players, bigBlindIndex)
 
-    return {
+    const state: PokerState = {
       phase: 'preflop',
       handNumber: 1,
       dealerIndex,
+      smallBlindIndex,
+      bigBlindIndex,
       players,
       communityCards: [],
       currentActor: players[underTheGunIndex].id,
@@ -49,14 +54,99 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       betsThisStreet: 1,
       smallBlind: config.smallBlind,
       bigBlind: config.bigBlind,
+      pot: config.smallBlind + config.bigBlind,
+      streetPots: this.emptyStreetPots(config.smallBlind + config.bigBlind),
+      sidePots: [],
+      stopRequested: false,
       handComplete: false,
       matchComplete: false,
       deck: remaining,
     }
+    state.sidePots = this.calculateCurrentSidePots(state)
+    return state
   }
 
   currentActor(state: PokerState): string | null {
     return state.currentActor
+  }
+
+  createPublicState(state: PokerState): PokerPublicState {
+    return {
+      phase: state.phase,
+      handNumber: state.handNumber,
+      dealerIndex: state.dealerIndex,
+      smallBlindIndex: state.smallBlindIndex,
+      bigBlindIndex: state.bigBlindIndex,
+      currentActor: state.currentActor,
+      communityCards: [...state.communityCards],
+      players: state.players.map((player) => ({
+        id: player.id,
+        seatIndex: player.seatIndex,
+        chips: player.chips,
+        holeCards: [...player.holeCards],
+        status: player.status,
+        currentBet: player.currentBet,
+      })),
+      pot: state.pot,
+      streetPots: { ...state.streetPots },
+      sidePots: state.sidePots.map((pot) => ({
+        amount: pot.amount,
+        eligiblePlayerIds: [...pot.eligiblePlayerIds],
+      })),
+      smallBlind: state.smallBlind,
+      bigBlind: state.bigBlind,
+      stopRequested: state.stopRequested,
+      handComplete: state.handComplete,
+      matchComplete: state.matchComplete,
+    }
+  }
+
+  makePublicStateEvent(state: PokerState, kind = 'poker/state'): GameEvent {
+    return this.makeEvent({
+      kind,
+      actorAgentId: null,
+      payload: this.createPublicState(state) as unknown as Record<string, unknown>,
+    })
+  }
+
+  continueAfterHand(state: PokerState): ApplyActionResult<PokerState> {
+    const next = this.cloneState(state)
+    const playersWithChips = next.players.filter((player) => player.chips > 0)
+
+    if (next.stopRequested || playersWithChips.length <= 1) {
+      next.currentActor = null
+      next.matchComplete = true
+      return {
+        nextState: next,
+        events: [
+          this.makeEvent({
+            kind: 'poker/match-end',
+            actorAgentId: null,
+            payload: { winnerId: playersWithChips[0]?.id ?? null },
+          }),
+          this.makePublicStateEvent(next),
+        ],
+      }
+    }
+
+    this.startNextHand(next)
+    return {
+      nextState: next,
+      events: [
+        this.makeEvent({
+          kind: 'poker/hand-start',
+          actorAgentId: null,
+          payload: { handNumber: next.handNumber },
+        }),
+        this.makePublicStateEvent(next),
+      ],
+    }
+  }
+
+  requestStopAfterHand(state: PokerState): PokerState {
+    const next = this.cloneState(state)
+    next.stopRequested = true
+    return next
   }
 
   availableActions(state: PokerState, agentId: string): ActionSpec<PokerAction>[] {
@@ -131,6 +221,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
         player.chips -= paid
         player.currentBet += paid
         player.totalCommitted += paid
+        this.addToPot(next, paid)
         if (player.chips === 0) player.status = 'allIn'
         player.hasActedThisStreet = true
         events.push(this.recordAction(next, agentId, { type: 'call', amount: paid }))
@@ -146,6 +237,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
         player.chips -= paid
         player.currentBet = targetBet
         player.totalCommitted += paid
+        this.addToPot(next, paid)
         if (player.chips === 0) player.status = 'allIn'
         player.hasActedThisStreet = true
         next.betsThisStreet += 1
@@ -159,6 +251,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
         player.totalCommitted += paid
         player.chips = 0
         player.status = 'allIn'
+        this.addToPot(next, paid)
         player.hasActedThisStreet = true
         if (player.currentBet > maxBet) {
           next.betsThisStreet += 1
@@ -221,6 +314,11 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
   private cloneState(state: PokerState): PokerState {
     return {
       ...state,
+      streetPots: { ...state.streetPots },
+      sidePots: state.sidePots.map((pot) => ({
+        amount: pot.amount,
+        eligiblePlayerIds: [...pot.eligiblePlayerIds],
+      })),
       players: state.players.map((player) => ({
         ...player,
         holeCards: [...player.holeCards],
@@ -265,6 +363,24 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
 
   private isSmallBetStreet(phase: PokerState['phase']): boolean {
     return phase === 'preflop' || phase === 'flop'
+  }
+
+  private emptyStreetPots(preflop = 0): PokerState['streetPots'] {
+    return { preflop, flop: 0, turn: 0, river: 0 }
+  }
+
+  private currentBettingStreet(state: PokerState): BettingStreet | null {
+    return state.phase === 'preflop' || state.phase === 'flop' || state.phase === 'turn' || state.phase === 'river'
+      ? state.phase
+      : null
+  }
+
+  private addToPot(state: PokerState, amount: number): void {
+    if (amount <= 0) return
+    state.pot += amount
+    const street = this.currentBettingStreet(state)
+    if (street) state.streetPots[street] += amount
+    state.sidePots = this.calculateCurrentSidePots(state)
   }
 
   private findNextActor(state: PokerState): string | null {
@@ -349,14 +465,8 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
 
   private settleHand(state: PokerState): GameEvent[] {
     const events: GameEvent[] = []
-    const pots = calculateSidePots(
-      state.players.map((player) => ({
-        playerId: player.id,
-        amount: player.totalCommitted,
-        isAllIn: player.status === 'allIn',
-        isFolded: player.status === 'folded',
-      })),
-    )
+    const pots = this.calculateCurrentSidePots(state)
+    state.sidePots = pots
 
     for (const pot of pots) {
       const eligible = state.players.filter((player) => pot.eligiblePlayerIds.includes(player.id))
@@ -398,6 +508,82 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     }
 
     return events
+  }
+
+  private calculateCurrentSidePots(state: PokerState): PokerState['sidePots'] {
+    return calculateSidePots(
+      state.players.map((player) => ({
+        playerId: player.id,
+        amount: player.totalCommitted,
+        isAllIn: player.status === 'allIn',
+        isFolded: player.status === 'folded',
+      })),
+    )
+  }
+
+  private startNextHand(state: PokerState): void {
+    state.handNumber += 1
+    state.phase = 'preflop'
+    state.handComplete = false
+    state.matchComplete = false
+    state.communityCards = []
+    state.actionHistory = []
+    state.betsThisStreet = 1
+    state.pot = 0
+    state.streetPots = this.emptyStreetPots()
+    state.sidePots = []
+    state.deck = shuffleDeck(createDeck())
+
+    for (const player of state.players) {
+      player.currentBet = 0
+      player.totalCommitted = 0
+      player.hasActedThisStreet = false
+      player.holeCards = []
+      player.status = player.chips > 0 ? 'active' : 'eliminated'
+    }
+
+    state.dealerIndex = this.nextActiveIndex(state.players, state.dealerIndex)
+    state.smallBlindIndex = this.smallBlindIndexFor(state.players, state.dealerIndex)
+    state.bigBlindIndex = this.bigBlindIndexFor(state.players, state.dealerIndex)
+
+    let remaining = state.deck
+    for (const player of state.players) {
+      if (player.status === 'eliminated') continue
+      const result = dealCards(remaining, 2)
+      player.holeCards = result.dealt
+      remaining = result.remaining
+    }
+    state.deck = remaining
+
+    this.postBlind(state.players[state.smallBlindIndex], state.smallBlind)
+    this.postBlind(state.players[state.bigBlindIndex], state.bigBlind)
+    this.addToPot(state, state.players[state.smallBlindIndex].currentBet + state.players[state.bigBlindIndex].currentBet)
+
+    const firstActorIndex =
+      state.players.filter((player) => player.status !== 'eliminated').length === 2
+        ? state.dealerIndex
+        : this.nextActiveIndex(state.players, state.bigBlindIndex)
+    state.currentActor = state.players[firstActorIndex]?.id ?? null
+  }
+
+  private smallBlindIndexFor(players: PokerPlayerState[], dealerIndex: number): number {
+    return players.filter((player) => player.status !== 'eliminated').length === 2
+      ? dealerIndex
+      : this.nextActiveIndex(players, dealerIndex)
+  }
+
+  private bigBlindIndexFor(players: PokerPlayerState[], dealerIndex: number): number {
+    return this.nextActiveIndex(players, this.smallBlindIndexFor(players, dealerIndex))
+  }
+
+  private nextActiveIndex(players: PokerPlayerState[], fromIndex: number): number {
+    for (let offset = 1; offset <= players.length; offset++) {
+      const index = (fromIndex + offset) % players.length
+      if (players[index].status !== 'eliminated' && players[index].status !== 'sittingOut' && players[index].chips > 0) {
+        return index
+      }
+    }
+    return fromIndex
   }
 
   private showdownWinners(players: PokerPlayerState[], communityCards: PokerState['communityCards']): PokerPlayerState[] {
