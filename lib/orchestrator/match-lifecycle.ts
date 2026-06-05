@@ -1,6 +1,6 @@
 import { newEventId, newMatchToken } from '@/lib/core/ids'
 import { getGame } from '@/lib/core/registry'
-import { defaultMatchConfig, type GameType, type MatchConfig } from '@/lib/core/types'
+import { defaultMatchConfig, type GameEvent, type GameType, type MatchConfig } from '@/lib/core/types'
 import { appendEvents, nextSeq } from '@/lib/db/queries/events'
 import { deleteWorkingMemory } from '@/lib/db/queries/memory'
 import {
@@ -68,12 +68,13 @@ export async function createAndStartMatch(input: CreateMatchInput): Promise<{ ma
     await redis.expire(keys.matchKeyring(matchId), 2 * 60 * 60)
   }
 
-  await appendEvents([
+  let seq = await nextSeq(matchId)
+  const startEvents: GameEvent[] = [
     {
       id: newEventId(),
       matchId,
       gameType: input.gameType,
-      seq: await nextSeq(matchId),
+      seq: seq++,
       occurredAt: new Date().toISOString(),
       kind: `${input.gameType}/match-start`,
       actorAgentId: null,
@@ -81,7 +82,18 @@ export async function createAndStartMatch(input: CreateMatchInput): Promise<{ ma
       visibility: 'public',
       restrictedTo: null,
     },
-  ])
+  ]
+  const publicStateEvent = game.publicStateEvent?.(initialState)
+  if (publicStateEvent) {
+    startEvents.push({
+      ...publicStateEvent,
+      id: newEventId(),
+      matchId,
+      seq,
+    })
+  }
+
+  await appendEvents(startEvents)
   await updateMatchStatus(matchId, 'running')
   log.info('match created', { matchId, gameType: input.gameType })
 

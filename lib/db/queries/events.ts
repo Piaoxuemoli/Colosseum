@@ -1,5 +1,5 @@
 import { and, asc, eq, gte, lte } from 'drizzle-orm'
-import type { GameEvent, Visibility } from '@/lib/core/types'
+import type { GameEvent, GameType, Visibility } from '@/lib/core/types'
 import { db } from '@/lib/db/client'
 import { gameEvents } from '@/lib/db/schema.sqlite'
 
@@ -53,7 +53,7 @@ export async function listMatchEvents(
   return rows.map((row) => ({
     id: row.id,
     matchId: row.matchId,
-    gameType: 'poker',
+    gameType: inferGameTypeFromKind(row.kind),
     seq: row.seq,
     occurredAt: row.occurredAt.toISOString(),
     kind: row.kind,
@@ -62,6 +62,11 @@ export async function listMatchEvents(
     visibility: row.visibility as Visibility,
     restrictedTo: row.restrictedTo,
   }))
+}
+
+function inferGameTypeFromKind(kind: string): GameType {
+  if (kind.startsWith('werewolf/')) return 'werewolf'
+  return 'poker'
 }
 
 export async function nextSeq(matchId: string): Promise<number> {
