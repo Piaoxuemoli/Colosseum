@@ -8,7 +8,7 @@
 - Brief spec: `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
 - Active plan set: Phase 4 Task 1–5 完成;Phase 4 Task 6 (M7 烟测 + demo 截图) + Phase 5-2 Task 7 (M8 Vercel) 挂起。
 - Current phase: Phase 4 Task 1–5 完成(已部署到 `http://43.156.230.108`)
-- Current task: Phase 4 Task 6 (M7 manual smoke checklist,需用户跑一轮真 LLM 对局)
+- Current task: Phase 4 Task 6 (M7 manual smoke checklist,生产部署已复测;仍建议用户跑一轮带真实 key 的 UI 对局)
 - 生产部署:`http://43.156.230.108/`,栈 = nextjs(colosseum:prod) + redis:7-alpine + caddy:2-alpine,SQLite on `/data` 卷。
 
 ## Last Known Status
@@ -19,7 +19,9 @@
 - Phases 2-1, 2-2, 3-1, 3-2, 3-3, 3-4 merged to `main` (merge commit `7acea7a`).
 - Phase 5-1 (replay) merged to `main` (merge commit `6300b61`) and pushed.
 - `npm run check` green on main: lint, typecheck, 87 test files / 349 tests, Next production build (includes new `/matches/:id/replay` route).
-- Docker still unavailable locally; Phase 4 deploy + any real Redis/Postgres smoke must happen on a box with Docker.
+- 2026-06-05 德扑观战/回放和引擎修复已在本地完成并部署到 `http://43.156.230.108`：公开 `poker/state` 快照、牌面/盲注/庄家/街池/边池展示、右侧状态面板、agent 名称化 action log、手后收尾 API/按钮、多手 GM continuation、回放终局摘要、事件 gameType 推断和测试 Web Streams polyfill。
+- 2026-06-05 生产部署时修复 `ops/deploy/entrypoint.sh` CRLF 行尾导致 Alpine 报 `/entrypoint.sh: not found` 的问题；新增 `.gitattributes` 强制 `*.sh` LF 和 `tests/deploy/entrypoint-line-endings.test.ts` 回归测试。
+- Docker is available locally as of 2026-06-05 `npm run doctor`; production smoke can still use the server Docker stack for parity.
 
 ## Validation Log
 
@@ -124,16 +126,24 @@
 | 2026-05-08 | `docker compose build` on `43.156.230.108` | Passed | Phase 4 Task 2 镜像 `colosseum:prod` 构建(3 stage: deps/builder/runner) |
 | 2026-05-08 | `docker compose up -d` + `curl http://43.156.230.108/api/health` | Passed | Phase 4 Task 3+5:栈起,Caddy :80,`{"ok":true,"db":"ok","redis":"ok"}` |
 | 2026-05-08 | `/opt/colosseum/scripts/backup.sh` + `/etc/cron.d/colosseum-backup` | Passed | Phase 4 Task 4 SQLite `.backup` 生成 `arena-YYYY-MM-DD-HHMM.db.gz`,cron 就位 |
+| 2026-06-05 | `npm test` | Passed | 德扑修复 + deploy entrypoint 回归：98 files / 399 tests |
+| 2026-06-05 | `npm run lint` + `npm run typecheck` | Passed | ESLint ignores `.remember/**`; typecheck 单独跑通过 |
+| 2026-06-05 | `BASE_URL=http://localhost:3000 DB_DRIVER=sqlite SQLITE_PATH=./data/colosseum.db REDIS_URL=redis://localhost:6379 npm run build` | Passed | Next build 通过；仍有 Next ESLint plugin 提示和 Node `url.parse()` deprecation warning |
+| 2026-06-05 | `docker compose up -d --build` on `43.156.230.108` | Passed | 生产镜像重建并启动；Next build 通过，仍有 Next ESLint plugin warning；`nextjs` / `redis` / `caddy` 均 Up |
+| 2026-06-05 | `curl http://43.156.230.108/api/health` + page/API smoke | Passed | `/api/health` 返回 `{"ok":true,"db":"ok","redis":"ok"}`；`/`、`/agents`、`/profiles`、`/matches/new`、`/api/providers`、`/api/agents?gameType=poker` 均 200 |
+| 2026-06-05 | Production poker smoke `match_08cca9c3-55b8-446f-8071-09e4219ffb6e` | Passed | 创建 6-agent poker match、调用 finish-after-hand 后 completed；SQLite 事件含 `poker/state` 3719、`poker/stop-requested` 1、`poker/match-end` 1；latest state 含 hand/communityCards/holeCards/dealer/SB/BB/pot/streetPots/sidePots |
+| 2026-06-05 | `npx vitest run tests/deploy/entrypoint-line-endings.test.ts` | Passed | 回归测试确认 `ops/deploy/entrypoint.sh` 使用 LF，防止 Alpine shebang 失败 |
 
 ## Open Questions / Blockers
 
-- Phase 4 Task 6 (M7 生产烟测 checklist 全绿) 未跑 —— 需用户真机配置 MiniMax/MiMo profile + agent 跑一局 poker 或 werewolf。
+- Phase 4 Task 6 (M7 生产烟测 checklist) 已完成服务器部署和 API/DB/replay 冒烟；仍建议用户真机配置 MiniMax/MiMo profile + agent 跑一局带真实 key 的 poker 或 werewolf，覆盖浏览器 localStorage keyring 上传路径。
 - Phase 5-2 Task 7 (M8 Vercel fallback 烟测) 挂起,等用户拿到 Vercel 账号;Supabase / Upstash 实际联通仅能在有账号时做。
 - 域名审核未通过 — 生产仍用 `http://43.156.230.108` 裸 IP;域名通过后在 `ops/deploy/Caddyfile` 取消 `your-domain.com { … }` 块注释,Caddy 会自动申请 TLS。
 - 旧 `poker-arena` 容器仍在服务器上占 `:3000`,不影响 Colosseum(用 `:80`);需要时可 `docker rm -f poker-arena-poker-arena-1 && docker rmi poker-arena-poker-arena` 清理。
-- Phase 1B-4 / 3-3 M6 manual 6-bot Redis/Docker E2E 未跑;现在服务器已就绪,可以在生产环境重新评估。
+- Phase 1B-4 / 3-3 M6 manual 6-bot Redis/Docker E2E 已在生产 poker 路径部分覆盖；werewolf 真 LLM/manual 仍可后续补跑。
 - Real M1 LLM curl was not run because no real `TEST_LLM_*` key was used; mocked SSE path is verified.
 - Default system moderator seed (`db/seeds/default-moderator.ts`) still deferred — 服务器首次运行时 `matches` / `agents` 表空,创建 werewolf match 前需先手动建一个 moderator agent(通过 UI)。
+- in-app Browser verification remains unavailable in this environment: Browser plugin returns `Browser is not available: iab`; production UI was verified with HTTP responses and server-side event payload checks instead.
 
 ## SDK / Plan Drift Notes
 
