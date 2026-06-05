@@ -5,12 +5,13 @@ import { ActionLog } from './ActionLog'
 import { ChipChart } from './ChipChart'
 import { ErrorBadge } from './ErrorBadge'
 import { LiveScoreboard } from './LiveScoreboard'
+import { PokerStatusPanel } from './PokerStatusPanel'
 import { ThinkingLog } from './ThinkingLog'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-function RightPanelBody({ matchId }: { matchId: string }) {
+function RightPanelBody({ matchId, gameType }: { matchId: string; gameType?: 'poker' | 'werewolf' }) {
   return (
     <>
       <div className="flex items-center justify-between">
@@ -24,6 +25,7 @@ function RightPanelBody({ matchId }: { matchId: string }) {
       </div>
 
       <LiveScoreboard />
+      {gameType === 'poker' ? <PokerStatusPanel /> : null}
 
       <Tabs defaultValue="actions" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -43,13 +45,13 @@ function RightPanelBody({ matchId }: { matchId: string }) {
   )
 }
 
-export function RightPanel({ matchId }: { matchId: string }) {
+export function RightPanel({ matchId, gameType }: { matchId: string; gameType?: 'poker' | 'werewolf' }) {
   return (
     <>
       {/* Desktop: always-visible rail. `lg:flex` mirrors SpectatorView's
           `lg:flex-row` so the aside only shows once there's horizontal room. */}
       <aside className="hidden w-full flex-col gap-3 rounded-3xl border border-border bg-slate-950/55 p-3 shadow-2xl shadow-cyan-950/20 lg:flex lg:w-[22rem] lg:min-w-[22rem]">
-        <RightPanelBody matchId={matchId} />
+        <RightPanelBody matchId={matchId} gameType={gameType} />
       </aside>
 
       {/* Mobile / tablet: floating "open panel" button + right-side sheet. */}
@@ -68,7 +70,7 @@ export function RightPanel({ matchId }: { matchId: string }) {
           <SheetHeader>
             <SheetTitle>对局信息</SheetTitle>
           </SheetHeader>
-          <RightPanelBody matchId={matchId} />
+          <RightPanelBody matchId={matchId} gameType={gameType} />
         </SheetContent>
       </Sheet>
     </>

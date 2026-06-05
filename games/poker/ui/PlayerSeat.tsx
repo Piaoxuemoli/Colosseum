@@ -11,11 +11,13 @@ export function PlayerSeat({
   player,
   isCurrentActor,
   isDealer,
+  blindRole,
   thinking,
 }: {
   player: PokerUiPlayer
   isCurrentActor: boolean
   isDealer: boolean
+  blindRole?: 'SB' | 'BB'
   thinking?: string
 }) {
   const anchorRef = useRef<HTMLDivElement>(null)
@@ -35,6 +37,7 @@ export function PlayerSeat({
           <div className="flex items-center gap-2">
             <div className="truncate text-sm font-semibold text-white">{player.displayName}</div>
             {isDealer ? <Badge variant="secondary">D</Badge> : null}
+            {blindRole ? <Badge variant="outline">{blindRole}</Badge> : null}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">筹码 ${player.chips}</div>
           {player.currentBet > 0 ? <div className="text-xs text-amber-200">下注 ${player.currentBet}</div> : null}

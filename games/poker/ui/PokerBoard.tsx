@@ -1,7 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import type { CardVisual, PokerUiPlayer } from '@/store/match-view-store'
+import type { CardVisual, PokerSidePot, PokerStreetPots, PokerUiPlayer } from '@/store/match-view-store'
 import { CommunityCards } from './CommunityCards'
 import { PlayerSeat } from './PlayerSeat'
 import { Pot } from './Pot'
@@ -22,6 +22,10 @@ export function PokerBoard({
   phase,
   currentActor,
   dealerIndex,
+  smallBlindIndex,
+  bigBlindIndex,
+  streetPots,
+  sidePots,
   thinkingByAgent,
 }: {
   players: PokerUiPlayer[]
@@ -30,8 +34,15 @@ export function PokerBoard({
   phase: string
   currentActor: string | null
   dealerIndex: number
+  smallBlindIndex: number
+  bigBlindIndex: number
+  streetPots: PokerStreetPots
+  sidePots: PokerSidePot[]
   thinkingByAgent: Record<string, string>
 }) {
+  const blindRole = (seatIndex: number) =>
+    seatIndex === smallBlindIndex ? 'SB' : seatIndex === bigBlindIndex ? 'BB' : undefined
+
   return (
     <>
       {/* Desktop: oval table with 6 absolutely-positioned seats. */}
@@ -40,7 +51,7 @@ export function PokerBoard({
           <div className="absolute inset-8 rounded-[50%] border border-cyan-200/10" />
           <div className="relative z-10 flex flex-col items-center gap-5">
             <CommunityCards cards={communityCards} />
-            <Pot amount={pot} phase={phase} />
+            <Pot amount={pot} phase={phase} streetPots={streetPots} sidePots={sidePots} />
           </div>
         </div>
 
@@ -54,6 +65,7 @@ export function PokerBoard({
               player={player}
               isCurrentActor={player.agentId === currentActor}
               isDealer={player.seatIndex === dealerIndex}
+              blindRole={blindRole(player.seatIndex)}
               thinking={thinkingByAgent[player.agentId]}
             />
           </div>
@@ -64,7 +76,7 @@ export function PokerBoard({
       <div className="flex flex-col gap-3 lg:hidden">
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-gradient-to-b from-emerald-950/70 to-emerald-950/30 p-4">
           <CommunityCards cards={communityCards} />
-          <Pot amount={pot} phase={phase} />
+          <Pot amount={pot} phase={phase} streetPots={streetPots} sidePots={sidePots} />
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {[...players]
@@ -75,6 +87,7 @@ export function PokerBoard({
                 player={player}
                 isCurrentActor={player.agentId === currentActor}
                 isDealer={player.seatIndex === dealerIndex}
+                blindRole={blindRole(player.seatIndex)}
                 thinking={thinkingByAgent[player.agentId]}
               />
             ))}
