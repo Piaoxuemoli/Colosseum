@@ -196,4 +196,50 @@ describe('M3: 6 bots end-to-end', () => {
       }),
     )
   }, 30_000)
+
+  it('honors an asynchronous finish-after-hand request even if the current state is overwritten', async () => {
+    const { clearRegistry } = await import('@/lib/core/registry')
+    const { registerAllGames } = await import('@/lib/core/register-games')
+    clearRegistry()
+    registerAllGames()
+
+    const { createProfile } = await import('@/lib/db/queries/profiles')
+    const { createAgent } = await import('@/lib/db/queries/agents')
+    const profile = await createProfile({
+      displayName: 'Async Stop Bot Profile',
+      providerId: 'bot',
+      baseUrl: 'http://noop',
+      model: 'bot-v1',
+    })
+
+    const agentIds: string[] = []
+    for (let i = 0; i < 2; i++) {
+      const agent = await createAgent({
+        displayName: `Async Stop Bot ${i}`,
+        gameType: 'poker',
+        kind: 'player',
+        profileId: profile.id,
+        systemPrompt: 'You are a poker bot.',
+      })
+      agentIds.push(agent.id)
+    }
+
+    const { createAndStartMatch } = await import('@/lib/orchestrator/match-lifecycle')
+    const { runMatchToCompletion } = await import('@/lib/orchestrator/game-master')
+    const { redis } = await import('@/lib/redis/client')
+    const { keys } = await import('@/lib/redis/keys')
+    const { findMatchById } = await import('@/lib/db/queries/matches')
+    const { matchId } = await createAndStartMatch({
+      gameType: 'poker',
+      agentIds,
+      config: { agentTimeoutMs: 5_000, minActionIntervalMs: 0 },
+      engineConfig: { smallBlind: 2, bigBlind: 4, startingChips: 40, maxBetsPerStreet: 4 },
+    })
+
+    await redis.set(keys.matchStopRequested(matchId), '1', 'EX', 24 * 60 * 60)
+    await runMatchToCompletion(matchId, { maxTicks: 500, intervalMs: 0 })
+
+    const match = await findMatchById(matchId)
+    expect(match?.status).toBe('completed')
+  }, 30_000)
 })

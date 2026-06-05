@@ -31,6 +31,7 @@ export async function POST(
   }
 
   const nextState = game.requestStopAfterHand(JSON.parse(stateRaw))
+  await redis.set(keys.matchStopRequested(matchId), '1', 'EX', 24 * 60 * 60)
   await redis.set(keys.matchState(matchId), JSON.stringify(nextState), 'EX', 24 * 60 * 60)
 
   let seq = await nextSeq(matchId)

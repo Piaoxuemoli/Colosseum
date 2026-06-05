@@ -21,6 +21,10 @@
 - `npm run check` green on main: lint, typecheck, 87 test files / 349 tests, Next production build (includes new `/matches/:id/replay` route).
 - 2026-06-05 德扑观战/回放和引擎修复已在本地完成并部署到 `http://43.156.230.108`：公开 `poker/state` 快照、牌面/盲注/庄家/街池/边池展示、右侧状态面板、agent 名称化 action log、手后收尾 API/按钮、多手 GM continuation、回放终局摘要、事件 gameType 推断和测试 Web Streams polyfill。
 - 2026-06-05 生产部署时修复 `ops/deploy/entrypoint.sh` CRLF 行尾导致 Alpine 报 `/entrypoint.sh: not found` 的问题；新增 `.gitattributes` 强制 `*.sh` LF 和 `tests/deploy/entrypoint-line-endings.test.ts` 回归测试。
+- 2026-06-05 按用户要求，项目校验改为只在生产服务器执行：服务器主机无 Node，使用临时 `node:22-alpine` Docker 容器挂载 `/opt/colosseum` 跑 lint/typecheck/test/build。
+- 2026-06-05 生产对局数据已清理并重启：备份 `/var/backups/colosseum/pre-clean-20260605-192227.db.gz`；保留 `api_profiles=1`、`agents=6`；清空 `matches/match_participants/game_events/agent_errors/working_memory/episodic_memory/semantic_memory`；Redis `DBSIZE=0`；`/api/matches` 返回空数组。
+- 2026-06-05 德扑正式上线修复已部署：默认对局改为持续桌，破产玩家下一手自动 rebuy 到初始筹码，只有 stop-after-hand 才完成比赛；`/end` 请求改用独立 Redis stop flag，避免被并发 tick 覆盖。
+- 2026-06-05 正式上线前生产数据再次清理并重启：备份 `/var/backups/colosseum/pre-launch-20260605-210821.db.gz`；保留 `api_profiles=1`、`agents=6`；清空所有对局/事件/错误/记忆表；Redis `DBSIZE=0`；`/api/matches` 返回空数组。
 - Docker is available locally as of 2026-06-05 `npm run doctor`; production smoke can still use the server Docker stack for parity.
 
 ## Validation Log
@@ -133,6 +137,14 @@
 | 2026-06-05 | `curl http://43.156.230.108/api/health` + page/API smoke | Passed | `/api/health` 返回 `{"ok":true,"db":"ok","redis":"ok"}`；`/`、`/agents`、`/profiles`、`/matches/new`、`/api/providers`、`/api/agents?gameType=poker` 均 200 |
 | 2026-06-05 | Production poker smoke `match_08cca9c3-55b8-446f-8071-09e4219ffb6e` | Passed | 创建 6-agent poker match、调用 finish-after-hand 后 completed；SQLite 事件含 `poker/state` 3719、`poker/stop-requested` 1、`poker/match-end` 1；latest state 含 hand/communityCards/holeCards/dealer/SB/BB/pot/streetPots/sidePots |
 | 2026-06-05 | `npx vitest run tests/deploy/entrypoint-line-endings.test.ts` | Passed | 回归测试确认 `ops/deploy/entrypoint.sh` 使用 LF，防止 Alpine shebang 失败 |
+| 2026-06-05 | Server-only validation via `docker run --rm -v /opt/colosseum:/app -w /app node:22-alpine ...` on `43.156.230.108` | Passed | 服务器 Docker 环境通过 `npm run lint`、`npm run typecheck`、`npm test`(97 files / 398 tests)、`npm run build`；build 仍有 Next ESLint plugin warning 和 npm update notice |
+| 2026-06-05 | Production data cleanup on `43.156.230.108` | Passed | 先备份 SQLite 到 `/var/backups/colosseum/pre-clean-20260605-192227.db.gz`，再清空对局/事件/错误/记忆表并 `FLUSHDB` Redis；验证 `agents=6`、`matches=0`、`game_events=0`、`agent_errors=0`、Redis `0` |
+| 2026-06-05 | `docker compose up -d` + `curl http://127.0.0.1/api/health` on server | Passed | 重启后 `{"ok":true,"db":"ok","redis":"ok"}`；`nextjs` / `redis` / `caddy` 均 Up；`/api/agents?gameType=poker` 仍有 6 个 agent，`/api/matches` 返回 `[]` |
+| 2026-06-05 | Red/green on server: `npx vitest run games/poker/engine/__tests__/poker-engine.test.ts` | Passed | 先确认新增 endless-table rebuy 回归失败，再修复后 17 tests passed |
+| 2026-06-05 | Red/green on server: `npx vitest run tests/integration/bot-match.test.ts` | Passed | 先确认异步 stop flag 回归失败，再修复后 3 tests passed |
+| 2026-06-05 | Production poker smoke `match_66de66df-813f-4d51-85a5-a43bd3be5e61` | Passed | 未请求结束时推进到第 2 手且仍 running；请求 finish-after-hand 后 completed，最终 public events=50 |
+| 2026-06-05 | Server-only full gate via Docker on `43.156.230.108` | Passed | `npm run lint`、`npm run typecheck`、`npm test`(97 files / 400 tests)、`npm run build` 全通过；仍有 Radix Dialog Description warning、Next ESLint plugin warning 和 npm update notice |
+| 2026-06-05 | Production pre-launch cleanup + restart | Passed | 备份 `/var/backups/colosseum/pre-launch-20260605-210821.db.gz`；清空对局/事件/错误/记忆，保留 `api_profiles=1`、`agents=6`；Redis `DBSIZE=0`；健康检查 `{"ok":true,"db":"ok","redis":"ok"}` |
 
 ## Open Questions / Blockers
 

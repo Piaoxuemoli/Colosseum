@@ -44,6 +44,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     const state: PokerState = {
       phase: 'preflop',
       handNumber: 1,
+      startingChips: config.startingChips,
       dealerIndex,
       smallBlindIndex,
       bigBlindIndex,
@@ -74,6 +75,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     return {
       phase: state.phase,
       handNumber: state.handNumber,
+      startingChips: state.startingChips,
       dealerIndex: state.dealerIndex,
       smallBlindIndex: state.smallBlindIndex,
       bigBlindIndex: state.bigBlindIndex,
@@ -111,9 +113,8 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
 
   continueAfterHand(state: PokerState): ApplyActionResult<PokerState> {
     const next = this.cloneState(state)
-    const playersWithChips = next.players.filter((player) => player.chips > 0)
 
-    if (next.stopRequested || playersWithChips.length <= 1) {
+    if (next.stopRequested) {
       next.currentActor = null
       next.matchComplete = true
       return {
@@ -122,7 +123,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
           this.makeEvent({
             kind: 'poker/match-end',
             actorAgentId: null,
-            payload: { winnerId: playersWithChips[0]?.id ?? null },
+            payload: { winnerId: this.chipLeaderId(next) },
           }),
           this.makePublicStateEvent(next),
         ],
@@ -491,20 +492,8 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       )
     }
 
-    const playersWithChips = state.players.filter((player) => player.chips > 0)
-    if (playersWithChips.length <= 1) {
-      state.matchComplete = true
-      events.push(
-        this.makeEvent({
-          kind: 'poker/match-end',
-          actorAgentId: null,
-          payload: { winnerId: playersWithChips[0]?.id ?? null },
-        }),
-      )
-    } else {
-      for (const player of state.players) {
-        if (player.chips === 0 && player.status !== 'sittingOut') player.status = 'eliminated'
-      }
+    for (const player of state.players) {
+      if (player.chips === 0 && player.status !== 'sittingOut') player.status = 'eliminated'
     }
 
     return events
@@ -535,6 +524,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     state.deck = shuffleDeck(createDeck())
 
     for (const player of state.players) {
+      if (player.chips <= 0 && player.status !== 'sittingOut') player.chips = state.startingChips
       player.currentBet = 0
       player.totalCommitted = 0
       player.hasActedThisStreet = false
@@ -564,6 +554,10 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
         ? state.dealerIndex
         : this.nextActiveIndex(state.players, state.bigBlindIndex)
     state.currentActor = state.players[firstActorIndex]?.id ?? null
+  }
+
+  private chipLeaderId(state: PokerState): string | null {
+    return [...state.players].sort((a, b) => b.chips - a.chips)[0]?.id ?? null
   }
 
   private smallBlindIndexFor(players: PokerPlayerState[], dealerIndex: number): number {
