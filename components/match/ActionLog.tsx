@@ -8,12 +8,12 @@ function formatAmount(value: unknown): string {
   return typeof value === 'number' ? ` ${value}` : ''
 }
 
-function describeAction(event: GameEvent): string {
+function describeAction(event: GameEvent, nameOf: (agentId: string | null) => string): string {
   if (event.kind !== 'poker/action') return event.kind
 
   const action = event.payload
   const type = typeof action.type === 'string' ? action.type : 'act'
-  const actor = event.actorAgentId ?? 'system'
+  const actor = nameOf(event.actorAgentId)
 
   if (type === 'raise') return `${actor} raise to${formatAmount(action.toAmount ?? action.amount)}`
   if (type === 'allIn') return `${actor} all-in${formatAmount(action.amount ?? action.toAmount)}`
@@ -22,6 +22,7 @@ function describeAction(event: GameEvent): string {
 
 export function ActionLog() {
   const events = useMatchViewStore((state) => state.events)
+  const players = useMatchViewStore((state) => state.players)
   const ref = useRef<HTMLDivElement>(null)
   const actions = events.filter((event) =>
     ['poker/action', 'poker/rejection', 'poker/deal-flop', 'poker/deal-turn', 'poker/deal-river', 'poker/showdown', 'poker/pot-award'].includes(
@@ -30,8 +31,13 @@ export function ActionLog() {
   )
 
   useEffect(() => {
-    ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' })
+    if (typeof ref.current?.scrollTo === 'function') {
+      ref.current.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' })
+    }
   }, [actions.length])
+
+  const nameOf = (agentId: string | null) =>
+    agentId ? players.find((player) => player.agentId === agentId)?.displayName ?? agentId : 'system'
 
   return (
     <div ref={ref} className="h-56 overflow-y-auto rounded-2xl border border-border bg-slate-950/45 p-3 text-xs">
@@ -42,7 +48,7 @@ export function ActionLog() {
           {actions.map((event) => (
             <li key={event.id} className="rounded-xl bg-slate-900/50 px-3 py-2 text-slate-200">
               <span className="mr-2 text-cyan-300/70">#{event.seq}</span>
-              {describeAction(event)}
+              {describeAction(event, nameOf)}
             </li>
           ))}
         </ol>
