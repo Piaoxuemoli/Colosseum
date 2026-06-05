@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "vision-router": {
+      "command": "python",
+      "args": ["-m", "vision_router_mcp.server"],
+      "env": {
+        "MIMO_API_KEY": "your-api-key-here",
+        "MIMO_API_BASE": "https://token-plan-cn.xiaomimimo.com/anthropic",
+        "MIMO_MODEL": "mimo-v2.5",
+        "MIMO_MAX_IMAGE_SIZE_MB": "20",
+        "MIMO_MAX_IMAGES": "6"
+      }
+    }
+  }
+}
