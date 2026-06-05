@@ -1,0 +1,26 @@
+# 统一 LF 换行，兼容 Linux / CI / Alpine Docker
+# Windows 开发机通过 git config core.autocrlf=false 配合本文件
+
+* text=auto eol=lf
+
+# Shell 脚本必须 LF（Alpine dash/bash shebang 解析 \r 会报 not found）
+*.sh text eol=lf
+
+# Windows 批处理/PowerShell 保留 CRLF
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# 二进制文件不转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary

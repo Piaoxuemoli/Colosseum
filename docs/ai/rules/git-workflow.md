@@ -177,6 +177,17 @@ git push https://github.com/Piaoxuemoli/Colosseum.git main
 
 如果需要保留任务分支上的分步提交历史，把 `git merge --squash` 换成 `git merge --no-ff feature/<scope>-<short-desc>`。
 
+## 换行符规范
+
+本仓库统一使用 LF (`\n`) 换行，确保 Linux / CI / Alpine Docker 环境一致。
+
+- `.gitattributes` 中 `* text=auto eol=lf` 强制所有文本文件入库为 LF。
+- Windows 开发机设置 `git config core.autocrlf false`，依赖 `.gitattributes` 管理换行。
+- `.editorconfig` 配合 IDE 自动使用 LF。
+- Shell 脚本 (`*.sh`) 必须 LF，否则 Alpine 的 dash/bash 解析 `\r` 会报 `not found`。
+- Windows 批处理 (`*.bat`) 和 PowerShell (`*.ps1`) 保留 CRLF。
+- 新增文件如果 git 提示 `LF will be replaced by CRLF`，先执行 `git add --renormalize .` 规范化。
+
 ## AI 执行 Git 的安全规则
 
 - 执行 commit 前必须先看 `git status`、`git diff`、最近提交风格。
