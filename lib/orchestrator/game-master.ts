@@ -37,8 +37,13 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
       return { done: true }
     }
 
-    const state = JSON.parse(stateRaw) as unknown
+    let state = JSON.parse(stateRaw) as unknown
     const game = getGame(match.gameType as GameType)
+    const stopRequested = (await redis.get(keys.matchStopRequested(matchId))) === '1'
+    if (stopRequested && game.requestStopAfterHand) {
+      state = game.requestStopAfterHand(state)
+    }
+
     const actorId = game.engine.currentActor(state)
     const gameType = String(match.gameType)
 

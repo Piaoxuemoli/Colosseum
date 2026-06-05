@@ -245,6 +245,27 @@ describe('PokerEngine hand continuation', () => {
     expect(events.some((event) => event.kind === 'poker/hand-start')).toBe(true)
   })
 
+  it('keeps an endless table running by rebuying busted players after a hand', () => {
+    const engine = new PokerEngine()
+    const ended = foldToHandEnd(engine)
+    ended.players[0].chips = defaultConfig.startingChips * 6
+    for (const player of ended.players.slice(1)) {
+      player.chips = 0
+      player.status = 'eliminated'
+    }
+
+    const { nextState, events } = engine.continueAfterHand(ended)
+
+    expect(nextState.matchComplete).toBe(false)
+    expect(nextState.handComplete).toBe(false)
+    expect(nextState.handNumber).toBe(ended.handNumber + 1)
+    expect(nextState.players.every((player) => player.chips > 0)).toBe(true)
+    expect(nextState.players.every((player) => player.status === 'active')).toBe(true)
+    expect(nextState.players.slice(1).every((player) => player.chips <= defaultConfig.startingChips)).toBe(true)
+    expect(events.some((event) => event.kind === 'poker/match-end')).toBe(false)
+    expect(events.some((event) => event.kind === 'poker/hand-start')).toBe(true)
+  })
+
   it('ends the match after the current hand when stop is requested', () => {
     const engine = new PokerEngine()
     const ended = { ...foldToHandEnd(engine), stopRequested: true }

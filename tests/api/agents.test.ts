@@ -1,7 +1,8 @@
+import { randomUUID } from 'node:crypto'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { migrateSqliteTestDb } from '@/tests/lib/db/test-utils'
 
-const DB = './tests/tmp-agents-api.db'
+const DB = `./tests/tmp-agents-api-${randomUUID()}.db`
 
 describe('Agents API', () => {
   let profileId: string

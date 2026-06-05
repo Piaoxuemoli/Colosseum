@@ -28,6 +28,7 @@ describe('keyring', () => {
 
   it('uploads keys to the match-scoped cache endpoint', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }))
+    fetchMock.mockClear()
 
     await uploadKeysForMatch('match_1', [
       { profileId: 'prof_1', apiKey: 'sk-1' },

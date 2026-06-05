@@ -115,6 +115,7 @@ export async function finalizeMatch(matchId: string): Promise<void> {
 
   await finalizeMatchRow({ matchId, winnerFaction: result.winnerFaction, result })
   await redis.del(keys.matchState(matchId))
+  await redis.del(keys.matchStopRequested(matchId))
   await redis.del(keys.matchKeyring(matchId))
   await redis.del(keys.matchToken(matchId))
 

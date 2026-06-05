@@ -1,7 +1,8 @@
+import { randomUUID } from 'node:crypto'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { migrateSqliteTestDb } from '@/tests/lib/db/test-utils'
 
-const DB = './tests/tmp-errors-list.db'
+const DB = `./tests/tmp-errors-list-${randomUUID()}.db`
 
 describe('GET /api/matches/:id/errors', () => {
   beforeAll(async () => {

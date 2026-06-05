@@ -20,7 +20,7 @@ describe('POST /api/profiles/test', () => {
     json?: unknown
     text?: string
   }) {
-    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: init.ok,
       status: init.status ?? (init.ok ? 200 : 500),
       statusText: init.statusText ?? '',
@@ -28,6 +28,12 @@ describe('POST /api/profiles/test', () => {
       text: async () => init.text ?? JSON.stringify(init.json ?? ''),
     } as Response)
     return spy
+  }
+
+  function findFetchCall(spy: ReturnType<typeof mockFetchOnce>, expectedUrl: string): [string, RequestInit] {
+    const call = spy.mock.calls.find(([url]) => url === expectedUrl)
+    expect(call).toBeDefined()
+    return call as [string, RequestInit]
   }
 
   it('returns 400 on invalid body (missing fields)', async () => {
@@ -69,7 +75,7 @@ describe('POST /api/profiles/test', () => {
     expect(typeof body.latencyMs).toBe('number')
 
     // Called the target chat.completions with OpenAI-compatible body.
-    const [calledUrl, init] = spy.mock.calls[0] as [string, RequestInit]
+    const [calledUrl, init] = findFetchCall(spy, 'https://api.example.com/v1/chat/completions')
     expect(calledUrl).toBe('https://api.example.com/v1/chat/completions')
     expect((init.headers as Record<string, string>).authorization).toBe(
       'Bearer sk-fake-xxxxxxxxxxxxxx',
@@ -149,7 +155,7 @@ describe('POST /api/profiles/test', () => {
     })
     await POST(req)
 
-    const [calledUrl] = spy.mock.calls[0] as [string, RequestInit]
+    const [calledUrl] = findFetchCall(spy, 'https://api.example.com/v1/chat/completions')
     expect(calledUrl).toBe('https://api.example.com/v1/chat/completions')
   })
 })

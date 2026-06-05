@@ -5,6 +5,7 @@
 export const keys = {
   matchState: (matchId: string) => `match:${matchId}:state`,
   matchToken: (matchId: string) => `match:${matchId}:token`,
+  matchStopRequested: (matchId: string) => `match:${matchId}:stopRequested`,
   matchKeyring: (matchId: string) => `match:${matchId}:keyring`,
   matchWorkingMemory: (matchId: string, agentId: string) => `match:${matchId}:memory:${agentId}:working`,
   matchChannel: (matchId: string) => `channel:match:${matchId}`,
