@@ -5,6 +5,7 @@ import { migrateSqliteTestDb } from '../test-utils'
 
 describe('lib/db/queries events/errors/memory', () => {
   let matchId: string
+  let werewolfMatchId: string
   let agentA: string
   let agentB: string
 
@@ -31,6 +32,14 @@ describe('lib/db/queries events/errors/memory', () => {
     agentB = (await createAgent({ displayName: 'B', gameType: 'poker', profileId: profile.id, systemPrompt: 'B' })).id
     matchId = (await createMatch({
       gameType: 'poker',
+      config: defaultMatchConfig(),
+      participants: [
+        { agentId: agentA, seatIndex: 0 },
+        { agentId: agentB, seatIndex: 1 },
+      ],
+    })).matchId
+    werewolfMatchId = (await createMatch({
+      gameType: 'werewolf',
       config: defaultMatchConfig(),
       participants: [
         { agentId: agentA, seatIndex: 0 },
@@ -74,6 +83,25 @@ describe('lib/db/queries events/errors/memory', () => {
     expect(events.map((event) => event.seq)).toEqual([1, 2])
     expect(await nextSeq(matchId)).toBe(3)
     expect((await listMatchEvents(matchId, { visibility: 'private' })).length).toBe(1)
+  })
+
+  it('preserves event game type from the stored event kind', async () => {
+    const { appendEvent, listMatchEvents } = await import('@/lib/db/queries/events')
+    await appendEvent({
+      id: newEventId(),
+      matchId: werewolfMatchId,
+      gameType: 'werewolf',
+      seq: 1,
+      occurredAt: '2026-05-06T00:00:03Z',
+      kind: 'werewolf/night-start',
+      actorAgentId: null,
+      payload: { day: 1 },
+      visibility: 'public',
+      restrictedTo: null,
+    })
+
+    const events = await listMatchEvents(werewolfMatchId)
+    expect(events[0].gameType).toBe('werewolf')
   })
 
   it('records agent errors without leaking huge raw responses', async () => {

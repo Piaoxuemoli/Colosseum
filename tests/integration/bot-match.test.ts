@@ -118,6 +118,12 @@ describe('M3: 6 bots end-to-end', () => {
     })
 
     expect(matchId).toMatch(/^match_/)
+    const { POST: requestEnd } = await import('@/app/api/matches/[matchId]/end/route')
+    const endResponse = await requestEnd(new Request('http://localhost/api/matches/x/end', { method: 'POST' }), {
+      params: Promise.resolve({ matchId }),
+    })
+    expect(endResponse.status).toBe(200)
+
     await runMatchToCompletion(matchId, { maxTicks: 500, intervalMs: 0 })
 
     const { findMatchById } = await import('@/lib/db/queries/matches')
@@ -129,5 +135,65 @@ describe('M3: 6 bots end-to-end', () => {
     const events = await listMatchEvents(matchId)
     expect(events.length).toBeGreaterThan(5)
     expect(events[0].kind).toContain('match-start')
+  }, 30_000)
+
+  it('continues into the next poker hand when no stop was requested', async () => {
+    const { clearRegistry } = await import('@/lib/core/registry')
+    const { registerAllGames } = await import('@/lib/core/register-games')
+    clearRegistry()
+    registerAllGames()
+
+    const { createProfile } = await import('@/lib/db/queries/profiles')
+    const { createAgent } = await import('@/lib/db/queries/agents')
+    const profile = await createProfile({
+      displayName: 'Two Seat Bot Profile',
+      providerId: 'bot',
+      baseUrl: 'http://noop',
+      model: 'bot-v1',
+    })
+
+    const agentIds: string[] = []
+    for (let i = 0; i < 2; i++) {
+      const agent = await createAgent({
+        displayName: `Heads Up Bot ${i}`,
+        gameType: 'poker',
+        kind: 'player',
+        profileId: profile.id,
+        systemPrompt: 'You are a poker bot.',
+      })
+      agentIds.push(agent.id)
+    }
+
+    const { createAndStartMatch } = await import('@/lib/orchestrator/match-lifecycle')
+    const { tickMatch } = await import('@/lib/orchestrator/game-master')
+    const { findMatchById } = await import('@/lib/db/queries/matches')
+    const { listMatchEvents } = await import('@/lib/db/queries/events')
+    const { matchId } = await createAndStartMatch({
+      gameType: 'poker',
+      agentIds,
+      config: { agentTimeoutMs: 5_000, minActionIntervalMs: 0 },
+      engineConfig: { smallBlind: 2, bigBlind: 4, startingChips: 200, maxBetsPerStreet: 4 },
+    })
+
+    for (let i = 0; i < 80; i++) {
+      await tickMatch(matchId)
+      const events = await listMatchEvents(matchId)
+      if (events.some((event) => event.kind === 'poker/hand-start')) break
+    }
+
+    const match = await findMatchById(matchId)
+    const events = await listMatchEvents(matchId)
+    const latestState = events.filter((event) => event.kind === 'poker/state').at(-1)
+
+    expect(events.some((event) => event.kind === 'poker/hand-start')).toBe(true)
+    expect(match?.status).toBe('running')
+    expect(latestState?.payload).toEqual(
+      expect.objectContaining({
+        handNumber: 2,
+        phase: 'preflop',
+        pot: 6,
+        streetPots: expect.objectContaining({ preflop: 6 }),
+      }),
+    )
   }, 30_000)
 })
