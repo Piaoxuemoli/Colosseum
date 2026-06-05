@@ -75,8 +75,24 @@ def parse_analysis_response(response_text: str) -> dict[str, Any]:
         parsed = json.loads(text)
         # Validate it has the expected structure
         if isinstance(parsed, dict):
+            # Check if description contains nested JSON
+            desc = parsed.get("description", "")
+            if isinstance(desc, str) and desc.startswith("{"):
+                try:
+                    nested = json.loads(desc)
+                    if isinstance(nested, dict) and "description" in nested:
+                        return {
+                            "description": nested.get("description", ""),
+                            "objects": nested.get("objects", []),
+                            "text_content": nested.get("text_content", ""),
+                            "scene": nested.get("scene", ""),
+                            "details": nested.get("details", ""),
+                        }
+                except json.JSONDecodeError:
+                    pass
+
             return {
-                "description": parsed.get("description", ""),
+                "description": desc,
                 "objects": parsed.get("objects", []),
                 "text_content": parsed.get("text_content", ""),
                 "scene": parsed.get("scene", ""),
