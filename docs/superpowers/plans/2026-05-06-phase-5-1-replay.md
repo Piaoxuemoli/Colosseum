@@ -24,17 +24,17 @@
 
 ```
 Colosseum/
-├── app/matches/[matchId]/replay/
+├── src/app/matches/[matchId]/replay/
 │   ├── page.tsx                     # Server：读 match + 事件
 │   └── ReplayView.tsx               # 'use client'
 ├── components/match/
 │   └── ReplayControls.tsx           # 控件条
-├── store/
+├── src/frontend/store/
 │   └── replay-store.ts              # 回放专用（播放状态）
 ├── db/queries/
 │   └── events.ts                    # Modify: listByMatch 分页
 └── tests/
-    ├── store/replay-store.test.ts
+    ├── src/frontend/store/replay-store.test.ts
     └── components/ReplayControls.test.tsx
 ```
 
@@ -81,15 +81,15 @@ git commit -m "feat(p5-1): list all events by match for replay"
 ## Task 2: replay-store
 
 **Files:**
-- Create: `store/replay-store.ts`
-- Create: `tests/store/replay-store.test.ts`
+- Create: `src/frontend/store/replay-store.ts`
+- Create: `tests/src/frontend/store/replay-store.test.ts`
 
 **Context:** 播放状态：`events`, `cursor`(已消费的事件 index), `isPlaying`, `speed`(0.5/1/2/4), `tick()` 按 speed 推进 cursor 一个 event。
 
 - [ ] **Step 1: 实现**
 
 ```typescript
-// store/replay-store.ts
+// src/frontend/store/replay-store.ts
 import { create } from 'zustand'
 import { useMatchViewStore } from './match-view-store'
 
@@ -168,8 +168,8 @@ export const useReplayStore = create<ReplayState>((set, get) => ({
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useReplayStore } from '@/store/replay-store'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useReplayStore } from '@/frontend/src/frontend/store/replay-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 
 describe('replay-store', () => {
   beforeEach(() => {
@@ -211,13 +211,13 @@ describe('replay-store', () => {
 })
 ```
 
-Run: `npx vitest run tests/store/replay-store.test.ts`
+Run: `npx vitest run tests/src/frontend/store/replay-store.test.ts`
 Expected: PASS。
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add store/replay-store.ts tests/store/replay-store.test.ts
+git add src/frontend/store/replay-store.ts tests/src/frontend/store/replay-store.test.ts
 git commit -m "feat(p5-1): replay-store (play/step/seek)"
 ```
 
@@ -236,8 +236,8 @@ git commit -m "feat(p5-1): replay-store (play/step/seek)"
 // components/match/ReplayControls.tsx
 'use client'
 import { useEffect } from 'react'
-import { useReplayStore } from '@/store/replay-store'
-import { Button } from '@/components/ui/button'
+import { useReplayStore } from '@/frontend/src/frontend/store/replay-store'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
 import { Play, Pause, SkipBack, SkipForward, Rewind, FastForward } from 'lucide-react'
 
 const SPEEDS = [0.5, 1, 2, 4]
@@ -306,8 +306,8 @@ export function ReplayControls() {
 ```tsx
 // tests/components/ReplayControls.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ReplayControls } from '@/components/match/ReplayControls'
-import { useReplayStore } from '@/store/replay-store'
+import { ReplayControls } from '@/frontend/components/match/ReplayControls'
+import { useReplayStore } from '@/frontend/src/frontend/store/replay-store'
 
 describe('ReplayControls', () => {
   it('renders with 0/0', () => {
@@ -342,15 +342,15 @@ git commit -m "feat(p5-1): ReplayControls bar"
 ## Task 4: Replay page + ReplayView
 
 **Files:**
-- Create: `app/matches/[matchId]/replay/page.tsx`
-- Create: `app/matches/[matchId]/replay/ReplayView.tsx`
+- Create: `src/app/matches/[matchId]/replay/page.tsx`
+- Create: `src/app/matches/[matchId]/replay/ReplayView.tsx`
 
 **Context:** Server 读 match 元数据 + 全部事件；Client load 到 replay-store；根据 gameType 渲染 PokerBoard / WerewolfBoard。
 
 - [ ] **Step 1: page.tsx**
 
 ```tsx
-// app/matches/[matchId]/replay/page.tsx
+// src/app/matches/[matchId]/replay/page.tsx
 import { notFound } from 'next/navigation'
 import { getMatch } from '@/db/queries/matches'
 import { listAllEventsByMatch } from '@/db/queries/events'
@@ -368,14 +368,14 @@ export default async function ReplayPage({ params }: { params: Promise<{ matchId
 - [ ] **Step 2: ReplayView.tsx**
 
 ```tsx
-// app/matches/[matchId]/replay/ReplayView.tsx
+// src/app/matches/[matchId]/replay/ReplayView.tsx
 'use client'
 import { useEffect } from 'react'
-import { useReplayStore } from '@/store/replay-store'
+import { useReplayStore } from '@/frontend/src/frontend/store/replay-store'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
-import { ReplayControls } from '@/components/match/ReplayControls'
-import { RightPanel } from '@/components/match/RightPanel'
+import { ReplayControls } from '@/frontend/components/match/ReplayControls'
+import { RightPanel } from '@/frontend/components/match/RightPanel'
 import Link from 'next/link'
 
 export default function ReplayView({ match, events }: { match: any; events: any[] }) {
@@ -421,7 +421,7 @@ npm run dev
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/matches/\[matchId\]/replay app/matches/\[matchId\]/SpectatorView.tsx
+git add src/app/matches/\[matchId\]/replay src/app/matches/\[matchId\]/SpectatorView.tsx
 git commit -m "feat(p5-1): /matches/:id/replay page"
 ```
 

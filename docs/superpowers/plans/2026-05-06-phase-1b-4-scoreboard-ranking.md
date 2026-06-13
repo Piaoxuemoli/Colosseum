@@ -26,7 +26,7 @@
 
 ```
 Colosseum/
-├── app/
+├── src/app/
 │   └── matches/[matchId]/
 │       └── SpectatorView.tsx                   # Modify: 接入 RightPanel
 ├── components/match/
@@ -37,9 +37,9 @@ Colosseum/
 │   ├── ActionLog.tsx                           # 行动日志
 │   ├── ThinkingLog.tsx                         # 思考链
 │   └── ErrorBadge.tsx                          # 错误 Badge
-├── store/
+├── src/frontend/store/
 │   └── match-view-store.ts                     # Modify: 新增 chipHistory / handOver reducer
-├── app/api/matches/[id]/
+├── src/app/api/matches/[id]/
 │   └── errors/route.ts                         # GET 最近错误列表（兜底轮询用）
 └── db/queries/
     └── errors.ts                               # Modify: listByMatch(matchId, limit)
@@ -50,14 +50,14 @@ Colosseum/
 ## Task 1: match-view-store 补充：chipHistory + errors
 
 **Files:**
-- Modify: `store/match-view-store.ts`
-- Modify: `tests/store/match-view-store.test.ts`
+- Modify: `src/frontend/store/match-view-store.ts`
+- Modify: `tests/src/frontend/store/match-view-store.test.ts`
 
 **Context:** `chipHistory` 是每手结束（`hand_over` / `settlement` 事件）记录所有 agent 当时的筹码快照；`errors` 存本场累计的 agent_error 数量（从 SSE 或轮询得到）。
 
 - [x] **Step 1: 更新 store 类型**
 
-在 `store/match-view-store.ts` 的 `MatchViewState` interface 里追加：
+在 `src/frontend/store/match-view-store.ts` 的 `MatchViewState` interface 里追加：
 
 ```typescript
 export interface ChipSnapshot {
@@ -78,7 +78,7 @@ export interface MatchViewState {
 
 - [x] **Step 2: 写失败测试**
 
-在 `tests/store/match-view-store.test.ts` 追加：
+在 `tests/src/frontend/store/match-view-store.test.ts` 追加：
 
 ```typescript
 describe('chipHistory', () => {
@@ -116,7 +116,7 @@ describe('errorCount', () => {
 
 - [x] **Step 3: 运行（应失败）**
 
-Run: `npx vitest run tests/store/match-view-store.test.ts`
+Run: `npx vitest run tests/src/frontend/store/match-view-store.test.ts`
 Expected: FAIL — `recordHandSnapshot is not a function`。
 
 - [x] **Step 4: 实现**
@@ -158,13 +158,13 @@ case 'agent_error':
 
 - [x] **Step 5: 运行（应通过）**
 
-Run: `npx vitest run tests/store/match-view-store.test.ts`
+Run: `npx vitest run tests/src/frontend/store/match-view-store.test.ts`
 Expected: PASS。
 
 - [x] **Step 6: Commit**
 
 ```bash
-git add store/match-view-store.ts tests/store/match-view-store.test.ts
+git add src/frontend/store/match-view-store.ts tests/src/frontend/store/match-view-store.test.ts
 git commit -m "feat(p1b-4): chipHistory + errorCount in match-view-store"
 ```
 
@@ -174,7 +174,7 @@ git commit -m "feat(p1b-4): chipHistory + errorCount in match-view-store"
 
 **Files:**
 - Modify: `db/queries/errors.ts`
-- Create: `app/api/matches/[id]/errors/route.ts`
+- Create: `src/app/api/matches/[id]/errors/route.ts`
 - Create: `tests/api/errors-list.test.ts`
 
 - [x] **Step 1: 补 query**
@@ -197,7 +197,7 @@ export async function listErrorsByMatch(matchId: string, limit = 20) {
 
 - [x] **Step 2: 写 API 路由**
 
-在 `app/api/matches/[id]/errors/route.ts`：
+在 `src/app/api/matches/[id]/errors/route.ts`：
 
 ```typescript
 import { NextRequest, NextResponse } from 'next/server'
@@ -249,7 +249,7 @@ Expected: PASS。
 - [x] **Step 4: Commit**
 
 ```bash
-git add db/queries/errors.ts app/api/matches/\[id\]/errors/route.ts tests/api/errors-list.test.ts
+git add db/queries/errors.ts src/app/api/matches/\[id\]/errors/route.ts tests/api/errors-list.test.ts
 git commit -m "feat(p1b-4): GET /api/matches/:id/errors"
 ```
 
@@ -267,9 +267,9 @@ git commit -m "feat(p1b-4): GET /api/matches/:id/errors"
 ```tsx
 'use client'
 import { useEffect, useState } from 'react'
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import { Badge } from '@/components/ui/badge'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { Popover, PopoverTrigger, PopoverContent } from '@/frontend/src/frontend/components/ui/popover'
+import { Badge } from '@/frontend/src/frontend/components/ui/badge'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { AlertTriangle } from 'lucide-react'
 
 interface ErrorItem { kind: string; message: string; createdAt: string }
@@ -340,7 +340,7 @@ git commit -m "feat(p1b-4): ErrorBadge with 5s polling"
 
 ```tsx
 'use client'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { Crown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -392,8 +392,8 @@ export function LiveScoreboard() {
 
 ```tsx
 import { render, screen } from '@testing-library/react'
-import { LiveScoreboard } from '@/components/match/LiveScoreboard'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { LiveScoreboard } from '@/frontend/components/match/LiveScoreboard'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 
 describe('LiveScoreboard', () => {
   it('sorts players by chips desc', () => {
@@ -445,7 +445,7 @@ npm install recharts
 ```tsx
 'use client'
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { useMemo } from 'react'
 
 const COLORS = ['#10b981', '#3b82f6', '#eab308', '#ef4444', '#a855f7', '#06b6d4']
@@ -519,7 +519,7 @@ git commit -m "feat(p1b-4): ChipChart with recharts"
 
 ```tsx
 'use client'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { useEffect, useRef } from 'react'
 
 function describe(event: any): string {
@@ -566,7 +566,7 @@ export function ActionLog() {
 
 ```tsx
 'use client'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { useEffect, useRef } from 'react'
 
 export function ThinkingLog() {
@@ -610,7 +610,7 @@ git commit -m "feat(p1b-4): ActionLog + ThinkingLog"
 
 **Files:**
 - Create: `components/match/RightPanel.tsx`
-- Modify: `app/matches/[matchId]/SpectatorView.tsx`（接入）
+- Modify: `src/app/matches/[matchId]/SpectatorView.tsx`（接入）
 
 **Context:** 右侧 `w-80` 容器，从上到下：ErrorBadge 行 → LiveScoreboard → Tabs(Actions / Thinking) → ChipChart。
 
@@ -618,7 +618,7 @@ git commit -m "feat(p1b-4): ActionLog + ThinkingLog"
 
 ```tsx
 'use client'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/src/frontend/components/ui/tabs'
 import { LiveScoreboard } from './LiveScoreboard'
 import { ActionLog } from './ActionLog'
 import { ThinkingLog } from './ThinkingLog'
@@ -653,11 +653,11 @@ export function RightPanel({ matchId }: { matchId: string }) {
 
 - [x] **Step 2: 接入 SpectatorView**
 
-在 `app/matches/[matchId]/SpectatorView.tsx` 的根容器修改为左右布局：
+在 `src/app/matches/[matchId]/SpectatorView.tsx` 的根容器修改为左右布局：
 
 ```tsx
 // ...existing imports
-import { RightPanel } from '@/components/match/RightPanel'
+import { RightPanel } from '@/frontend/components/match/RightPanel'
 
 // 在 return 里：
 return (
@@ -681,7 +681,7 @@ npx shadcn@latest add tabs popover badge
 - [x] **Step 4: Commit**
 
 ```bash
-git add components/match/RightPanel.tsx app/matches/\[matchId\]/SpectatorView.tsx components/ui/
+git add components/match/RightPanel.tsx src/app/matches/\[matchId\]/SpectatorView.tsx src/frontend/components/ui/
 git commit -m "feat(p1b-4): RightPanel integrates scoreboard/logs/chart"
 ```
 
@@ -691,7 +691,7 @@ git commit -m "feat(p1b-4): RightPanel integrates scoreboard/logs/chart"
 
 **Files:**
 - Create: `components/match/RankingPanel.tsx`
-- Modify: `app/matches/[matchId]/SpectatorView.tsx`
+- Modify: `src/app/matches/[matchId]/SpectatorView.tsx`
 
 **Context:** 当 store 的 `derived.status === 'settled'` 时自动弹出 Dialog，展示最终排名、每位的盈亏、总手数、可返回大厅。
 
@@ -699,9 +699,9 @@ git commit -m "feat(p1b-4): RightPanel integrates scoreboard/logs/chart"
 
 ```tsx
 'use client'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/src/frontend/components/ui/dialog'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { useRouter } from 'next/navigation'
 import { Trophy } from 'lucide-react'
 
@@ -752,7 +752,7 @@ export function RankingPanel({ initialChips }: { initialChips: number }) {
 - [x] **Step 2: 接入 SpectatorView**
 
 ```tsx
-import { RankingPanel } from '@/components/match/RankingPanel'
+import { RankingPanel } from '@/frontend/components/match/RankingPanel'
 
 // 在 return 内插入（initialChips 从 match 初始数据来）
 <RankingPanel initialChips={match.config.initialChips} />
@@ -773,7 +773,7 @@ npx shadcn@latest add dialog
 - [x] **Step 5: Commit**
 
 ```bash
-git add components/match/RankingPanel.tsx app/matches/\[matchId\]/SpectatorView.tsx components/ui/dialog.tsx
+git add components/match/RankingPanel.tsx src/app/matches/\[matchId\]/SpectatorView.tsx src/frontend/components/ui/dialog.tsx
 git commit -m "feat(p1b-4): RankingPanel on match settlement"
 ```
 
@@ -782,8 +782,8 @@ git commit -m "feat(p1b-4): RankingPanel on match settlement"
 ## Task 9: ingestEvent 补齐 settled 状态
 
 **Files:**
-- Modify: `store/match-view-store.ts`
-- Modify: `tests/store/match-view-store.test.ts`
+- Modify: `src/frontend/store/match-view-store.ts`
+- Modify: `tests/src/frontend/store/match-view-store.test.ts`
 
 **Context:** 目前 store 的 `derived.status` 可能没有在 `match_end` / `settlement` 事件里更新为 `'settled'`。补上。
 
@@ -798,7 +798,7 @@ it('sets status to settled on match_end event', () => {
 })
 ```
 
-Run: `npx vitest run tests/store/match-view-store.test.ts -t "match_end"`
+Run: `npx vitest run tests/src/frontend/store/match-view-store.test.ts -t "match_end"`
 Expected: FAIL。
 
 - [x] **Step 2: 实现**
@@ -814,13 +814,13 @@ case 'settlement':
   break
 ```
 
-Run: `npx vitest run tests/store/match-view-store.test.ts -t "match_end"`
+Run: `npx vitest run tests/src/frontend/store/match-view-store.test.ts -t "match_end"`
 Expected: PASS。
 
 - [x] **Step 3: Commit**
 
 ```bash
-git add store/match-view-store.ts tests/store/match-view-store.test.ts
+git add src/frontend/store/match-view-store.ts tests/src/frontend/store/match-view-store.test.ts
 git commit -m "feat(p1b-4): mark match settled on match_end event"
 ```
 

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** 实现 `PokerEngine` 类（`lib/engine/contracts.ts` 的 GameEngine 接口）：初始化 + 盲注 + availableActions + applyAction + 街切换 + 摊牌结算 + finalize + match-end 检测。
+**Goal:** 实现 `PokerEngine` 类（`src/platform/engine/contracts.ts` 的 GameEngine 接口）：初始化 + 盲注 + availableActions + applyAction + 街切换 + 摊牌结算 + finalize + match-end 检测。
 
 **前置条件：** P1a-1/2/3 完成（algos 已在位）。
 
@@ -19,12 +19,12 @@
 ## Task 14: Poker engine 骨架 + 初始化 + 发底牌 + 盲注
 
 **Files:**
-- Create: `games/poker/engine/poker-engine.ts`（骨架 + `createInitialState` + `currentActor`）
-- Create: `games/poker/engine/__tests__/poker-engine.test.ts`
+- Create: `src/games/poker/engine/poker-engine.ts`（骨架 + `createInitialState` + `currentActor`）
+- Create: `src/games/poker/engine/__tests__/poker-engine.test.ts`
 
 - [x] **Step 1: 写测试**
 
-Create `games/poker/engine/__tests__/poker-engine.test.ts`:
+Create `src/games/poker/engine/__tests__/poker-engine.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -69,20 +69,20 @@ describe('PokerEngine.createInitialState', () => {
 
 - [x] **Step 2: 确认失败**
 
-Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 失败（engine 不存在）。
 
 - [x] **Step 3: 写实现（骨架）**
 
-Create `games/poker/engine/poker-engine.ts`:
+Create `src/games/poker/engine/poker-engine.ts`:
 
 ```typescript
-import type { GameEngine, ActionSpec, ApplyActionResult, BoundaryKind } from '@/lib/engine/contracts'
-import type { GameEvent, MatchResult } from '@/lib/core/types'
+import type { GameEngine, ActionSpec, ApplyActionResult, BoundaryKind } from '@/platform/engine/contracts'
+import type { GameEvent, MatchResult } from '@/platform/core/types'
 import type { PokerState, PokerAction, PokerConfig, PokerPlayerState } from './poker-types'
 import { createDeck, shuffleDeck } from './card'
 import { dealCards } from './deck'
-import { newEventId } from '@/lib/core/ids'
+import { newEventId } from '@/platform/core/ids'
 
 export class PokerEngine
   implements GameEngine<PokerState, PokerAction, PokerConfig>
@@ -184,13 +184,13 @@ export class PokerEngine
 
 - [x] **Step 4: 跑测试**
 
-Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 3 passed。
 
 - [x] **Step 5: Commit**
 
 ```bash
-git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
+git add src/games/poker/engine/poker-engine.ts src/games/poker/engine/__tests__/poker-engine.test.ts
 git commit -m "feat(p1a): poker engine skeleton + initialState + blinds"
 ```
 
@@ -199,8 +199,8 @@ git commit -m "feat(p1a): poker engine skeleton + initialState + blinds"
 ## Task 15: Poker engine — availableActions + applyAction（单街内）
 
 **Files:**
-- Modify: `games/poker/engine/poker-engine.ts`
-- Modify: `games/poker/engine/__tests__/poker-engine.test.ts`
+- Modify: `src/games/poker/engine/poker-engine.ts`
+- Modify: `src/games/poker/engine/__tests__/poker-engine.test.ts`
 
 - [x] **Step 1: 追加测试**
 
@@ -272,7 +272,7 @@ describe('PokerEngine.applyAction', () => {
 
 - [x] **Step 2: 确认失败**
 
-Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 上面 5 个失败。
 
 - [x] **Step 3: 实现 availableActions + applyAction**
@@ -439,13 +439,13 @@ Expected: 上面 5 个失败。
 
 - [x] **Step 4: 跑测试**
 
-Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 8 passed（初始化 3 + availableActions 2 + applyAction 4）。
 
 - [x] **Step 5: Commit**
 
 ```bash
-git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
+git add src/games/poker/engine/poker-engine.ts src/games/poker/engine/__tests__/poker-engine.test.ts
 git commit -m "feat(p1a): poker engine availableActions + applyAction (single street)"
 ```
 
@@ -454,8 +454,8 @@ git commit -m "feat(p1a): poker engine availableActions + applyAction (single st
 ## Task 16: Poker engine — 街切换 + hand-end + boundary
 
 **Files:**
-- Modify: `games/poker/engine/poker-engine.ts`
-- Modify: `games/poker/engine/__tests__/poker-engine.test.ts`
+- Modify: `src/games/poker/engine/poker-engine.ts`
+- Modify: `src/games/poker/engine/__tests__/poker-engine.test.ts`
 
 - [x] **Step 1: 追加测试**
 
@@ -612,13 +612,13 @@ describe('PokerEngine street transitions', () => {
 
 - [x] **Step 3: 跑测试**
 
-Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 10 passed。
 
 - [x] **Step 4: Commit**
 
 ```bash
-git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
+git add src/games/poker/engine/poker-engine.ts src/games/poker/engine/__tests__/poker-engine.test.ts
 git commit -m "feat(p1a): poker engine street transitions + boundary detection"
 ```
 
@@ -627,8 +627,8 @@ git commit -m "feat(p1a): poker engine street transitions + boundary detection"
 ## Task 17: Poker engine — settleHand + finalize + match-end
 
 **Files:**
-- Modify: `games/poker/engine/poker-engine.ts`
-- Modify: `games/poker/engine/__tests__/poker-engine.test.ts`
+- Modify: `src/games/poker/engine/poker-engine.ts`
+- Modify: `src/games/poker/engine/__tests__/poker-engine.test.ts`
 
 - [x] **Step 1: 追加测试**
 
@@ -753,7 +753,7 @@ import { evaluateHand } from './evaluator'
 
 - [x] **Step 3: 跑测试**
 
-Run: `npm test games/poker/engine/__tests__/poker-engine.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/poker-engine.test.ts`
 Expected: 12 passed。
 
 Run: `npx tsc --noEmit`
@@ -762,7 +762,7 @@ Expected: 0 errors。
 - [x] **Step 4: Commit**
 
 ```bash
-git add games/poker/engine/poker-engine.ts games/poker/engine/__tests__/poker-engine.test.ts
+git add src/games/poker/engine/poker-engine.ts src/games/poker/engine/__tests__/poker-engine.test.ts
 git commit -m "feat(p1a): poker engine settlement + finalize + match-end detection"
 ```
 
@@ -774,7 +774,7 @@ git commit -m "feat(p1a): poker engine settlement + finalize + match-end detecti
 
 **验证：**
 ```bash
-npm test games/poker/engine/
+npm test src/games/poker/engine/
 npx tsc --noEmit
 ```
 
