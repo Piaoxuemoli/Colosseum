@@ -137,7 +137,7 @@ export function ActionLog() {
       list.push(event)
       map.set(hand, list)
     }
-    return Array.from(map.entries()).sort((a, b) => b[0] - a[0])
+    return Array.from(map.entries()).sort((a, b) => a[0] - b[0])
   }, [actions])
 
   useEffect(() => {
@@ -150,21 +150,32 @@ export function ActionLog() {
     agentId ? players.find((player) => player.agentId === agentId)?.displayName ?? agentId : 'system'
 
   return (
-    <div ref={ref} className="h-full min-h-0 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 text-xs">
+    <div ref={ref} className="thin-scrollbar h-full min-h-0 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 pr-2 text-xs">
       {actions.length === 0 ? (
         <div className="text-muted-foreground">等待行动...</div>
       ) : (
         <ul className="space-y-4">
           {grouped.map(([handNumber, handEvents]) => (
             <li key={handNumber}>
-              <div className="sticky top-0 z-10 mb-2 rounded-md bg-slate-800/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+              <div className="sticky top-0 z-10 mb-2 rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
                 第 {handNumber} 手
               </div>
               <ol className="space-y-1.5 font-mono">
-                {handEvents.map((event) => {
+                {handEvents.map((event, eventIndex, arr) => {
                   const { text, className } = describeAction(event, nameOf)
+                  const isLatest = event.id === actions[actions.length - 1]?.id
+                  const isLastInHand = eventIndex === arr.length - 1
                   return (
-                    <li key={event.id} className="rounded-xl bg-slate-900/50 px-3 py-2">
+                    <li
+                      key={event.id}
+                      className={`rounded-xl px-3 py-2 transition-colors ${
+                        isLatest
+                          ? 'border border-cyan-300/20 bg-cyan-300/[0.08]'
+                          : isLastInHand
+                            ? 'bg-slate-900/70'
+                            : 'bg-slate-900/50'
+                      }`}
+                    >
                       <span className="mr-2 text-cyan-300/70">#{event.seq}</span>
                       <span className={className}>{text}</span>
                     </li>

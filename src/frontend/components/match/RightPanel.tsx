@@ -12,7 +12,15 @@ import { Button } from '@/frontend/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/frontend/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/components/ui/tabs'
 
-function RightPanelBody({ matchId, gameType }: { matchId: string; gameType?: 'poker' | 'werewolf' }) {
+function RightPanelBody({
+  matchId,
+  gameType,
+  startingChips,
+}: {
+  matchId: string
+  gameType?: 'poker' | 'werewolf'
+  startingChips?: number
+}) {
   const [tab, setTab] = useState('status')
 
   return (
@@ -76,19 +84,27 @@ function RightPanelBody({ matchId, gameType }: { matchId: string; gameType?: 'po
         </TabsContent>
 
         <TabsContent value="chart" className="mt-2 min-h-0 flex-1 overflow-hidden">
-          {tab === 'chart' ? <ChipChart /> : null}
+          {tab === 'chart' ? <ChipChart startingChips={startingChips} /> : null}
         </TabsContent>
       </Tabs>
     </>
   )
 }
 
-export function RightPanel({ matchId, gameType }: { matchId: string; gameType?: 'poker' | 'werewolf' }) {
+export function RightPanel({
+  matchId,
+  gameType,
+  startingChips,
+}: {
+  matchId: string
+  gameType?: 'poker' | 'werewolf'
+  startingChips?: number
+}) {
   return (
     <>
       {/* Desktop: fixed-height rail without outer scrollbar. */}
       <aside className="hidden h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] w-full flex-col gap-3 rounded-lg border border-white/10 bg-slate-950/60 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:flex lg:w-[22rem] lg:min-w-[22rem]">
-        <RightPanelBody matchId={matchId} gameType={gameType} />
+        <RightPanelBody matchId={matchId} gameType={gameType} startingChips={startingChips} />
       </aside>
 
       {/* Mobile / tablet: floating "open panel" button + right-side sheet. */}
@@ -107,7 +123,7 @@ export function RightPanel({ matchId, gameType }: { matchId: string; gameType?: 
           <SheetHeader>
             <SheetTitle>对局信息</SheetTitle>
           </SheetHeader>
-          <RightPanelBody matchId={matchId} gameType={gameType} />
+          <RightPanelBody matchId={matchId} gameType={gameType} startingChips={startingChips} />
         </SheetContent>
       </Sheet>
     </>

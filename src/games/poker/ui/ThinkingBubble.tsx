@@ -1,7 +1,16 @@
 'use client'
 
 import { memo, useEffect, type RefObject } from 'react'
-import { autoPlacement, offset, shift, useFloating, useTransitionStyles } from '@floating-ui/react'
+import {
+  FloatingPortal,
+  autoPlacement,
+  flip,
+  offset,
+  shift,
+  size,
+  useFloating,
+  useTransitionStyles,
+} from '@floating-ui/react'
 
 export const ThinkingBubble = memo(function ThinkingBubble({
   anchorRef,
@@ -14,7 +23,20 @@ export const ThinkingBubble = memo(function ThinkingBubble({
 }) {
   const { refs, floatingStyles, context } = useFloating({
     open: visible,
-    middleware: [autoPlacement({ allowedPlacements: ['top', 'bottom', 'left', 'right'] }), offset(10), shift({ padding: 8 })],
+    strategy: 'fixed',
+    placement: 'top',
+    middleware: [
+      offset(10),
+      flip({ fallbackPlacements: ['bottom', 'left', 'right'] }),
+      shift({ padding: 8 }),
+      autoPlacement({ allowedPlacements: ['top', 'bottom', 'left', 'right'], crossAxis: true }),
+      size({
+        apply({ availableWidth, availableHeight, elements }) {
+          elements.floating.style.maxWidth = `${Math.min(320, Math.max(200, availableWidth - 16))}px`
+          elements.floating.style.maxHeight = `${Math.min(240, Math.max(120, availableHeight - 16))}px`
+        },
+      }),
+    ],
   })
 
   useEffect(() => {
@@ -30,12 +52,14 @@ export const ThinkingBubble = memo(function ThinkingBubble({
   if (!isMounted) return null
 
   return (
-    <div
-      ref={refs.setFloating}
-      style={{ ...floatingStyles, ...styles }}
-      className="z-50 max-w-xs rounded-lg border border-cyan-200/25 bg-slate-950/90 p-3 text-sm leading-6 text-cyan-50 shadow-2xl shadow-cyan-950/40 backdrop-blur"
-    >
-      {text ? text : <span className="italic text-cyan-100/60">思考中...</span>}
-    </div>
+    <FloatingPortal>
+      <div
+        ref={refs.setFloating}
+        style={{ ...floatingStyles, ...styles }}
+        className="thin-scrollbar z-50 max-w-xs overflow-y-auto rounded-lg border border-cyan-200/25 bg-slate-950/95 p-3 text-sm leading-6 text-cyan-50 shadow-2xl shadow-cyan-950/40 backdrop-blur"
+      >
+        {text ? text : <span className="italic text-cyan-100/60">思考中...</span>}
+      </div>
+    </FloatingPortal>
   )
 })
