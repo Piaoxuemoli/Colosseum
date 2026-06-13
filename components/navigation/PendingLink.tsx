@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   forwardRef,
   useEffect,
+  useRef,
   useState,
   type AnchorHTMLAttributes,
   type MouseEvent,
@@ -24,10 +25,21 @@ export const PendingLink = forwardRef<HTMLAnchorElement, PendingLinkProps>(
   ({ href, className, pendingClassName, onClick, target, ...props }, ref) => {
     const pathname = usePathname()
     const [pending, setPending] = useState(false)
+    const pendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
       setPending(false)
+      if (pendingTimer.current) {
+        clearTimeout(pendingTimer.current)
+        pendingTimer.current = null
+      }
     }, [pathname])
+
+    useEffect(() => {
+      return () => {
+        if (pendingTimer.current) clearTimeout(pendingTimer.current)
+      }
+    }, [])
 
     return (
       <Link
@@ -41,7 +53,11 @@ export const PendingLink = forwardRef<HTMLAnchorElement, PendingLinkProps>(
           onClick?.(event)
           if (event.defaultPrevented || isModifiedClick(event) || target === '_blank') return
           const nextPath = href.split(/[?#]/, 1)[0]
-          if (nextPath !== pathname) setPending(true)
+          if (nextPath !== pathname) {
+            setPending(true)
+            if (pendingTimer.current) clearTimeout(pendingTimer.current)
+            pendingTimer.current = setTimeout(() => setPending(false), 6_000)
+          }
         }}
         {...props}
       />

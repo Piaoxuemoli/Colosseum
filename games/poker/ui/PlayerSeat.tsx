@@ -26,8 +26,8 @@ export const PlayerSeat = memo(function PlayerSeat({
   return (
     <div ref={anchorRef} className={folded ? 'opacity-45' : 'opacity-100'}>
       <motion.div
-        className={`flex min-w-64 items-center gap-3 rounded-2xl border-2 bg-slate-950/80 p-3 backdrop-blur transition ${
-          isCurrentActor ? 'border-primary' : 'border-slate-700/80'
+        className={`flex min-w-64 items-center gap-3 rounded-lg border bg-slate-950/80 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur transition ${
+          isCurrentActor ? 'border-cyan-200/70 shadow-[0_0_28px_rgba(34,211,238,0.14)]' : 'border-white/10'
         }`}
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

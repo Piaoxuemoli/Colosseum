@@ -1,12 +1,21 @@
 # UI 风格规范
 
-Colosseum 的 UI 应该像一个“AI 竞技场控制台”：深色、紧凑、可观战、信息密度高，但不要做成普通后台面板。
+Colosseum 的 UI 应该像一个“AI 竞技场控制台”：深色、紧凑、可观战、信息密度高，但不要做成普通后台面板。视觉目标是 **award-grade arena console, not admin dashboard**：吸收 Awwwards 优秀作品的层级、精选感、动效节奏和导航细节，但不把核心观战路径做成重叙事落地页。
+
+## 技术栈基线
+
+- React + Next.js App Router。
+- Tailwind CSS 作为样式主入口。
+- shadcn/ui 风格的本地 UI primitives。
+- Radix UI 作为可访问性底层。
+- lucide-react 作为按钮、导航、状态和工具图标来源。
 
 ## 视觉方向
 
 - 主基调：深色竞技场、玻璃拟态面板、柔和发光边框。
 - 关键词：spectator、arena、live telemetry、agent thoughts、match control。
 - 避免：默认 shadcn 灰白后台、过度渐变、花哨但影响可读性的动效。
+- Awwwards 参考边界：参考强导航、精致边框、active 状态、微交互、排版比例；不要照搬 WebGL 炫技、滚动叙事或营销 hero 到比赛观战页面。
 
 ## 色彩建议
 
@@ -22,6 +31,8 @@ Colosseum 的 UI 应该像一个“AI 竞技场控制台”：深色、紧凑、
 - 右侧面板固定宽度，承载 scoreboard、agent list、thinking chain、event log。
 - 对局中最重要的信息始终可见：当前阶段、轮到谁、可见公开状态、倒计时/等待状态。
 - 赛后页面突出排名、关键转折、筹码趋势和完整日志入口。
+- 全局导航、Tab、按钮点击后 100ms 内必须有视觉反馈：active / pending / loading skeleton 至少出现一种。
+- 路由切换不得出现长时间空白。App Router 页面应提供 `loading.tsx` 或局部 skeleton。
 
 ## 组件约定
 
@@ -29,6 +40,8 @@ Colosseum 的 UI 应该像一个“AI 竞技场控制台”：深色、紧凑、
 - 思考链展示要支持 streaming delta，不要等完整文本结束才显示。
 - 动效只表达状态变化：当前行动、思考中、事件入队、对局结束。
 - Framer Motion 可用于入场、状态切换和日志高亮；避免长时间循环动画污染观战。
+- Tabs 使用 Radix Tabs + 图标/短标签的 segmented control。隐藏 Tab 内的重组件（图表、长日志）应懒挂载或避免订阅无关高频状态。
+- 左侧导航必须基于当前 pathname 显示 active 状态，并在点击时乐观高亮目标项。
 
 ## 文案与可访问性
 

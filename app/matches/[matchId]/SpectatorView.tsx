@@ -201,7 +201,7 @@ export function SpectatorView({
         />
 
         {matchComplete ? (
-          <div className="mx-auto mt-8 max-w-xl rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-6 text-center shadow-2xl shadow-cyan-950/30">
+          <div className="mx-auto mt-8 max-w-xl rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-6 text-center shadow-2xl shadow-cyan-950/30">
             <div className="text-2xl font-black text-white">对局结束</div>
             {winnerName ? <div className="mt-2 text-sm text-cyan-100/80">获胜者：{winnerName}</div> : null}
           </div>

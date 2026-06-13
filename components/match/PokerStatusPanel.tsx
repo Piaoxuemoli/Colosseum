@@ -48,7 +48,7 @@ export function PokerStatusPanel() {
   const river = communityCards.slice(4, 5)
 
   return (
-    <section className="rounded-2xl border border-border bg-slate-950/45 p-3 text-sm">
+    <section className="h-full min-h-0 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 text-sm">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/70">Poker State</div>
