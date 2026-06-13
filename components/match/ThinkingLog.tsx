@@ -24,7 +24,7 @@ export function ThinkingLog() {
   }, [entries.length])
 
   return (
-    <div ref={ref} className="h-56 overflow-y-auto rounded-2xl border border-border bg-slate-950/45 p-3 text-xs">
+    <div ref={ref} className="h-full min-h-0 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 text-xs">
       {entries.length === 0 ? (
         <div className="text-muted-foreground">等待思考流...</div>
       ) : (

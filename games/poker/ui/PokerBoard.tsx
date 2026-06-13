@@ -74,7 +74,7 @@ export function PokerBoard({
 
       {/* Mobile / tablet: stacked list of seats + community cards pinned on top. */}
       <div className="flex flex-col gap-3 lg:hidden">
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-gradient-to-b from-emerald-950/70 to-emerald-950/30 p-4">
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-white/10 bg-gradient-to-b from-emerald-950/70 to-emerald-950/30 p-4">
           <CommunityCards cards={communityCards} />
           <Pot amount={pot} phase={phase} streetPots={streetPots} sidePots={sidePots} />
         </div>

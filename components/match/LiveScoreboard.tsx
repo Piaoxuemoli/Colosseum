@@ -10,20 +10,17 @@ export function LiveScoreboard() {
   const sorted = [...players].sort((a, b) => b.chips - a.chips)
 
   return (
-    <div className="rounded-2xl border border-border bg-slate-950/45 p-3">
-      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">实时排名</div>
-      <ul className="space-y-1">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-white/10 bg-slate-950/45 p-3">
+      <div className="mb-2 shrink-0 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">实时排名</div>
+      <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
         {sorted.map((player, index) => {
           const delta = previous[player.agentId] === undefined ? 0 : player.chips - previous[player.agentId]
           return (
             <li
               key={player.agentId}
-              className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm hover:bg-cyan-300/5"
+              className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-cyan-300/5"
             >
               <div className="w-5 text-xs text-muted-foreground">{index + 1}</div>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-300/15 text-sm">
-                {player.avatarEmoji}
-              </div>
               <div className="min-w-0 flex-1 truncate">{player.displayName}</div>
               {index === 0 ? <Crown aria-label="leader" size={14} className="text-yellow-300" /> : null}
               <div className="font-mono text-sm text-cyan-50">{player.chips}</div>

@@ -33,7 +33,7 @@ export const ThinkingBubble = memo(function ThinkingBubble({
     <div
       ref={refs.setFloating}
       style={{ ...floatingStyles, ...styles }}
-      className="z-50 max-w-xs rounded-2xl border border-cyan-200/25 bg-slate-950/90 p-3 text-sm leading-6 text-cyan-50 shadow-2xl shadow-cyan-950/40 backdrop-blur"
+      className="z-50 max-w-xs rounded-lg border border-cyan-200/25 bg-slate-950/90 p-3 text-sm leading-6 text-cyan-50 shadow-2xl shadow-cyan-950/40 backdrop-blur"
     >
       {text ? text : <span className="italic text-cyan-100/60">思考中...</span>}
     </div>
