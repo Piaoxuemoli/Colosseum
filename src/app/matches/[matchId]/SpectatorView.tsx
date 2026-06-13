@@ -41,10 +41,15 @@ export function SpectatorView({
   const ingestEvent = useMatchViewStore((state) => state.ingestEvent)
   const setMatchEnd = useMatchViewStore((state) => state.setMatchEnd)
   const appendThinking = useThinkingStore((state) => state.appendThinking)
-  const clearThinking = useThinkingStore((state) => state.clearThinking)
+  const finalizeThinking = useThinkingStore((state) => state.finalizeThinking)
 
   const handNumber = useMatchViewStore((state) => state.handNumber)
   const players = useMatchViewStore((state) => state.players)
+
+  const nameOf = useCallback(
+    (agentId: string) => players.find((p) => p.agentId === agentId)?.displayName ?? agentId,
+    [players],
+  )
   const communityCards = useMatchViewStore((state) => state.communityCards)
   const pot = useMatchViewStore((state) => state.pot)
   const streetPots = useMatchViewStore((state) => state.streetPots)
@@ -70,9 +75,9 @@ export function SpectatorView({
     const buffer = thinkingBuffer.current
     thinkingBuffer.current = {}
     for (const [agentId, delta] of Object.entries(buffer)) {
-      if (delta) appendThinking(agentId, delta)
+      if (delta) appendThinking(agentId, nameOf(agentId), handNumber, delta)
     }
-  }, [appendThinking])
+  }, [appendThinking, handNumber, nameOf])
 
   useEffect(() => {
     return () => {
@@ -89,12 +94,22 @@ export function SpectatorView({
     (raw: unknown) => {
       const message = raw as SseMessage
       switch (message.kind) {
-        case 'event':
+        case 'event': {
           ingestEvent(message.event)
-          if (message.event.kind === 'poker/action' && message.event.actorAgentId) {
-            clearThinking(message.event.actorAgentId)
+          const actorId = message.event.actorAgentId
+          if (actorId) {
+            if (
+              message.event.kind === 'poker/action' ||
+              message.event.kind === 'poker/deal-flop' ||
+              message.event.kind === 'poker/deal-turn' ||
+              message.event.kind === 'poker/deal-river' ||
+              message.event.kind === 'poker/showdown'
+            ) {
+              finalizeThinking(actorId)
+            }
           }
           break
+        }
         case 'thinking-delta': {
           const buffer = thinkingBuffer.current
           buffer[message.agentId] = (buffer[message.agentId] ?? '') + message.delta
@@ -112,7 +127,7 @@ export function SpectatorView({
           break
       }
     },
-    [clearThinking, flushThinking, ingestEvent, setMatchEnd],
+    [finalizeThinking, flushThinking, ingestEvent, setMatchEnd],
   )
 
   useMatchStream(matchId, onMessage)

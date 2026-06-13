@@ -39,14 +39,15 @@ export function PokerBoard({
   streetPots: PokerStreetPots
   sidePots: PokerSidePot[]
 }) {
-  const thinkingByAgent = useThinkingStore((s) => s.thinkingByAgent)
+  const currentThinking = useThinkingStore((s) => s.current)
+  const thinkingText = (agentId: string) => currentThinking[agentId]?.text
   const blindRole = (seatIndex: number) =>
     seatIndex === smallBlindIndex ? 'SB' : seatIndex === bigBlindIndex ? 'BB' : undefined
 
   return (
     <>
       {/* Desktop: oval table with 6 absolutely-positioned seats. */}
-      <div className="relative mx-auto hidden aspect-[16/10] w-full max-w-6xl lg:block">
+      <div className="relative mx-auto hidden aspect-[16/10] w-full max-w-7xl lg:block">
         <div className="absolute inset-[9%] flex items-center justify-center rounded-[50%] border-[10px] border-amber-900/70 bg-[radial-gradient(circle_at_center,#14532d,#052e16_65%,#04140b)] shadow-2xl shadow-black/50">
           <div className="absolute inset-8 rounded-[50%] border border-cyan-200/10" />
           <div className="relative z-10 flex flex-col items-center gap-5">
@@ -66,7 +67,7 @@ export function PokerBoard({
               isCurrentActor={player.agentId === currentActor}
               isDealer={player.seatIndex === dealerIndex}
               blindRole={blindRole(player.seatIndex)}
-              thinking={thinkingByAgent[player.agentId]}
+              thinking={thinkingText(player.agentId)}
             />
           </div>
         ))}
@@ -88,7 +89,7 @@ export function PokerBoard({
                 isCurrentActor={player.agentId === currentActor}
                 isDealer={player.seatIndex === dealerIndex}
                 blindRole={blindRole(player.seatIndex)}
-                thinking={thinkingByAgent[player.agentId]}
+                thinking={thinkingText(player.agentId)}
               />
             ))}
         </div>
