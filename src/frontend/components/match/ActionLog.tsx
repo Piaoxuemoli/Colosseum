@@ -4,22 +4,109 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useMatchViewStore } from '@/frontend/store/match-view-store'
 import type { GameEvent } from '@/platform/core/types'
 
-const RECENT_EVENT_LIMIT = 200
+const RECENT_EVENT_LIMIT = 400
+
+const SUIT_SYMBOLS: Record<string, string> = {
+  spades: '♠',
+  hearts: '♥',
+  diamonds: '♦',
+  clubs: '♣',
+  S: '♠',
+  H: '♥',
+  D: '♦',
+  C: '♣',
+  s: '♠',
+  h: '♥',
+  d: '♦',
+  c: '♣',
+}
+
+function formatCard(card: { rank: string; suit: string }): string {
+  return `${SUIT_SYMBOLS[card.suit] ?? card.suit}${card.rank}`
+}
 
 function formatAmount(value: unknown): string {
   return typeof value === 'number' ? ` ${value}` : ''
 }
 
-function describeAction(event: GameEvent, nameOf: (agentId: string | null) => string): string {
-  if (event.kind !== 'poker/action') return event.kind
+function actionColorClass(type: string): string {
+  switch (type) {
+    case 'fold':
+      return 'text-slate-400'
+    case 'check':
+      return 'text-slate-300'
+    case 'call':
+      return 'text-emerald-300'
+    case 'bet':
+    case 'raise':
+      return 'text-cyan-300'
+    case 'allIn':
+      return 'text-rose-300'
+    default:
+      return 'text-slate-300'
+  }
+}
 
-  const action = event.payload
+function describeAction(event: GameEvent, nameOf: (agentId: string | null) => string): { text: string; className: string } {
+  if (event.kind !== 'poker/action') {
+    return { text: describeSystemEvent(event), className: 'text-slate-300' }
+  }
+
+  const action = event.payload as Record<string, unknown>
   const type = typeof action.type === 'string' ? action.type : 'act'
   const actor = nameOf(event.actorAgentId)
+  const amount = formatAmount(action.amount ?? action.toAmount)
 
-  if (type === 'raise') return `${actor} raise to${formatAmount(action.toAmount ?? action.amount)}`
-  if (type === 'allIn') return `${actor} all-in${formatAmount(action.amount ?? action.toAmount)}`
-  return `${actor} ${type}${formatAmount(action.amount ?? action.toAmount)}`
+  switch (type) {
+    case 'fold':
+      return { text: `${actor} 弃牌`, className: actionColorClass(type) }
+    case 'check':
+      return { text: `${actor} 过牌`, className: actionColorClass(type) }
+    case 'call':
+      return { text: `${actor} 跟注${amount}`, className: actionColorClass(type) }
+    case 'bet':
+      return { text: `${actor} 下注${amount}`, className: actionColorClass(type) }
+    case 'raise':
+      return { text: `${actor} 加注到${amount}`, className: actionColorClass(type) }
+    case 'allIn':
+      return { text: `${actor} 全下${amount}`, className: actionColorClass(type) }
+    case 'postSmallBlind':
+      return { text: `${actor} 小盲${amount}`, className: 'text-slate-300' }
+    case 'postBigBlind':
+      return { text: `${actor} 大盲${amount}`, className: 'text-slate-300' }
+    default:
+      return { text: `${actor} ${type}${amount}`, className: 'text-slate-300' }
+  }
+}
+
+function describeSystemEvent(event: GameEvent): string {
+  const payload = event.payload as Record<string, unknown>
+
+  switch (event.kind) {
+    case 'poker/deal-flop': {
+      const cards = Array.isArray(payload.cards) ? (payload.cards as Array<{ rank: string; suit: string }>) : []
+      return `翻牌：${cards.map(formatCard).join(' ')}`
+    }
+    case 'poker/deal-turn': {
+      const cards = Array.isArray(payload.cards) ? (payload.cards as Array<{ rank: string; suit: string }>) : []
+      return `转牌：${cards.map(formatCard).join(' ')}`
+    }
+    case 'poker/deal-river': {
+      const cards = Array.isArray(payload.cards) ? (payload.cards as Array<{ rank: string; suit: string }>) : []
+      return `河牌：${cards.map(formatCard).join(' ')}`
+    }
+    case 'poker/showdown':
+      return '摊牌'
+    case 'poker/pot-award': {
+      const winnerIds = Array.isArray(payload.winnerIds) ? (payload.winnerIds as string[]) : []
+      const potAmount = typeof payload.potAmount === 'number' ? payload.potAmount : null
+      const amountText = potAmount !== null ? ` ${potAmount}` : ''
+      if (winnerIds.length === 0) return `底池分配${amountText}`
+      return `底池分配 +${amountText} → ${winnerIds.join(', ')}`
+    }
+    default:
+      return event.kind
+  }
 }
 
 export function ActionLog() {
@@ -42,11 +129,22 @@ export function ActionLog() {
     )
   }, [events])
 
+  const grouped = useMemo(() => {
+    const map = new Map<number, typeof actions>()
+    for (const event of actions) {
+      const hand = (event as GameEvent & { handNumberAt?: number }).handNumberAt ?? 0
+      const list = map.get(hand) ?? []
+      list.push(event)
+      map.set(hand, list)
+    }
+    return Array.from(map.entries()).sort((a, b) => b[0] - a[0])
+  }, [actions])
+
   useEffect(() => {
     if (typeof ref.current?.scrollTo === 'function') {
       ref.current.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' })
     }
-  }, [actions.length])
+  }, [grouped.length, actions.length])
 
   const nameOf = (agentId: string | null) =>
     agentId ? players.find((player) => player.agentId === agentId)?.displayName ?? agentId : 'system'
@@ -56,14 +154,26 @@ export function ActionLog() {
       {actions.length === 0 ? (
         <div className="text-muted-foreground">等待行动...</div>
       ) : (
-        <ol className="space-y-2 font-mono">
-          {actions.map((event) => (
-            <li key={event.id} className="rounded-xl bg-slate-900/50 px-3 py-2 text-slate-200">
-              <span className="mr-2 text-cyan-300/70">#{event.seq}</span>
-              {describeAction(event, nameOf)}
+        <ul className="space-y-4">
+          {grouped.map(([handNumber, handEvents]) => (
+            <li key={handNumber}>
+              <div className="sticky top-0 z-10 mb-2 rounded-md bg-slate-800/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                第 {handNumber} 手
+              </div>
+              <ol className="space-y-1.5 font-mono">
+                {handEvents.map((event) => {
+                  const { text, className } = describeAction(event, nameOf)
+                  return (
+                    <li key={event.id} className="rounded-xl bg-slate-900/50 px-3 py-2">
+                      <span className="mr-2 text-cyan-300/70">#{event.seq}</span>
+                      <span className={className}>{text}</span>
+                    </li>
+                  )
+                })}
+              </ol>
             </li>
           ))}
-        </ol>
+        </ul>
       )}
     </div>
   )
