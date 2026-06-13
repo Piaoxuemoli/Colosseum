@@ -184,6 +184,40 @@ git push https://github.com/Piaoxuemoli/Colosseum.git main
 
 如果需要保留任务分支上的分步提交历史，把 `git merge --squash` 换成 `git merge --no-ff feature/<scope>-<short-desc>`。
 
+## 网络异常与代理降级
+
+当 `git push` 因网络原因失败（如 `Connection reset`、`Could not read from remote repository`）时，不要反复重试浪费 token。优先按以下顺序处理：
+
+1. **检查用户是否使用代理/VPN**，并询问代理地址（常见形式：`http://127.0.0.1:7890` 或 `socks5://127.0.0.1:1080`）。
+2. **配置 git 走 HTTP/HTTPS 代理**（以本地 7890 端口为例）：
+
+   ```bash
+   git config http.proxy http://127.0.0.1:7890
+   git config https.proxy http://127.0.0.1:7890
+   ```
+
+   如果是 SOCKS5 代理：
+
+   ```bash
+   git config http.proxy socks5://127.0.0.1:1080
+   git config https.proxy socks5://127.0.0.1:1080
+   ```
+
+3. **改用 HTTPS 地址推送**（绕过 SSH 端口限制）：
+
+   ```bash
+   git push https://github.com/Piaoxuemoli/Colosseum.git main
+   ```
+
+4. 若代理恢复后希望长期保留，可写入仓库配置；若只是临时应急，推送成功后建议清理：
+
+   ```bash
+   git config --unset http.proxy
+   git config --unset https.proxy
+   ```
+
+**注意**：代理配置只应修改当前仓库（默认行为），不要修改全局 `--global` 配置，除非用户明确要求。
+
 ## 换行符规范
 
 本仓库统一使用 LF (`\n`) 换行，确保 Linux / CI / Alpine Docker 环境一致。
