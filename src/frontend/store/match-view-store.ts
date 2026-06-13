@@ -338,6 +338,7 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           status = 'live'
           break
         case 'poker/state': {
+          const prevHandNumber = handNumber
           phase = typeof event.payload.phase === 'string' ? event.payload.phase : phase
           handNumber = numberOr(event.payload.handNumber, handNumber)
           currentActor = stringOrNull(event.payload.currentActor)
@@ -352,6 +353,20 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           matchComplete = Boolean(event.payload.matchComplete)
           if (matchComplete) status = 'settled'
           players = playersFromPublicState(event.payload, players)
+          // Fallback: if the hand number advanced without a pot-award record, snapshot now.
+          if (handNumber > prevHandNumber && prevHandNumber > 0) {
+            const last = chipHistory[chipHistory.length - 1]
+            if (!last || last.handNumber !== prevHandNumber) {
+              chipHistory = [
+                ...chipHistory,
+                {
+                  handNumber: prevHandNumber,
+                  at: Date.now(),
+                  chips: Object.fromEntries(players.map((player) => [player.agentId, player.chips])),
+                },
+              ]
+            }
+          }
           break
         }
         case 'poker/deal-flop':
@@ -398,14 +413,19 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           if (playersChanged) players = awarded
 
           pot = 0
-          chipHistory = [
-            ...chipHistory,
-            {
-              handNumber,
-              at: Date.now(),
-              chips: Object.fromEntries(players.map((player) => [player.agentId, player.chips])),
-            },
-          ]
+          // Deduplicate: a single hand can emit multiple pot-award events (main pot + side pots).
+          // Keep only the final chip snapshot for the hand.
+          const existingIndex = chipHistory.findIndex((snapshot) => snapshot.handNumber === handNumber)
+          const snapshot = {
+            handNumber,
+            at: Date.now(),
+            chips: Object.fromEntries(players.map((player) => [player.agentId, player.chips])),
+          }
+          if (existingIndex >= 0) {
+            chipHistory = [...chipHistory.slice(0, existingIndex), snapshot, ...chipHistory.slice(existingIndex + 1)]
+          } else {
+            chipHistory = [...chipHistory, snapshot]
+          }
           break
         }
         case 'poker/match-end':
