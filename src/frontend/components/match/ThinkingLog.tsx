@@ -152,7 +152,7 @@ export function ThinkingLog() {
       list.push(entry)
       map.set(entry.handNumber, list)
     }
-    return Array.from(map.entries()).sort((a, b) => b[0] - a[0])
+    return Array.from(map.entries()).sort((a, b) => a[0] - b[0])
   }, [history])
 
   const currentEntries = useMemo(
@@ -168,14 +168,14 @@ export function ThinkingLog() {
   }, [grouped.length, currentEntries.length])
 
   return (
-    <div ref={ref} className="h-full min-h-0 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 text-xs">
+    <div ref={ref} className="thin-scrollbar h-full min-h-0 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 pr-2 text-xs">
       {history.length === 0 && currentEntries.length === 0 ? (
         <div className="text-muted-foreground">等待思考流...</div>
       ) : (
         <ul className="space-y-4">
           {currentEntries.length > 0 && (
             <li>
-              <div className="sticky top-0 z-10 mb-2 rounded-md bg-slate-800/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+              <div className="sticky top-0 z-10 mb-2 rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
                 当前思考
               </div>
               <ul className="space-y-2">
@@ -194,7 +194,7 @@ export function ThinkingLog() {
 
           {grouped.map(([handNumber, entries]) => (
             <li key={handNumber}>
-              <div className="sticky top-0 z-10 mb-2 rounded-md bg-slate-800/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+              <div className="sticky top-0 z-10 mb-2 rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
                 第 {handNumber} 手
               </div>
               <ul className="space-y-2">
