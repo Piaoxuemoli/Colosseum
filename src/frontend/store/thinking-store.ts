@@ -2,43 +2,67 @@
 
 import { create } from 'zustand'
 
+export type ThinkingEntry = {
+  agentId: string
+  displayName: string
+  handNumber: number
+  text: string
+  at: number
+}
+
+type CurrentThinking = {
+  text: string
+  displayName: string
+  handNumber: number
+}
+
 export type ThinkingState = {
-  currentActor: string | null
-  thinkingByAgent: Record<string, string>
-  appendThinking(agentId: string, delta: string): void
-  clearThinking(agentId: string): void
-  setCurrentActor(agentId: string | null): void
+  current: Record<string, CurrentThinking>
+  history: ThinkingEntry[]
+  appendThinking(agentId: string, displayName: string, handNumber: number, delta: string): void
+  finalizeThinking(agentId: string): void
   reset(): void
 }
 
 export const useThinkingStore = create<ThinkingState>((set) => ({
-  currentActor: null,
-  thinkingByAgent: {},
+  current: {},
+  history: [],
 
-  appendThinking(agentId, delta) {
+  appendThinking(agentId, displayName, handNumber, delta) {
     set((state) => ({
-      thinkingByAgent: {
-        ...state.thinkingByAgent,
-        [agentId]: (state.thinkingByAgent[agentId] ?? '') + delta,
+      current: {
+        ...state.current,
+        [agentId]: {
+          text: (state.current[agentId]?.text ?? '') + delta,
+          displayName,
+          handNumber,
+        },
       },
-      currentActor: agentId,
     }))
   },
 
-  clearThinking(agentId) {
+  finalizeThinking(agentId) {
     set((state) => {
-      if (!state.thinkingByAgent[agentId]) return state
-      const next = { ...state.thinkingByAgent }
-      delete next[agentId]
-      return { thinkingByAgent: next }
+      const item = state.current[agentId]
+      if (!item || item.text.trim().length === 0) {
+        if (!item) return state
+        const nextCurrent = { ...state.current }
+        delete nextCurrent[agentId]
+        return { current: nextCurrent }
+      }
+      const nextCurrent = { ...state.current }
+      delete nextCurrent[agentId]
+      return {
+        current: nextCurrent,
+        history: [
+          ...state.history,
+          { agentId, displayName: item.displayName, handNumber: item.handNumber, text: item.text, at: Date.now() },
+        ],
+      }
     })
   },
 
-  setCurrentActor(agentId) {
-    set({ currentActor: agentId })
-  },
-
   reset() {
-    set({ currentActor: null, thinkingByAgent: {} })
+    set({ current: {}, history: [] })
   },
 }))

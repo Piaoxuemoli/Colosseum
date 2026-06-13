@@ -1,11 +1,13 @@
 'use client'
 
-import { memo, useRef } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Badge } from '@/frontend/components/ui/badge'
 import type { PokerUiPlayer } from '@/frontend/store/match-view-store'
 import { PlayingCard } from './PlayingCard'
 import { ThinkingBubble } from './ThinkingBubble'
+
+const BUBBLE_DURATION_MS = 4500
 
 export const PlayerSeat = memo(function PlayerSeat({
   player,
@@ -22,6 +24,24 @@ export const PlayerSeat = memo(function PlayerSeat({
 }) {
   const anchorRef = useRef<HTMLDivElement>(null)
   const folded = player.status === 'folded'
+
+  const [bubbleText, setBubbleText] = useState('')
+  const [bubbleVisible, setBubbleVisible] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!thinking || thinking.trim().length === 0) return
+    setBubbleText(thinking)
+    setBubbleVisible(true)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      setBubbleVisible(false)
+      timerRef.current = null
+    }, BUBBLE_DURATION_MS)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [thinking])
 
   return (
     <div ref={anchorRef} className={folded ? 'opacity-45' : 'opacity-100'}>
@@ -48,7 +68,7 @@ export const PlayerSeat = memo(function PlayerSeat({
             : [0, 1].map((slot) => <PlayingCard key={slot} faceDown size="sm" />)}
         </div>
       </motion.div>
-      <ThinkingBubble anchorRef={anchorRef} text={thinking ?? ''} visible={Boolean(thinking) || isCurrentActor} />
+      <ThinkingBubble anchorRef={anchorRef} text={bubbleText} visible={bubbleVisible} />
     </div>
   )
 })

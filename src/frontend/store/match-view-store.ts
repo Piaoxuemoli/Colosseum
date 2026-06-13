@@ -64,10 +64,12 @@ export type WerewolfDerived = {
   winner: 'werewolves' | 'villagers' | 'tie' | null
 }
 
+export type RichGameEvent = GameEvent & { handNumberAt: number }
+
 export type MatchViewState = {
   matchId: string
   initialized: boolean
-  events: GameEvent[]
+  events: RichGameEvent[]
   phase: string
   handNumber: number
   currentActor: string | null
@@ -109,7 +111,7 @@ const initialWerewolf: WerewolfDerived = {
 const initialState = {
   matchId: '',
   initialized: false,
-  events: [] as GameEvent[],
+  events: [] as RichGameEvent[],
   phase: 'waiting',
   handNumber: 0,
   currentActor: null as string | null,
@@ -301,6 +303,7 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
       phase: 'preflop',
       handNumber: 1,
       status: 'live',
+      events: [] as RichGameEvent[],
     })
   },
 
@@ -477,7 +480,7 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
       }
 
       return {
-        events: [...state.events, event],
+        events: [...state.events, { ...event, handNumberAt: handNumber }],
         phase,
         handNumber,
         currentActor,
