@@ -15,7 +15,7 @@ const createSchema = z
     kind: agentKindSchema.optional(),
     profileId: z.string().min(1),
     systemPrompt: z.string().min(1).max(4000),
-    avatarEmoji: z.string().max(8).nullable().optional(),
+    avatarEmoji: z.string().max(8).nullable().optional().default(null),
   })
   .refine((data) => !(data.gameType === 'poker' && data.kind === 'moderator'), {
     message: 'poker does not support moderator kind',
