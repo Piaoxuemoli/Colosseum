@@ -15,10 +15,10 @@ export default async function ProfilesPage() {
     <div className="mx-auto max-w-5xl px-6 py-10">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">Local Key Control</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-white">API Profiles</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Profile 只保存 provider、baseUrl 和模型信息；API Key 只留在当前浏览器 localStorage。
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">Local Key Control</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">API Profiles</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Profile 只保存 baseUrl 和模型名；API Key 只留在当前浏览器 localStorage。
           </p>
         </div>
         <ProfileForm />
@@ -35,15 +35,11 @@ export default async function ProfilesPage() {
             <Card key={profile.id}>
               <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
-                  <div className="font-semibold text-white">{profile.displayName}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {profile.providerId} · {profile.model}
-                  </div>
-                  <div className="mt-1 truncate font-mono text-xs text-cyan-100/65">{profile.baseUrl}</div>
+                  <div className="font-medium text-white">{profile.displayName}</div>
+                  <div className="mt-1 truncate font-mono text-xs text-muted-foreground">{profile.baseUrl}</div>
                 </div>
                 <ProfileRowActions
                   profileId={profile.id}
-                  providerId={profile.providerId}
                   baseUrl={profile.baseUrl}
                   model={profile.model}
                 />
