@@ -145,6 +145,13 @@ test(engine): cover showdown side pots
 - 不提交 `.env*`、API key、token、cookie、私钥、`old/ops/private/*`。
 - AI 只有在用户明确要求，或当前会话已明确进入允许自动分步提交的执行态时才创建 commit；不要在普通问答中擅自 commit。
 
+## AI 基建与文档归档
+
+- `.kimi-code/skills/**` 属于 AI 基建，新增或更新走 `chore` 或 `docs` 提交。
+- `old/docs-archive/` 只接收**已完成或过时**的重写版文档；不要把当前活跃文档放入其中。
+- 归档文档时优先使用 `git mv` 保留历史，并同步更新 `AGENTS.md` 和 `docs/ai/session-state.md` 的索引。
+- `screenshots/**` 仅用于 README / 文档配图，不提交临时截图；提交前确认图片与当前 UI 一致且已压缩。
+
 ## 合入规范
 
 本项目默认是独立开发，所有合入在本地完成，不走 PR / MR 流程。不要在常规总结里提示 PR 链接。

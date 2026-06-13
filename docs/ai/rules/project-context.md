@@ -12,6 +12,7 @@ Colosseum 是一个纯 AI 博弈竞技平台。用户配置 LLM Profile，创建
 - 完整 spec：`docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`
 - 实施 plan：`docs/superpowers/plans/`
 - 长任务状态：`docs/ai/session-state.md`
+- 部署 Skill：`.kimi-code/skills/deployment/SKILL.md`
 
 ## 架构红线
 
