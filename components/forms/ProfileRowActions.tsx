@@ -17,12 +17,10 @@ type TestState =
 
 export function ProfileRowActions({
   profileId,
-  providerId,
   baseUrl,
   model,
 }: {
   profileId: string
-  providerId: string
   baseUrl: string
   model: string
 }) {
@@ -105,7 +103,7 @@ export function ProfileRowActions({
     try {
       const body = await api.post<{ ok: boolean; latencyMs?: number; error?: string }>(
         '/api/profiles/test',
-        { providerId, baseUrl, model, apiKey },
+        { baseUrl, model, apiKey },
       )
       if (body.ok) {
         setTestState({ kind: 'ok', latencyMs: body.latencyMs ?? 0 })

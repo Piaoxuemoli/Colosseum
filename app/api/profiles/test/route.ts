@@ -20,7 +20,6 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const bodySchema = z.object({
-  providerId: z.string().min(1).max(64),
   baseUrl: z.string().url(),
   model: z.string().min(1).max(128),
   apiKey: z.string().min(1).max(512),
@@ -40,6 +39,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const { baseUrl, model, apiKey } = parsed.data
+  const providerId = 'openai-compatible'
   const url = `${baseUrl.replace(/\/$/, '')}/chat/completions`
 
   const controller = new AbortController()
@@ -89,7 +89,7 @@ export async function POST(req: Request): Promise<Response> {
     // Belt and braces: strip the apiKey from any error message too.
     const safe = message.replaceAll(apiKey, '<redacted>').slice(0, 300)
     log.warn('profile-test failed', {
-      providerId: parsed.data.providerId,
+      providerId,
       baseUrl,
       model,
       // apiKey intentionally omitted.
