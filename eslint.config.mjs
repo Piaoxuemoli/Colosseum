@@ -11,6 +11,7 @@ export default [
       'dist/**',
       'build/**',
       '.remember/**',
+      '**/.pytest_cache/**',
       'next-env.d.ts',
     ],
   },
