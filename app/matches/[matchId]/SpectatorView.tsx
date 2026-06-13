@@ -126,10 +126,10 @@ export function SpectatorView({
         <main className="min-w-0 flex-1">
           <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-300">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                 Spectator View
               </p>
-              <h1 className="mt-3 text-3xl font-black tracking-tight text-white">
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
                 狼人杀 · Day {werewolfDay}
               </h1>
               <p className="mt-2 font-mono text-xs text-muted-foreground">{matchId}</p>
@@ -167,8 +167,8 @@ export function SpectatorView({
       <main className="min-w-0 flex-1">
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">Spectator View</p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-white">德州扑克 · 第 {handNumber} 手</h1>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">Spectator View</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">德州扑克 · 第 {handNumber} 手</h1>
             <p className="mt-2 font-mono text-xs text-muted-foreground">{matchId}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
