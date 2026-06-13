@@ -164,6 +164,7 @@
 | 2026-06-13 | `npm run lint` + `npm run typecheck` + `npm run check` | Passed | Frontend polish gate passed. Build route sizes stayed stable (`/matches/[matchId]` first load 316 kB). Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
 | 2026-06-13 | Production deploy via SSH key + Docker Compose | Passed | `docker compose up -d --build nextjs` succeeded on `43.156.230.108`; `/api/health` returned `{"ok":true,"db":"ok","redis":"ok"}`; `/`, `/agents`, `/matches/new`, `/api/providers`, and `/api/agents?gameType=poker` returned 200. Backup script attempt returned `Permission denied`. |
 | 2026-06-13 | Project structure refactor gate | Passed | `npm run lint` + `npm run typecheck` + `npm run build` passed after moving source into `src/{app,frontend,backend,platform,games}` and archive into `archive/old/`. Local Docker unavailable so `npm run infra:up` / full poker UI smoke skipped; will verify on production after merge. |
+| 2026-06-13 | Match spectator UI polish gate | Passed | `npm run lint` + `npm run typecheck` + `npm run build` passed. Deployed to production; `/api/health` OK; `/`, `/matches/new`, `/api/agents?gameType=poker` 200. Full poker match UI smoke will be verified live. |
 
 ## Open Questions / Blockers
 
@@ -178,6 +179,7 @@
 - 2026-06-13 deploy note: `ops/private/puke.pem` / `ops/private/deploy.env` are still absent and `rsync` is unavailable locally, but deployment works with `C:/Users/Qoobeewang/Downloads/hermesqoobee.pem` after copying to a temporary ACL-restricted key. The temporary local key copy was removed after deployment.
 - 2026-06-13 ops follow-up: `/opt/colosseum/scripts/backup.sh` on production returned `Permission denied` when invoked as part of deployment. Check executable bit / mount permissions before the next release.
 - 2026-06-13 项目结构重组完成：源码迁入 `src/{app,frontend,backend,platform,games}`，归档整合到 `archive/old/`，`tsconfig.json` paths 改为 `@/*` → `./src/*`，`ops/deploy/Dockerfile` 同步复制 `src/platform/db/` 与 `src/platform/env.ts`；纲领文档 `AGENTS.md`、`docs/ai/rules/project-context.md`、`docs/ai/rules/frontend-backend.md`、`.kimi-code/skills/deployment/SKILL.md`、`README.md`、`.cursor/.claude rules` 已更新。
+- 2026-06-13 对局 UI 优化完成：`/matches/*` 内左侧 Sidebar 收起为图标栏，底部文案改为用户视角平台介绍；思考气泡 4.5s 自动消失；右侧“思考”Tab 按手牌历史记录并结构化展示；“行动”Tab 按手牌分组并用中文描述决策；牌桌 `max-width` 扩至 `max-w-7xl`。
 
 ## SDK / Plan Drift Notes
 
