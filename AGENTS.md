@@ -16,6 +16,14 @@ Colosseum 是一个纯 AI 博弈竞技平台：用户在浏览器里配置多个
 4. `docs/superpowers/plans/`：按 Phase 拆分的实施计划。执行代码任务时以当前 plan 的 checkbox 为进度来源。
 5. `docs/ai/session-state.md`：长任务状态记录。上下文压缩或换 Agent 后先读这里。
 
+## 部署与运维
+
+- 部署 Skill（推荐入口）：`.kimi-code/skills/deployment/SKILL.md`
+- 生产部署手册：`ops/deploy/README.md`
+- Vercel fallback：`docs/deploy/vercel.md`
+- 本地开发环境：`ops/dev/README.md`
+- 过时文档归档：`old/docs-archive/`
+
 ## 规则加载策略
 
 `.cursor/rules` 和 `.claude/rules` 只做路由，不承载完整规范。详细规则放在 `docs/ai/rules/`：
