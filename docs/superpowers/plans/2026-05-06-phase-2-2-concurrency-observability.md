@@ -26,17 +26,17 @@
 
 ```
 Colosseum/
-├── lib/auth/
+├── src/backend/auth/
 │   └── match-token.ts                    # Modify: HMAC 签名 + 验签
 ├── lib/obs/
 │   ├── logger.ts                         # JSON logger
 │   └── metrics.ts                        # 进程内 counter / histogram
-├── app/api/
+├── src/app/api/
 │   ├── _health/route.ts                  # GET health
 │   └── _metrics/route.ts                 # GET metrics
-├── lib/agent/
+├── src/backend/agent/
 │   └── key-cache.ts                      # Modify: 加 TTL + match cleanup hook
-├── lib/orchestrator/
+├── src/backend/orchestrator/
 │   ├── gm.ts                             # Modify: logger + metrics 埋点
 │   └── match-lifecycle.ts                # Modify: match 结束触发 cleanup
 └── tests/
@@ -50,7 +50,7 @@ Colosseum/
 ## Task 1: HMAC 签名 match-token
 
 **Files:**
-- Modify: `lib/auth/match-token.ts`
+- Modify: `src/backend/auth/match-token.ts`
 - Create: `tests/auth/match-token.test.ts`
 
 **Context:** P1 的 token 是内存 Map，进程重启会丢 + 不利于多实例。改为 HMAC-SHA256，payload 含 `matchId + exp`。
@@ -58,7 +58,7 @@ Colosseum/
 - [ ] **Step 1: 实现**
 
 ```typescript
-// lib/auth/match-token.ts
+// src/backend/auth/match-token.ts
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
 function secret(): Buffer {
@@ -94,7 +94,7 @@ export function verifyMatchToken(token: string | null | undefined, matchId: stri
 
 ```typescript
 import { describe, it, expect, beforeAll } from 'vitest'
-import { signMatchToken, verifyMatchToken } from '@/lib/auth/match-token'
+import { signMatchToken, verifyMatchToken } from '@/backend/auth/match-token'
 
 beforeAll(() => { process.env.MATCH_TOKEN_SECRET = 'test-secret-1234' })
 
@@ -125,7 +125,7 @@ Expected: PASS。
 - [ ] **Step 3: Commit**
 
 ```bash
-git add lib/auth/match-token.ts tests/auth/match-token.test.ts
+git add src/backend/auth/match-token.ts tests/auth/match-token.test.ts
 git commit -m "feat(p2-2): HMAC-signed match-token"
 ```
 
@@ -134,15 +134,15 @@ git commit -m "feat(p2-2): HMAC-signed match-token"
 ## Task 2: Key cache TTL + match cleanup
 
 **Files:**
-- Modify: `lib/agent/key-cache.ts`
-- Modify: `lib/orchestrator/match-lifecycle.ts`
+- Modify: `src/backend/agent/key-cache.ts`
+- Modify: `src/backend/orchestrator/match-lifecycle.ts`
 
 **Context:** in-process `Map` 缓存，match 结束或 2 小时 TTL 后清理。
 
 - [ ] **Step 1: 升级 key-cache**
 
 ```typescript
-// lib/agent/key-cache.ts
+// src/backend/agent/key-cache.ts
 interface Entry { apiKey: string; expAt: number }
 const cache = new Map<string, Entry>()
 const TTL_MS = 2 * 60 * 60 * 1000
@@ -172,10 +172,10 @@ export function _stats() {
 
 - [ ] **Step 2: match 结束钩子**
 
-在 `lib/orchestrator/match-lifecycle.ts` 的 `settleMatch(matchId)` 成功后调用：
+在 `src/backend/orchestrator/match-lifecycle.ts` 的 `settleMatch(matchId)` 成功后调用：
 
 ```typescript
-import { dropMatch } from '@/lib/agent/key-cache'
+import { dropMatch } from '@/backend/agent/key-cache'
 // ...
 dropMatch(matchId)
 logger.info({ event: 'match.settled', matchId })
@@ -184,7 +184,7 @@ logger.info({ event: 'match.settled', matchId })
 - [ ] **Step 3: Commit**
 
 ```bash
-git add lib/agent/key-cache.ts lib/orchestrator/match-lifecycle.ts
+git add src/backend/agent/key-cache.ts src/backend/orchestrator/match-lifecycle.ts
 git commit -m "feat(p2-2): key-cache TTL + cleanup on match settle"
 ```
 
@@ -228,7 +228,7 @@ export const logger = {
 
 - [ ] **Step 2: 在 GM 关键点埋点**
 
-在 `lib/orchestrator/gm.ts` 替换 `console.log` 为 `logger.info`：
+在 `src/backend/orchestrator/gm.ts` 替换 `console.log` 为 `logger.info`：
 - `tick.start` / `tick.end`（附 matchId + handNumber + phase）
 - `agent.request`（agentId + 耗时）
 - `agent.fallback`（errorKind）
@@ -237,7 +237,7 @@ export const logger = {
 - [ ] **Step 3: Commit**
 
 ```bash
-git add lib/obs/logger.ts lib/orchestrator/gm.ts
+git add lib/obs/logger.ts src/backend/orchestrator/gm.ts
 git commit -m "feat(p2-2): JSON logger + GM instrumentation"
 ```
 
@@ -248,8 +248,8 @@ git commit -m "feat(p2-2): JSON logger + GM instrumentation"
 **Files:**
 - Create: `lib/obs/metrics.ts`
 - Create: `tests/obs/metrics.test.ts`
-- Create: `app/api/_metrics/route.ts`
-- Create: `app/api/_health/route.ts`
+- Create: `src/app/api/_metrics/route.ts`
+- Create: `src/app/api/_health/route.ts`
 
 - [ ] **Step 1: 实现 metrics**
 
@@ -322,14 +322,14 @@ Expected: PASS。
 - [ ] **Step 3: API routes**
 
 ```typescript
-// app/api/_metrics/route.ts
+// src/app/api/_metrics/route.ts
 import { NextResponse } from 'next/server'
 import { snapshot } from '@/lib/obs/metrics'
 export async function GET() { return NextResponse.json(snapshot()) }
 ```
 
 ```typescript
-// app/api/_health/route.ts
+// src/app/api/_health/route.ts
 import { NextResponse } from 'next/server'
 export async function GET() {
   return NextResponse.json({ status: 'ok', ts: new Date().toISOString(), uptime: process.uptime() })
@@ -338,7 +338,7 @@ export async function GET() {
 
 - [ ] **Step 4: GM 埋点**
 
-在 `lib/orchestrator/gm.ts`：
+在 `src/backend/orchestrator/gm.ts`：
 
 ```typescript
 import { inc, observe } from '@/lib/obs/metrics'
@@ -357,7 +357,7 @@ inc('agent.fallback', 1, { kind: errorKind })
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lib/obs/metrics.ts app/api/_metrics app/api/_health tests/obs/metrics.test.ts lib/orchestrator/gm.ts
+git add lib/obs/metrics.ts src/app/api/_metrics src/app/api/_health tests/obs/metrics.test.ts src/backend/orchestrator/gm.ts
 git commit -m "feat(p2-2): in-process metrics + health/metrics endpoints"
 ```
 

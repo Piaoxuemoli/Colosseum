@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** 封装所有 DB 查询到 `lib/db/queries/` 函数库；定义跨游戏通用契约（GameEngine、MemoryModule、gameRegistry）。
+**Goal:** 封装所有 DB 查询到 `src/platform/db/queries/` 函数库；定义跨游戏通用契约（GameEngine、MemoryModule、gameRegistry）。
 
 **前置条件：** `2026-05-06-phase-1a-1-schema.md` 完成（9 张表已建好）。
 
@@ -15,21 +15,21 @@
 ## Task 5: DB queries 层（agents + profiles）
 
 **Files:**
-- Create: `lib/db/queries/agents.ts`
-- Create: `lib/db/queries/profiles.ts`
-- Create: `tests/lib/db/queries/agents.test.ts`
+- Create: `src/platform/db/queries/agents.ts`
+- Create: `src/platform/db/queries/profiles.ts`
+- Create: `tests/src/platform/db/queries/agents.test.ts`
 
 **Context:** 把高频 DB 查询封装成函数，route handler 里调函数而不是直接写 drizzle。
 
 - [x] **Step 1: 写失败的测试**
 
-Create `tests/lib/db/queries/agents.test.ts`:
+Create `tests/src/platform/db/queries/agents.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeAll } from 'vitest'
 import { unlinkSync, existsSync } from 'node:fs'
 
-describe('lib/db/queries/agents', () => {
+describe('src/platform/db/queries/agents', () => {
   beforeAll(() => {
     process.env.NODE_ENV = 'test'
     process.env.BASE_URL = 'http://localhost:3000'
@@ -41,7 +41,7 @@ describe('lib/db/queries/agents', () => {
 
   it('create + findById + list round trip', async () => {
     // Need to run migrations on this fresh db first
-    const { db } = await import('@/lib/db/client')
+    const { db } = await import('@/platform/db/client')
     const { sql } = await import('drizzle-orm')
     // Apply the same DDL as migrations by running the sqlite schema definitions
     // Simplest: rely on existing migrations path — but here we test against
@@ -58,14 +58,14 @@ describe('lib/db/queries/agents', () => {
 
 - [x] **Step 2: 写 agents queries**
 
-Create `lib/db/queries/agents.ts`:
+Create `src/platform/db/queries/agents.ts`:
 
 ```typescript
 import { eq, and } from 'drizzle-orm'
-import { db } from '@/lib/db/client'
-import { agents } from '@/lib/db/schema.sqlite'
-import { newAgentId } from '@/lib/core/ids'
-import type { GameType, AgentKind } from '@/lib/core/types'
+import { db } from '@/platform/db/client'
+import { agents } from '@/platform/db/schema.sqlite'
+import { newAgentId } from '@/platform/core/ids'
+import type { GameType, AgentKind } from '@/platform/core/types'
 
 export type AgentRow = typeof agents.$inferSelect
 export type NewAgentInput = {
@@ -114,13 +114,13 @@ export async function listAgents(filter?: {
 
 - [x] **Step 3: 写 profiles queries**
 
-Create `lib/db/queries/profiles.ts`:
+Create `src/platform/db/queries/profiles.ts`:
 
 ```typescript
 import { eq } from 'drizzle-orm'
-import { db } from '@/lib/db/client'
-import { apiProfiles } from '@/lib/db/schema.sqlite'
-import { newProfileId } from '@/lib/core/ids'
+import { db } from '@/platform/db/client'
+import { apiProfiles } from '@/platform/db/schema.sqlite'
+import { newProfileId } from '@/platform/core/ids'
 
 export type ApiProfileRow = typeof apiProfiles.$inferSelect
 export type NewApiProfileInput = {
@@ -161,13 +161,13 @@ export async function listProfiles(): Promise<ApiProfileRow[]> {
 
 - [x] **Step 4: 跑测试（smoke）**
 
-Run: `npm test tests/lib/db/queries/agents.test.ts`
+Run: `npm test tests/src/platform/db/queries/agents.test.ts`
 Expected: 1 passed（占位 smoke）。
 
 - [x] **Step 5: Commit**
 
 ```bash
-git add lib/db/queries/ tests/lib/db/queries/
+git add src/platform/db/queries/ tests/src/platform/db/queries/
 git commit -m "feat(p1a): db queries for agents + profiles"
 ```
 
@@ -176,18 +176,18 @@ git commit -m "feat(p1a): db queries for agents + profiles"
 ## Task 6: DB queries（matches + match_participants）
 
 **Files:**
-- Create: `lib/db/queries/matches.ts`
+- Create: `src/platform/db/queries/matches.ts`
 
 - [x] **Step 1: 写实现**
 
-Create `lib/db/queries/matches.ts`:
+Create `src/platform/db/queries/matches.ts`:
 
 ```typescript
 import { eq, and } from 'drizzle-orm'
-import { db } from '@/lib/db/client'
-import { matches, matchParticipants } from '@/lib/db/schema.sqlite'
-import { newMatchId } from '@/lib/core/ids'
-import type { GameType, MatchConfig, MatchResult } from '@/lib/core/types'
+import { db } from '@/platform/db/client'
+import { matches, matchParticipants } from '@/platform/db/schema.sqlite'
+import { newMatchId } from '@/platform/core/ids'
+import type { GameType, MatchConfig, MatchResult } from '@/platform/core/types'
 
 export type MatchRow = typeof matches.$inferSelect
 export type ParticipantRow = typeof matchParticipants.$inferSelect
@@ -293,7 +293,7 @@ export async function isAgentParticipant(
 - [x] **Step 2: Commit**
 
 ```bash
-git add lib/db/queries/matches.ts
+git add src/platform/db/queries/matches.ts
 git commit -m "feat(p1a): db queries for matches + participants"
 ```
 
@@ -302,19 +302,19 @@ git commit -m "feat(p1a): db queries for matches + participants"
 ## Task 7: DB queries（game_events + agent_errors + memory 三表）
 
 **Files:**
-- Create: `lib/db/queries/events.ts`
-- Create: `lib/db/queries/errors.ts`
-- Create: `lib/db/queries/memory.ts`
+- Create: `src/platform/db/queries/events.ts`
+- Create: `src/platform/db/queries/errors.ts`
+- Create: `src/platform/db/queries/memory.ts`
 
 - [x] **Step 1: 写 events queries**
 
-Create `lib/db/queries/events.ts`:
+Create `src/platform/db/queries/events.ts`:
 
 ```typescript
 import { eq, asc, and, gte, lte } from 'drizzle-orm'
-import { db } from '@/lib/db/client'
-import { gameEvents } from '@/lib/db/schema.sqlite'
-import type { GameEvent, Visibility } from '@/lib/core/types'
+import { db } from '@/platform/db/client'
+import { gameEvents } from '@/platform/db/schema.sqlite'
+import type { GameEvent, Visibility } from '@/platform/core/types'
 
 export async function appendEvent(event: GameEvent): Promise<void> {
   await db.insert(gameEvents).values({
@@ -397,12 +397,12 @@ export async function nextSeq(matchId: string): Promise<number> {
 
 - [x] **Step 2: 写 errors queries**
 
-Create `lib/db/queries/errors.ts`:
+Create `src/platform/db/queries/errors.ts`:
 
 ```typescript
-import { db } from '@/lib/db/client'
-import { agentErrors } from '@/lib/db/schema.sqlite'
-import { newId } from '@/lib/core/ids'
+import { db } from '@/platform/db/client'
+import { agentErrors } from '@/platform/db/schema.sqlite'
+import { newId } from '@/platform/core/ids'
 
 export type ErrorLayer = 'http' | 'structured' | 'parse' | 'validate' | 'fallback'
 
@@ -429,18 +429,18 @@ export async function recordAgentError(input: {
 
 - [x] **Step 3: 写 memory queries**
 
-Create `lib/db/queries/memory.ts`:
+Create `src/platform/db/queries/memory.ts`:
 
 ```typescript
 import { eq, and, desc } from 'drizzle-orm'
-import { db } from '@/lib/db/client'
+import { db } from '@/platform/db/client'
 import {
   workingMemory,
   episodicMemory,
   semanticMemory,
-} from '@/lib/db/schema.sqlite'
-import { newId } from '@/lib/core/ids'
-import type { GameType } from '@/lib/core/types'
+} from '@/platform/db/schema.sqlite'
+import { newId } from '@/platform/core/ids'
+import type { GameType } from '@/platform/core/types'
 
 // === Working ===
 export async function saveWorkingMemory(input: {
@@ -656,7 +656,7 @@ export async function loadAllSemanticForObserver(input: {
 - [x] **Step 4: Commit**
 
 ```bash
-git add lib/db/queries/events.ts lib/db/queries/errors.ts lib/db/queries/memory.ts
+git add src/platform/db/queries/events.ts src/platform/db/queries/errors.ts src/platform/db/queries/memory.ts
 git commit -m "feat(p1a): db queries for events + errors + memory(3 layers)"
 ```
 
@@ -665,18 +665,18 @@ git commit -m "feat(p1a): db queries for events + errors + memory(3 layers)"
 ## Task 8: 通用 GameEngine / MemoryModule 契约
 
 **Files:**
-- Create: `lib/engine/contracts.ts`
-- Create: `lib/memory/contracts.ts`
-- Create: `lib/core/registry.ts`
+- Create: `src/platform/engine/contracts.ts`
+- Create: `src/platform/memory/contracts.ts`
+- Create: `src/platform/core/registry.ts`
 
 **Context:** spec 第 5.1 / 6.2 节定义的接口。这是游戏自治原则的粘合层。
 
 - [x] **Step 1: 写 engine contracts**
 
-Create `lib/engine/contracts.ts`:
+Create `src/platform/engine/contracts.ts`:
 
 ```typescript
-import type { GameEvent } from '@/lib/core/types'
+import type { GameEvent } from '@/platform/core/types'
 
 /** 合法动作的描述（给 LLM/Bot 看的）。 */
 export type ActionSpec<TAction = unknown> = {
@@ -713,16 +713,16 @@ export interface GameEngine<TState, TAction, TConfig> {
 
   boundary(prevState: TState, nextState: TState): BoundaryKind | null
 
-  finalize(state: TState): import('@/lib/core/types').MatchResult
+  finalize(state: TState): import('@/platform/core/types').MatchResult
 }
 ```
 
 - [x] **Step 2: 写 memory contracts**
 
-Create `lib/memory/contracts.ts`:
+Create `src/platform/memory/contracts.ts`:
 
 ```typescript
-import type { GameEvent, GameType } from '@/lib/core/types'
+import type { GameEvent, GameType } from '@/platform/core/types'
 
 export type MemoryContextSnapshot = {
   workingSummary: string              // 当前对局工作记忆格式化输出
@@ -775,12 +775,12 @@ export interface MemoryModule<TWorking, TEpisodic, TSemantic> {
 
 - [x] **Step 3: 写 game registry**
 
-Create `lib/core/registry.ts`:
+Create `src/platform/core/registry.ts`:
 
 ```typescript
 import type { GameType } from './types'
-import type { GameEngine } from '@/lib/engine/contracts'
-import type { MemoryModule } from '@/lib/memory/contracts'
+import type { GameEngine } from '@/platform/engine/contracts'
+import type { MemoryModule } from '@/platform/memory/contracts'
 
 export type GameModule = {
   gameType: GameType
@@ -792,13 +792,13 @@ export type GameModule = {
   moderatorContextBuilder?: ModeratorContextBuilder    // 仅 werewolf
 }
 
-// 以下接口详见 games/poker/agent/*.ts（Task 18-22 实现）
+// 以下接口详见 src/games/poker/agent/*.ts（Task 18-22 实现）
 export interface PlayerContextBuilder {
   build(input: {
     agent: { id: string; systemPrompt: string }
     gameState: unknown
     validActions: unknown[]
-    memoryContext: import('@/lib/memory/contracts').MemoryContextSnapshot
+    memoryContext: import('@/platform/memory/contracts').MemoryContextSnapshot
   }): { systemMessage: string; userMessage: string }
 }
 
@@ -848,13 +848,13 @@ export function clearRegistry(): void {
 
 - [x] **Step 4: 写契约级别的 smoke 测试**
 
-Create `tests/lib/core/registry.test.ts`:
+Create `tests/src/platform/core/registry.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest'
-import { registerGame, getGame, hasGame, clearRegistry } from '@/lib/core/registry'
+import { registerGame, getGame, hasGame, clearRegistry } from '@/platform/core/registry'
 
-describe('lib/core/registry', () => {
+describe('src/platform/core/registry', () => {
   beforeEach(() => clearRegistry())
 
   it('registers and retrieves a module', () => {
@@ -881,7 +881,7 @@ describe('lib/core/registry', () => {
 
 Run:
 ```bash
-npm test tests/lib/core/registry.test.ts
+npm test tests/src/platform/core/registry.test.ts
 npx tsc --noEmit
 ```
 
@@ -890,7 +890,7 @@ Expected: 2 passed，tsc 无错。
 - [x] **Step 6: Commit**
 
 ```bash
-git add lib/engine/contracts.ts lib/memory/contracts.ts lib/core/registry.ts tests/lib/core/registry.test.ts
+git add src/platform/engine/contracts.ts src/platform/memory/contracts.ts src/platform/core/registry.ts tests/src/platform/core/registry.test.ts
 git commit -m "feat(p1a): generic contracts (GameEngine / MemoryModule / Registry)"
 ```
 

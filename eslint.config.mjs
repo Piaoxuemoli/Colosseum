@@ -4,6 +4,7 @@ import tseslint from 'typescript-eslint'
 export default [
   {
     ignores: [
+      'archive/**',
       'old/**',
       'node_modules/**',
       '.next/**',

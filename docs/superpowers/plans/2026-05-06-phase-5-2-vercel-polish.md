@@ -27,7 +27,7 @@
 
 ```
 Colosseum/
-├── lib/redis/
+├── src/platform/redis/
 │   ├── index.ts                      # 已有：getRedis()；Modify: 根据 env 选 adapter
 │   ├── node-redis-adapter.ts         # 已有，重命名/整理
 │   └── upstash-adapter.ts            # 新增
@@ -40,7 +40,7 @@ Colosseum/
 │   └── Shortcuts.tsx                 # `?` 键盘快捷键面板
 ├── styles/
 │   └── responsive.css                # 断点微调
-└── app/
+└── src/app/
     └── layout.tsx                    # Modify: Shortcuts 全局挂载
 ```
 
@@ -49,8 +49,8 @@ Colosseum/
 ## Task 1: Redis Adapter 抽象
 
 **Files:**
-- Modify: `lib/redis/index.ts`
-- Create: `lib/redis/upstash-adapter.ts`
+- Modify: `src/platform/redis/index.ts`
+- Create: `src/platform/redis/upstash-adapter.ts`
 - Create: `tests/redis/adapter.test.ts`
 
 **Context:** 抽一个最小接口：`get(k) / set(k, v, ex?) / del(k) / publish(ch, payload) / subscribe(ch, cb)`。本地/Docker 用 `ioredis`；Vercel 用 Upstash REST + SSE。Pub/Sub 在 Upstash 免费版不支持,用数据库轮询兜底(delay 1-2s 可接受于 fallback 场景)。
@@ -62,7 +62,7 @@ Colosseum/
 - [x] **Step 5: Commit**
 
 ```typescript
-// lib/redis/index.ts
+// src/platform/redis/index.ts
 export interface RedisLike {
   get(k: string): Promise<string | null>
   set(k: string, v: string, opts?: { ex?: number }): Promise<void>
@@ -88,7 +88,7 @@ export function getRedis(): RedisLike {
 - [ ] **Step 2: upstash-adapter**
 
 ```typescript
-// lib/redis/upstash-adapter.ts
+// src/platform/redis/upstash-adapter.ts
 import { Redis } from '@upstash/redis'
 import type { RedisLike } from './index'
 
@@ -155,7 +155,7 @@ vi.mock('@upstash/redis', () => ({
 
 describe('upstash adapter', () => {
   it('get returns null-safe string', async () => {
-    const { createUpstashAdapter } = await import('@/lib/redis/upstash-adapter')
+    const { createUpstashAdapter } = await import('@/platform/redis/upstash-adapter')
     const a = createUpstashAdapter()
     expect(await a.get('k')).toBe('x')
   })
@@ -189,7 +189,7 @@ git commit -m "feat(p5-2): Upstash redis adapter"
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "functions": {
-    "app/api/**/route.ts": { "maxDuration": 60 }
+    "src/app/api/**/route.ts": { "maxDuration": 60 }
   }
 }
 ```
@@ -285,12 +285,12 @@ export function Empty({
 
 - [ ] **Step 2: 接入 3 个页面**
 
-`app/page.tsx`（Lobby）、`app/agents/page.tsx`、`app/profiles/page.tsx` 在数据为空时渲染 `<Empty ... />`。
+`src/app/page.tsx`（Lobby）、`src/app/agents/page.tsx`、`src/app/profiles/page.tsx` 在数据为空时渲染 `<Empty ... />`。
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add components/Empty.tsx app/page.tsx app/agents/page.tsx app/profiles/page.tsx
+git add components/Empty.tsx src/app/page.tsx src/app/agents/page.tsx src/app/profiles/page.tsx
 git commit -m "feat(p5-2): Empty state component + usage"
 ```
 
@@ -300,7 +300,7 @@ git commit -m "feat(p5-2): Empty state component + usage"
 
 **Files:**
 - Create: `components/Shortcuts.tsx`
-- Modify: `app/layout.tsx`
+- Modify: `src/app/layout.tsx`
 
 - [ ] **Step 1: 组件**
 
@@ -369,10 +369,10 @@ export function Shortcuts() {
 
 - [ ] **Step 2: 全局挂载**
 
-`app/layout.tsx`：
+`src/app/layout.tsx`：
 
 ```tsx
-import { Shortcuts } from '@/components/Shortcuts'
+import { Shortcuts } from '@/frontend/components/Shortcuts'
 // ...
 <body>{children}<Shortcuts /></body>
 ```
@@ -380,7 +380,7 @@ import { Shortcuts } from '@/components/Shortcuts'
 - [ ] **Step 3: Commit**
 
 ```bash
-git add components/Shortcuts.tsx app/layout.tsx
+git add components/Shortcuts.tsx src/app/layout.tsx
 git commit -m "feat(p5-2): keyboard shortcuts (? / g h / g a / g p / n)"
 ```
 
@@ -389,8 +389,8 @@ git commit -m "feat(p5-2): keyboard shortcuts (? / g h / g a / g p / n)"
 ## Task 5: 响应式初版
 
 **Files:**
-- Modify: `games/poker/ui/PokerBoard.tsx`
-- Modify: `games/werewolf/ui/WerewolfBoard.tsx`
+- Modify: `src/games/poker/ui/PokerBoard.tsx`
+- Modify: `src/games/werewolf/ui/WerewolfBoard.tsx`
 - Modify: `components/match/RightPanel.tsx`
 
 **Context:** Tailwind 断点：
@@ -406,8 +406,8 @@ git commit -m "feat(p5-2): keyboard shortcuts (? / g h / g a / g p / n)"
 // components/match/RightPanel.tsx
 'use client'
 import { useState } from 'react'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger } from '@/frontend/src/frontend/components/ui/sheet'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
 import { Menu } from 'lucide-react'
 // ... existing
 
@@ -452,7 +452,7 @@ npx shadcn@latest add sheet
 - [ ] **Step 5: Commit**
 
 ```bash
-git add components/match/RightPanel.tsx games/poker/ui/PokerBoard.tsx games/werewolf/ui/WerewolfBoard.tsx components/ui/sheet.tsx
+git add components/match/RightPanel.tsx src/games/poker/ui/PokerBoard.tsx src/games/werewolf/ui/WerewolfBoard.tsx src/frontend/components/ui/sheet.tsx
 git commit -m "feat(p5-2): responsive initial pass (md breakpoint)"
 ```
 
@@ -461,7 +461,7 @@ git commit -m "feat(p5-2): responsive initial pass (md breakpoint)"
 ## Task 6: 错误 Toast + 全局 ErrorBoundary
 
 **Files:**
-- Modify: `app/layout.tsx`
+- Modify: `src/app/layout.tsx`
 - Create: `components/ErrorBoundary.tsx`
 
 **Context:** shadcn `toast` 已加装。确保 API 调用失败时统一走 Toast；组件级异常用 ErrorBoundary 捕获兜底。
@@ -527,7 +527,7 @@ export async function apiFetch(url: string, init?: RequestInit) {
 - [ ] **Step 4: Commit**
 
 ```bash
-git add components/ErrorBoundary.tsx app/layout.tsx lib/client/api.ts
+git add components/ErrorBoundary.tsx src/app/layout.tsx lib/client/api.ts
 git commit -m "feat(p5-2): ErrorBoundary + unified toast on API failure"
 ```
 
@@ -547,7 +547,7 @@ git commit -m "feat(p5-2): ErrorBoundary + unified toast on API failure"
 - [ ] `vercel --prod` 部署成功
 - [ ] Supabase migrate 跑通（npx drizzle-kit migrate）
 - [ ] 默认 moderator seed 完成
-- [ ] `https://<vercel>.app/api/_health` 200
+- [ ] `https://<vercel>.src/app/api/_health` 200
 - [ ] 创建 poker match 能跑 ≥1 手（可接受 2-3s 事件延迟）
 - [ ] 创建 werewolf match 能跑至 gameEnd
 

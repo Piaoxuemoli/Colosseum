@@ -2,13 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** 把 `old/src/games/poker/engine/` 里的 Card/Deck/Evaluator/PotManager/Equity 纯算法移植过来，带完整单测。再加上新写的 poker-types.ts（zod schema + TS 类型）。
+**Goal:** 把 `old/src/src/games/poker/engine/` 里的 Card/Deck/Evaluator/PotManager/Equity 纯算法移植过来，带完整单测。再加上新写的 poker-types.ts（zod schema + TS 类型）。
 
 **前置条件：** P1a-1 + P1a-2 完成。
 
 **参考：**
 - spec 第 5.2 节（Poker 规则）
-- 源文件：`old/src/games/poker/engine/{deck,evaluator,equity,pot-manager}.ts`
+- 源文件：`old/src/src/games/poker/engine/{deck,evaluator,equity,pot-manager}.ts`
 
 **已知风险（执行时注意）：**
 - old evaluator/equity 的导出 API 签名需要 grep 核对（plan 里写的是猜测）
@@ -21,15 +21,15 @@
 ## Task 9: Card 类型 + Deck 工具（抄自 old）
 
 **Files:**
-- Create: `games/poker/engine/card.ts`
-- Create: `games/poker/engine/deck.ts`
-- Create: `games/poker/engine/__tests__/deck.test.ts`
+- Create: `src/games/poker/engine/card.ts`
+- Create: `src/games/poker/engine/deck.ts`
+- Create: `src/games/poker/engine/__tests__/deck.test.ts`
 
-**Source:** `old/src/types/card.ts` + `old/src/games/poker/engine/deck.ts`
+**Source:** `old/src/types/card.ts` + `old/src/src/games/poker/engine/deck.ts`
 
 - [x] **Step 1: 抄 Card 类型**
 
-Create `games/poker/engine/card.ts`（基于 `old/src/types/card.ts`，增加可选 `rng` 参数便于种子化测试）：
+Create `src/games/poker/engine/card.ts`（基于 `old/src/types/card.ts`，增加可选 `rng` 参数便于种子化测试）：
 
 ```typescript
 export const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'] as const
@@ -76,7 +76,7 @@ export function cardToString(card: Card): string {
 
 - [x] **Step 2: 抄 deck 工具**
 
-Create `games/poker/engine/deck.ts`:
+Create `src/games/poker/engine/deck.ts`:
 
 ```typescript
 import type { Card } from './card'
@@ -96,7 +96,7 @@ export function dealCards(deck: Card[], count: number): DealResult {
 
 - [x] **Step 3: 写测试**
 
-Create `games/poker/engine/__tests__/deck.test.ts`:
+Create `src/games/poker/engine/__tests__/deck.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -145,13 +145,13 @@ describe('poker/engine/deck', () => {
 
 - [x] **Step 4: 跑测试**
 
-Run: `npm test games/poker/engine/__tests__/deck.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/deck.test.ts`
 Expected: 6 passed。
 
 - [x] **Step 5: Commit**
 
 ```bash
-git add games/poker/engine/card.ts games/poker/engine/deck.ts games/poker/engine/__tests__/deck.test.ts
+git add src/games/poker/engine/card.ts src/games/poker/engine/deck.ts src/games/poker/engine/__tests__/deck.test.ts
 git commit -m "feat(p1a): poker card + deck (ported from old/ with seed-aware shuffle)"
 ```
 
@@ -160,27 +160,27 @@ git commit -m "feat(p1a): poker card + deck (ported from old/ with seed-aware sh
 ## Task 10: Evaluator（抄自 old）
 
 **Files:**
-- Create: `games/poker/engine/evaluator.ts`
-- Create: `games/poker/engine/__tests__/evaluator.test.ts`
+- Create: `src/games/poker/engine/evaluator.ts`
+- Create: `src/games/poker/engine/__tests__/evaluator.test.ts`
 
-**Source:** `old/src/games/poker/engine/evaluator.ts`（243 行算法）
+**Source:** `old/src/src/games/poker/engine/evaluator.ts`（243 行算法）
 
 - [x] **Step 1: 原样复制 + 适配 import**
 
 Run:
 ```bash
-cp old/src/games/poker/engine/evaluator.ts games/poker/engine/evaluator.ts
+cp old/src/src/games/poker/engine/evaluator.ts src/games/poker/engine/evaluator.ts
 ```
 
-手工编辑 `games/poker/engine/evaluator.ts`：
+手工编辑 `src/games/poker/engine/evaluator.ts`：
 - 把所有 `from '../../../types/card'` 改成 `from './card'`
 - 其他 import 同理调整
 
-**验证方式：** `grep -n "^import" games/poker/engine/evaluator.ts` 确认所有 import 指向 `./card`。
+**验证方式：** `grep -n "^import" src/games/poker/engine/evaluator.ts` 确认所有 import 指向 `./card`。
 
 - [x] **Step 2: 写教科书测试**
 
-Create `games/poker/engine/__tests__/evaluator.test.ts`:
+Create `src/games/poker/engine/__tests__/evaluator.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -232,17 +232,17 @@ describe('evaluateHand', () => {
 })
 ```
 
-**注意：** 若 evaluator 导出名/签名不同，先 `grep -n "^export" games/poker/engine/evaluator.ts` 看真实 API，按实际改测试。
+**注意：** 若 evaluator 导出名/签名不同，先 `grep -n "^export" src/games/poker/engine/evaluator.ts` 看真实 API，按实际改测试。
 
 - [x] **Step 3: 跑测试**
 
-Run: `npm test games/poker/engine/__tests__/evaluator.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/evaluator.test.ts`
 Expected: 5 passed。
 
 - [x] **Step 4: Commit**
 
 ```bash
-git add games/poker/engine/evaluator.ts games/poker/engine/__tests__/evaluator.test.ts
+git add src/games/poker/engine/evaluator.ts src/games/poker/engine/__tests__/evaluator.test.ts
 git commit -m "feat(p1a): port hand evaluator from old/ with textbook tests"
 ```
 
@@ -251,14 +251,14 @@ git commit -m "feat(p1a): port hand evaluator from old/ with textbook tests"
 ## Task 11: Pot manager（边池）
 
 **Files:**
-- Create: `games/poker/engine/pot-manager.ts`
-- Create: `games/poker/engine/__tests__/pot-manager.test.ts`
+- Create: `src/games/poker/engine/pot-manager.ts`
+- Create: `src/games/poker/engine/__tests__/pot-manager.test.ts`
 
-**Source:** `old/src/games/poker/engine/pot-manager.ts`（77 行）
+**Source:** `old/src/src/games/poker/engine/pot-manager.ts`（77 行）
 
 - [x] **Step 1: 写实现（基于 old，就地定义 SidePot 去掉 game types 依赖）**
 
-Create `games/poker/engine/pot-manager.ts`:
+Create `src/games/poker/engine/pot-manager.ts`:
 
 ```typescript
 export interface PlayerBet {
@@ -318,7 +318,7 @@ export function mergePots(existing: SidePot[], newPots: SidePot[]): SidePot[] {
 
 - [x] **Step 2: 写测试**
 
-Create `games/poker/engine/__tests__/pot-manager.test.ts`:
+Create `src/games/poker/engine/__tests__/pot-manager.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -377,13 +377,13 @@ describe('calculateSidePots', () => {
 
 - [x] **Step 3: 跑测试**
 
-Run: `npm test games/poker/engine/__tests__/pot-manager.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/pot-manager.test.ts`
 Expected: 4 passed。
 
 - [x] **Step 4: Commit**
 
 ```bash
-git add games/poker/engine/pot-manager.ts games/poker/engine/__tests__/pot-manager.test.ts
+git add src/games/poker/engine/pot-manager.ts src/games/poker/engine/__tests__/pot-manager.test.ts
 git commit -m "feat(p1a): port pot-manager with side-pot textbook tests"
 ```
 
@@ -392,22 +392,22 @@ git commit -m "feat(p1a): port pot-manager with side-pot textbook tests"
 ## Task 12: Equity（蒙特卡洛胜率）
 
 **Files:**
-- Create: `games/poker/engine/equity.ts`
-- Create: `games/poker/engine/__tests__/equity.test.ts`
+- Create: `src/games/poker/engine/equity.ts`
+- Create: `src/games/poker/engine/__tests__/equity.test.ts`
 
-**Source:** `old/src/games/poker/engine/equity.ts`
+**Source:** `old/src/src/games/poker/engine/equity.ts`
 
 - [x] **Step 1: 复制并适配 import**
 
 ```bash
-cp old/src/games/poker/engine/equity.ts games/poker/engine/equity.ts
+cp old/src/src/games/poker/engine/equity.ts src/games/poker/engine/equity.ts
 ```
 
-编辑 `games/poker/engine/equity.ts` 把 import 路径改成 `./card` 和 `./evaluator`。
+编辑 `src/games/poker/engine/equity.ts` 把 import 路径改成 `./card` 和 `./evaluator`。
 
 - [x] **Step 2: 写收敛性测试**
 
-Create `games/poker/engine/__tests__/equity.test.ts`:
+Create `src/games/poker/engine/__tests__/equity.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -445,17 +445,17 @@ describe('computeEquity', () => {
 })
 ```
 
-**签名按 `grep -n "^export" games/poker/engine/equity.ts` 实际调整。**
+**签名按 `grep -n "^export" src/games/poker/engine/equity.ts` 实际调整。**
 
 - [x] **Step 3: 跑测试**
 
-Run: `npm test games/poker/engine/__tests__/equity.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/equity.test.ts`
 Expected: 2 passed（蒙特卡洛有随机性，偶尔失败可提高 iterations 到 2000）。
 
 - [x] **Step 4: Commit**
 
 ```bash
-git add games/poker/engine/equity.ts games/poker/engine/__tests__/equity.test.ts
+git add src/games/poker/engine/equity.ts src/games/poker/engine/__tests__/equity.test.ts
 git commit -m "feat(p1a): port equity Monte Carlo from old/"
 ```
 
@@ -464,12 +464,12 @@ git commit -m "feat(p1a): port equity Monte Carlo from old/"
 ## Task 13: Poker 类型定义
 
 **Files:**
-- Create: `games/poker/engine/poker-types.ts`
-- Create: `games/poker/engine/__tests__/poker-types.test.ts`
+- Create: `src/games/poker/engine/poker-types.ts`
+- Create: `src/games/poker/engine/__tests__/poker-types.test.ts`
 
 - [x] **Step 1: 写实现**
 
-Create `games/poker/engine/poker-types.ts`:
+Create `src/games/poker/engine/poker-types.ts`:
 
 ```typescript
 import { z } from 'zod'
@@ -541,7 +541,7 @@ export interface PokerState {
 
 - [x] **Step 2: 写测试**
 
-Create `games/poker/engine/__tests__/poker-types.test.ts`:
+Create `src/games/poker/engine/__tests__/poker-types.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -568,11 +568,11 @@ describe('pokerActionSchema', () => {
 
 - [x] **Step 3: 跑测试 + commit**
 
-Run: `npm test games/poker/engine/__tests__/poker-types.test.ts`
+Run: `npm test src/games/poker/engine/__tests__/poker-types.test.ts`
 Expected: 5 passed。
 
 ```bash
-git add games/poker/engine/poker-types.ts games/poker/engine/__tests__/poker-types.test.ts
+git add src/games/poker/engine/poker-types.ts src/games/poker/engine/__tests__/poker-types.test.ts
 git commit -m "feat(p1a): poker types (PokerState / PokerAction with zod)"
 ```
 

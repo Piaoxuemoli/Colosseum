@@ -24,18 +24,18 @@
 
 ```
 Colosseum/
-├── games/werewolf/ui/
+├── src/games/werewolf/ui/
 │   ├── WerewolfBoard.tsx           # 主容器
 │   ├── PlayerCard.tsx              # 单个玩家卡（头像 + 状态 + 自称 + beliefBar）
 │   ├── ModeratorPanel.tsx          # 左上主持人面板
 │   ├── SpeechBubble.tsx            # 发言气泡（配角色 icon）
 │   ├── VoteTally.tsx               # 当日投票可视化
 │   └── WerewolfResultPanel.tsx     # 赛后揭露 + 胜率
-├── app/matches/[matchId]/
+├── src/app/matches/[matchId]/
 │   └── SpectatorView.tsx           # Modify: 按 gameType 分流
-├── store/
+├── src/frontend/store/
 │   └── match-view-store.ts         # Modify: 补 werewolf 派生
-└── tests/games/werewolf/ui/
+└── tests/src/games/werewolf/ui/
     ├── PlayerCard.test.tsx
     ├── VoteTally.test.tsx
     └── WerewolfResultPanel.test.tsx
@@ -46,8 +46,8 @@ Colosseum/
 ## Task 1: match-view-store 补狼人杀派生
 
 **Files:**
-- Modify: `store/match-view-store.ts`
-- Modify: `tests/store/match-view-store.test.ts`
+- Modify: `src/frontend/store/match-view-store.ts`
+- Modify: `tests/src/frontend/store/match-view-store.test.ts`
 
 **Context:** 追加 werewolf 专用 state：`day`、`phase`、`moderatorNarration[]`、`speechLog[]`、`voteLog[]`、`roleAssignments`（只在 gameEnd 后可见）、`alive[]`。reducer 消费 werewolf/* events。
 
@@ -147,13 +147,13 @@ it('reveals roles on gameEnd', () => {
 })
 ```
 
-Run: `npx vitest run tests/store/match-view-store.test.ts -t "werewolf"`
+Run: `npx vitest run tests/src/frontend/store/match-view-store.test.ts -t "werewolf"`
 Expected: PASS。
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add store/match-view-store.ts tests/store/match-view-store.test.ts
+git add src/frontend/store/match-view-store.ts tests/src/frontend/store/match-view-store.test.ts
 git commit -m "feat(p3-4): match-view-store werewolf derivations"
 ```
 
@@ -162,8 +162,8 @@ git commit -m "feat(p3-4): match-view-store werewolf derivations"
 ## Task 2: PlayerCard
 
 **Files:**
-- Create: `games/werewolf/ui/PlayerCard.tsx`
-- Create: `tests/games/werewolf/ui/PlayerCard.test.tsx`
+- Create: `src/games/werewolf/ui/PlayerCard.tsx`
+- Create: `tests/src/games/werewolf/ui/PlayerCard.test.tsx`
 
 **Context:** 每位玩家一张卡片：
 - 头像（首字母圆形）
@@ -176,7 +176,7 @@ git commit -m "feat(p3-4): match-view-store werewolf derivations"
 - [ ] **Step 1: 组件**
 
 ```tsx
-// games/werewolf/ui/PlayerCard.tsx
+// src/games/werewolf/ui/PlayerCard.tsx
 'use client'
 import { motion } from 'framer-motion'
 import { Skull } from 'lucide-react'
@@ -262,13 +262,13 @@ describe('PlayerCard', () => {
 })
 ```
 
-Run: `npx vitest run tests/games/werewolf/ui/PlayerCard.test.tsx`
+Run: `npx vitest run tests/src/games/werewolf/ui/PlayerCard.test.tsx`
 Expected: PASS。
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add games/werewolf/ui/PlayerCard.tsx tests/games/werewolf/ui/PlayerCard.test.tsx
+git add src/games/werewolf/ui/PlayerCard.tsx tests/src/games/werewolf/ui/PlayerCard.test.tsx
 git commit -m "feat(p3-4): PlayerCard with alive/reveal states"
 ```
 
@@ -277,17 +277,17 @@ git commit -m "feat(p3-4): PlayerCard with alive/reveal states"
 ## Task 3: SpeechBubble 时间线
 
 **Files:**
-- Create: `games/werewolf/ui/SpeechBubble.tsx`
+- Create: `src/games/werewolf/ui/SpeechBubble.tsx`
 
 **Context:** 中间区域的卷轴式发言列表。每条：左边头像 + 名字，右边文本框。有 `claimedRole` 的在头像下挂一个小角色 chip。自动滚到最新。
 
 - [ ] **Step 1: 组件**
 
 ```tsx
-// games/werewolf/ui/SpeechBubble.tsx
+// src/games/werewolf/ui/SpeechBubble.tsx
 'use client'
 import { useEffect, useRef } from 'react'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 
 export function SpeechBubbleList() {
   const speeches = useMatchViewStore(s => s.werewolf.speechLog)
@@ -320,7 +320,7 @@ export function SpeechBubbleList() {
 - [ ] **Step 2: Commit**
 
 ```bash
-git add games/werewolf/ui/SpeechBubble.tsx
+git add src/games/werewolf/ui/SpeechBubble.tsx
 git commit -m "feat(p3-4): SpeechBubbleList timeline"
 ```
 
@@ -329,16 +329,16 @@ git commit -m "feat(p3-4): SpeechBubbleList timeline"
 ## Task 4: ModeratorPanel
 
 **Files:**
-- Create: `games/werewolf/ui/ModeratorPanel.tsx`
+- Create: `src/games/werewolf/ui/ModeratorPanel.tsx`
 
 **Context:** 左上角固定组件，显示最近一条 `moderatorNarration`，带仪式感样式（金边 + 衬线字体）。
 
 - [ ] **Step 1: 组件**
 
 ```tsx
-// games/werewolf/ui/ModeratorPanel.tsx
+// src/games/werewolf/ui/ModeratorPanel.tsx
 'use client'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Gavel } from 'lucide-react'
 
@@ -377,7 +377,7 @@ export function ModeratorPanel() {
 - [ ] **Step 2: Commit**
 
 ```bash
-git add games/werewolf/ui/ModeratorPanel.tsx
+git add src/games/werewolf/ui/ModeratorPanel.tsx
 git commit -m "feat(p3-4): ModeratorPanel with narration animation"
 ```
 
@@ -386,15 +386,15 @@ git commit -m "feat(p3-4): ModeratorPanel with narration animation"
 ## Task 5: VoteTally + WerewolfBoard 组装
 
 **Files:**
-- Create: `games/werewolf/ui/VoteTally.tsx`
-- Create: `games/werewolf/ui/WerewolfBoard.tsx`
+- Create: `src/games/werewolf/ui/VoteTally.tsx`
+- Create: `src/games/werewolf/ui/WerewolfBoard.tsx`
 
 - [ ] **Step 1: VoteTally**
 
 ```tsx
-// games/werewolf/ui/VoteTally.tsx
+// src/games/werewolf/ui/VoteTally.tsx
 'use client'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { useMemo } from 'react'
 
 export function VoteTally() {
@@ -430,9 +430,9 @@ export function VoteTally() {
 - [ ] **Step 2: WerewolfBoard**
 
 ```tsx
-// games/werewolf/ui/WerewolfBoard.tsx
+// src/games/werewolf/ui/WerewolfBoard.tsx
 'use client'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { PlayerCard } from './PlayerCard'
 import { SpeechBubbleList } from './SpeechBubble'
 import { ModeratorPanel } from './ModeratorPanel'
@@ -496,7 +496,7 @@ export function WerewolfBoard() {
 - [ ] **Step 3: Commit**
 
 ```bash
-git add games/werewolf/ui/VoteTally.tsx games/werewolf/ui/WerewolfBoard.tsx
+git add src/games/werewolf/ui/VoteTally.tsx src/games/werewolf/ui/WerewolfBoard.tsx
 git commit -m "feat(p3-4): WerewolfBoard layout (3 cols grid)"
 ```
 
@@ -505,20 +505,20 @@ git commit -m "feat(p3-4): WerewolfBoard layout (3 cols grid)"
 ## Task 6: SpectatorView 按 gameType 分流
 
 **Files:**
-- Modify: `app/matches/[matchId]/SpectatorView.tsx`
+- Modify: `src/app/matches/[matchId]/SpectatorView.tsx`
 
 - [ ] **Step 1: 分流**
 
 ```tsx
-// app/matches/[matchId]/SpectatorView.tsx
+// src/app/matches/[matchId]/SpectatorView.tsx
 'use client'
 import { useEffect } from 'react'
-import { useMatchViewStore } from '@/store/match-view-store'
-import { useMatchSse } from '@/lib/client/sse'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
+import { useMatchSse } from '@/frontend/lib/client/sse'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
-import { RightPanel } from '@/components/match/RightPanel'
-import { RankingPanel } from '@/components/match/RankingPanel'
+import { RightPanel } from '@/frontend/components/match/RightPanel'
+import { RankingPanel } from '@/frontend/components/match/RankingPanel'
 import { WerewolfResultPanel } from '@/games/werewolf/ui/WerewolfResultPanel'
 
 export default function SpectatorView({ match }: { match: any }) {
@@ -541,7 +541,7 @@ export default function SpectatorView({ match }: { match: any }) {
 - [ ] **Step 2: Commit**
 
 ```bash
-git add app/matches/\[matchId\]/SpectatorView.tsx
+git add src/app/matches/\[matchId\]/SpectatorView.tsx
 git commit -m "feat(p3-4): SpectatorView dispatches by gameType"
 ```
 
@@ -550,8 +550,8 @@ git commit -m "feat(p3-4): SpectatorView dispatches by gameType"
 ## Task 7: WerewolfResultPanel
 
 **Files:**
-- Create: `games/werewolf/ui/WerewolfResultPanel.tsx`
-- Create: `tests/games/werewolf/ui/WerewolfResultPanel.test.tsx`
+- Create: `src/games/werewolf/ui/WerewolfResultPanel.tsx`
+- Create: `tests/src/games/werewolf/ui/WerewolfResultPanel.test.tsx`
 
 **Context:** gameEnd 后弹 Dialog，展示：
 - 胜利阵营（狼胜 / 村胜 / 平局）
@@ -561,11 +561,11 @@ git commit -m "feat(p3-4): SpectatorView dispatches by gameType"
 - [ ] **Step 1: 组件**
 
 ```tsx
-// games/werewolf/ui/WerewolfResultPanel.tsx
+// src/games/werewolf/ui/WerewolfResultPanel.tsx
 'use client'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/src/frontend/components/ui/dialog'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 import { useRouter } from 'next/navigation'
 
 const ZH: Record<string, string> = { werewolf: '狼人', seer: '预言家', witch: '女巫', villager: '平民' }
@@ -617,7 +617,7 @@ export function WerewolfResultPanel() {
 ```tsx
 import { render, screen } from '@testing-library/react'
 import { WerewolfResultPanel } from '@/games/werewolf/ui/WerewolfResultPanel'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/src/frontend/store/match-view-store'
 
 describe('WerewolfResultPanel', () => {
   it('shows werewolf victory title', () => {
@@ -631,13 +631,13 @@ describe('WerewolfResultPanel', () => {
 })
 ```
 
-Run: `npx vitest run tests/games/werewolf/ui/WerewolfResultPanel.test.tsx`
+Run: `npx vitest run tests/src/games/werewolf/ui/WerewolfResultPanel.test.tsx`
 Expected: PASS。
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add games/werewolf/ui/WerewolfResultPanel.tsx tests/games/werewolf/ui/WerewolfResultPanel.test.tsx
+git add src/games/werewolf/ui/WerewolfResultPanel.tsx tests/src/games/werewolf/ui/WerewolfResultPanel.test.tsx
 git commit -m "feat(p3-4): WerewolfResultPanel with reveal"
 ```
 
