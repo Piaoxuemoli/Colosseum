@@ -155,6 +155,8 @@
 | 2026-06-05 | Production frontend smoke | Passed | `/` HTML 不再包含侧栏 `Launch table` 新对局导航；侧栏状态更新为“正式上线”；RSC payload 中文本会重复出现，不用于可见按钮数精确判断 |
 | 2026-06-05 | Production poker elimination smoke `match_1cc5c78d-b54d-4179-b642-803ea1d215c4` | Passed | 低筹码德扑推进到第 74 手：4 个 `eliminated` 玩家均 `chips=0` 且 `holeCards=[]`，剩 2 名有筹码玩家继续运行，验证破产玩家未 rebuy |
 | 2026-06-05 | Production final cleanup + restart | Passed | 备份 `/var/backups/colosseum/pre-final-launch-20260605-215416.db.gz`；清空对局/事件/错误/记忆，保留 `api_profiles=1`、`agents=6`；Redis `DBSIZE=0`；`/api/matches` 返回 `[]` |
+| 2026-06-13 | Frontend performance fix + gate | Passed | Split thinking store, optimized player reference updates in `ingestEvent`, memoized PlayerSeat/PlayingCard/Pot/CommunityCards/PlayerCard/ThinkingBubble, fixed Framer Motion remount keys, batched thinking deltas on client/server, limited ActionLog/ThinkingLog rendering, capped spectator SSR events to 100, optimized `nextSeq` with MAX aggregate, added SSE exponential backoff. `npm run lint` + `npm run typecheck` + `npm run build` passed. |
+| 2026-06-13 | Deployment skill + archive stale docs | Passed | Created `.kimi-code/skills/deployment/SKILL.md`; moved `docs/superpowers/plans/2026-05-06-phase-4-deployment.md`, `docs/ai/phase-6-server-verify-plan.md`, `docs/superpowers/notes/phase-0-complete.md`, and 4 `docs/demo/*` checklists into `old/docs-archive/`; added `old/docs-archive/README.md`; updated `AGENTS.md` with deployment section. `npm run lint` + `npm run typecheck` + `npm run build` passed. |
 
 ## Open Questions / Blockers
 
