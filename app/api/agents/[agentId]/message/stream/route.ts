@@ -245,7 +245,17 @@ export async function POST(
             delta: true,
           })
           emit.artifactUpdate({
-            parts: [{ kind: 'data', data: { action, thinking: 'bot fallback', fallback: true } }],
+            parts: [
+              {
+                kind: 'data',
+                data: {
+                  action,
+                  thinking: 'bot fallback',
+                  fallback: true,
+                  errorKind: !profile ? 'llm-profile-missing' : 'llm-api-key-missing',
+                },
+              },
+            ],
             delta: false,
           })
           emit.statusUpdate('completed')
@@ -287,7 +297,17 @@ export async function POST(
           })
         }
         emit.artifactUpdate({
-          parts: [{ kind: 'data', data: { action: validated.action, thinking: result.thinkingText, fallback: validated.layer === 'fallback' } }],
+          parts: [
+            {
+              kind: 'data',
+              data: {
+                action: validated.action,
+                thinking: result.thinkingText,
+                fallback: validated.layer === 'fallback',
+                ...(validated.layer === 'fallback' ? { errorKind: 'llm-invalid-action' } : {}),
+              },
+            },
+          ],
           delta: false,
         })
         emit.statusUpdate('completed')
@@ -312,7 +332,7 @@ export async function POST(
           delta: true,
         })
         emit.artifactUpdate({
-          parts: [{ kind: 'data', data: { action, thinking: 'bot fallback', fallback: true, errorKind } }],
+          parts: [{ kind: 'data', data: { action, thinking: 'bot fallback', fallback: true, errorKind: `llm-${errorKind}` } }],
           delta: false,
         })
         emit.statusUpdate('completed')

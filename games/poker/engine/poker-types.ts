@@ -62,6 +62,7 @@ export interface PokerState {
   betsThisStreet: number
   smallBlind: number
   bigBlind: number
+  startingChips: number
   pot: number
   streetPots: Record<Exclude<PokerPhase, 'waiting' | 'showdown' | 'handComplete'>, number>
   sidePots: PokerSidePotState[]
@@ -85,6 +86,7 @@ export interface PokerPublicState {
   sidePots: PokerSidePotState[]
   smallBlind: number
   bigBlind: number
+  startingChips: number
   stopRequested: boolean
   handComplete: boolean
   matchComplete: boolean

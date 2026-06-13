@@ -54,6 +54,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       betsThisStreet: 1,
       smallBlind: config.smallBlind,
       bigBlind: config.bigBlind,
+      startingChips: config.startingChips,
       pot: config.smallBlind + config.bigBlind,
       streetPots: this.emptyStreetPots(config.smallBlind + config.bigBlind),
       sidePots: [],
@@ -95,6 +96,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       })),
       smallBlind: state.smallBlind,
       bigBlind: state.bigBlind,
+      startingChips: state.startingChips,
       stopRequested: state.stopRequested,
       handComplete: state.handComplete,
       matchComplete: state.matchComplete,
@@ -128,23 +130,7 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       }
     }
 
-    const playersWithChips = next.players.filter((player) => player.chips > 0)
-    if (playersWithChips.length <= 1) {
-      next.currentActor = null
-      next.matchComplete = true
-      return {
-        nextState: next,
-        events: [
-          this.makeEvent({
-            kind: 'poker/match-end',
-            actorAgentId: null,
-            payload: { winnerId: playersWithChips[0]?.id ?? null },
-          }),
-          this.makePublicStateEvent(next),
-        ],
-      }
-    }
-
+    // Endless table: always start the next hand unless the user requested stop.
     this.startNextHand(next)
     return {
       nextState: next,
@@ -507,23 +493,9 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       )
     }
 
-    for (const player of state.players) {
-      if (player.chips === 0 && player.status !== 'sittingOut') player.status = 'eliminated'
-    }
-
-    const playersWithChips = state.players.filter((player) => player.chips > 0)
-    if (playersWithChips.length <= 1) {
-      state.currentActor = null
-      state.matchComplete = true
-      events.push(
-        this.makeEvent({
-          kind: 'poker/match-end',
-          actorAgentId: null,
-          payload: { winnerId: playersWithChips[0]?.id ?? null },
-        }),
-      )
-    }
-
+    // Endless table: players with zero chips are not eliminated; they will be
+    // reloaded in startNextHand. The match only ends when the user explicitly
+    // requests stop after the current hand.
     return events
   }
 
@@ -551,11 +523,15 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     state.sidePots = []
     state.deck = shuffleDeck(createDeck())
 
+    // Endless table: reload any player who cannot afford the big blind.
     for (const player of state.players) {
       player.currentBet = 0
       player.totalCommitted = 0
       player.hasActedThisStreet = false
       player.holeCards = []
+      if (player.chips < state.bigBlind && player.status !== 'sittingOut') {
+        player.chips = state.startingChips
+      }
       player.status = player.chips > 0 ? 'active' : 'eliminated'
     }
 

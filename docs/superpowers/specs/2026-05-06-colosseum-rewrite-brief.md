@@ -126,7 +126,7 @@ flowchart LR
 
 ---
 
-## 5. 一手对局的端到端数据流
+## 5. 持续桌的一手循环数据流
 
 ```mermaid
 sequenceDiagram
@@ -178,8 +178,11 @@ sequenceDiagram
     alt 手结束
       GM->>Mem: synthesizeEpisodic + updateSemantic
       Mem->>DB: 写 episodic + semantic memory
+      GM->>Eng: continueAfterBoundary(hand-end)
+      Eng-->>GM: 下一手 state + hand-start/state events
+      GM->>RD: 保存下一手 GameState
     end
-    alt 对局结束
+    alt 用户请求本手后结束 / 手动停止
       GM->>Eng: finalize() → ranking
       GM->>DB: 写 finalRanking + status=completed
       GM-->>U: SSE match-end → RankingPanel
@@ -393,7 +396,7 @@ flowchart LR
 
 **每 Phase 里程碑**：
 - **P0**：Hello World LLM 调通 + A2A toy agent
-- **P1**：6 个 LLM 自主打完一局德扑，实时思考链 + 筹码图 + 排名
+- **P1**：6 个 LLM 在持续德扑桌自主打多手牌，实时思考链 + 筹码图；用户请求本手后结束时展示排名
 - **P2**：Agent Card curl 可读 + 2 对局并发不串扰 + fallback Badge
 - **P3**：狼人杀 6 玩家 + 1 Moderator 打完一局
 - **P4**：公网 URL + 录屏 demo

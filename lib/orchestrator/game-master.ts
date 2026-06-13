@@ -75,13 +75,15 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     if (agentDecision.fallback || layer === 'fallback') {
       const rawCode = agentDecision.errorCode ?? 'agent-invalid-action'
       inc('agent.fallback', 1, { gameType, reason: bucketizeFallbackReason(rawCode) })
-      await recordAgentError({
-        matchId,
-        agentId: actorId,
-        layer: 'fallback',
-        errorCode: rawCode,
-        recoveryAction: action as Record<string, unknown>,
-      })
+      if (!isAgentEndpointRecordedError(rawCode)) {
+        await recordAgentError({
+          matchId,
+          agentId: actorId,
+          layer: 'fallback',
+          errorCode: rawCode,
+          recoveryAction: action as Record<string, unknown>,
+        })
+      }
     }
 
     const { nextState, events } = game.engine.applyAction(state, actorId, action)
@@ -270,7 +272,7 @@ async function requestAgentDecision(input: {
     return {
       action: decision.action,
       fallback: decision.fallback ?? false,
-      errorCode: decision.errorKind ? `agent-${decision.errorKind}` : undefined,
+      errorCode: normalizeAgentErrorKind(decision.errorKind),
     }
   } catch (err) {
     flushThinking()
@@ -282,6 +284,16 @@ async function requestAgentDecision(input: {
     })
     return { action: input.fallback(), fallback: true, errorCode: 'agent-endpoint-failed' }
   }
+}
+
+function normalizeAgentErrorKind(errorKind: string | undefined): string | undefined {
+  if (!errorKind) return undefined
+  if (errorKind.startsWith('agent-') || errorKind.startsWith('llm-')) return errorKind
+  return `agent-${errorKind}`
+}
+
+function isAgentEndpointRecordedError(errorCode: string): boolean {
+  return errorCode.startsWith('llm-')
 }
 
 export async function runMatchToCompletion(
