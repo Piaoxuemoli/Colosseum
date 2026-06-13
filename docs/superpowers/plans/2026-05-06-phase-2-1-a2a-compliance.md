@@ -25,12 +25,12 @@
 
 ```
 Colosseum/
-├── app/api/agents/[agentId]/
+├── src/app/api/agents/[agentId]/
 │   ├── .well-known/agent-card.json/
 │   │   └── route.ts                        # 新增：发布 AgentCard
 │   ├── route.ts                            # 新增：JSON-RPC 总入口 POST
 │   └── message/stream/route.ts             # Modify: 语义对齐 A2A v0.3
-├── lib/a2a-core/
+├── src/backend/a2a-core/
 │   ├── agent-card.ts                       # AgentCard 构造器
 │   ├── jsonrpc.ts                          # JSON-RPC 请求 / 响应帧
 │   ├── sse-writer.ts                       # status-update / artifact-update helper
@@ -40,7 +40,7 @@ Colosseum/
 │   ├── agent-card.test.ts
 │   ├── jsonrpc.test.ts
 │   └── sse-writer.test.ts
-└── lib/orchestrator/gm.ts                  # Modify: 改用 a2a-core client
+└── src/backend/orchestrator/gm.ts                  # Modify: 改用 a2a-core client
 ```
 
 ---
@@ -49,7 +49,7 @@ Colosseum/
 
 **Files:**
 - Modify: `package.json`
-- Create: `lib/a2a-core/types.ts`
+- Create: `src/backend/a2a-core/types.ts`
 
 - [ ] **Step 1: 安装**
 
@@ -60,7 +60,7 @@ npm install @a2a-js/sdk
 - [ ] **Step 2: 类型 re-export**
 
 ```typescript
-// lib/a2a-core/types.ts
+// src/backend/a2a-core/types.ts
 export type {
   Message,
   Part,
@@ -92,7 +92,7 @@ export interface DecisionRequestData {
 - [ ] **Step 3: Commit**
 
 ```bash
-git add package.json package-lock.json lib/a2a-core/types.ts
+git add package.json package-lock.json src/backend/a2a-core/types.ts
 git commit -m "chore(p2-1): install @a2a-js/sdk + type re-exports"
 ```
 
@@ -101,7 +101,7 @@ git commit -m "chore(p2-1): install @a2a-js/sdk + type re-exports"
 ## Task 2: AgentCard 构造器
 
 **Files:**
-- Create: `lib/a2a-core/agent-card.ts`
+- Create: `src/backend/a2a-core/agent-card.ts`
 - Create: `tests/a2a-core/agent-card.test.ts`
 
 **Context:** `buildAgentCard(agent, profile, baseUrl)` 按 spec 4.3 返回合规 AgentCard JSON。
@@ -111,7 +111,7 @@ git commit -m "chore(p2-1): install @a2a-js/sdk + type re-exports"
 ```typescript
 // tests/a2a-core/agent-card.test.ts
 import { describe, it, expect } from 'vitest'
-import { buildAgentCard } from '@/lib/a2a-core/agent-card'
+import { buildAgentCard } from '@/backend/a2a-core/agent-card'
 
 describe('buildAgentCard', () => {
   it('returns v0.3 compliant card', () => {
@@ -155,7 +155,7 @@ Expected: FAIL（模块不存在）。
 - [ ] **Step 2: 实现**
 
 ```typescript
-// lib/a2a-core/agent-card.ts
+// src/backend/a2a-core/agent-card.ts
 import type { AgentCard } from './types'
 
 export interface BuildCardInput {
@@ -214,10 +214,10 @@ Expected: PASS。
 - [ ] **Step 3: AgentCard Route**
 
 ```typescript
-// app/api/agents/[agentId]/.well-known/agent-card.json/route.ts
+// src/app/api/agents/[agentId]/.well-known/agent-card.json/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { getAgent } from '@/db/queries/agents'
-import { buildAgentCard } from '@/lib/a2a-core/agent-card'
+import { buildAgentCard } from '@/backend/a2a-core/agent-card'
 
 export async function GET(
   req: NextRequest,
@@ -242,7 +242,7 @@ Expected: 完整 JSON，`protocolVersion=0.3.0`、`url` 正确。
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lib/a2a-core/agent-card.ts app/api/agents/\[agentId\]/.well-known tests/a2a-core/agent-card.test.ts
+git add src/backend/a2a-core/agent-card.ts src/app/api/agents/\[agentId\]/.well-known tests/a2a-core/agent-card.test.ts
 git commit -m "feat(p2-1): AgentCard publishing at .well-known/agent-card.json"
 ```
 
@@ -251,7 +251,7 @@ git commit -m "feat(p2-1): AgentCard publishing at .well-known/agent-card.json"
 ## Task 3: JSON-RPC 帧编解码
 
 **Files:**
-- Create: `lib/a2a-core/jsonrpc.ts`
+- Create: `src/backend/a2a-core/jsonrpc.ts`
 - Create: `tests/a2a-core/jsonrpc.test.ts`
 
 **Context:** `@a2a-js/sdk` 有自己的 JSON-RPC 工具，但为控制清晰度，我们封一层：解析请求、生成错误响应、封装方法分发。
@@ -261,7 +261,7 @@ git commit -m "feat(p2-1): AgentCard publishing at .well-known/agent-card.json"
 ```typescript
 // tests/a2a-core/jsonrpc.test.ts
 import { describe, it, expect } from 'vitest'
-import { parseRpcRequest, rpcError, rpcResult } from '@/lib/a2a-core/jsonrpc'
+import { parseRpcRequest, rpcError, rpcResult } from '@/backend/a2a-core/jsonrpc'
 
 describe('parseRpcRequest', () => {
   it('parses valid request', () => {
@@ -293,7 +293,7 @@ describe('rpcError / rpcResult', () => {
 - [ ] **Step 2: 实现**
 
 ```typescript
-// lib/a2a-core/jsonrpc.ts
+// src/backend/a2a-core/jsonrpc.ts
 export interface RpcRequest {
   jsonrpc: '2.0'
   id: number | string
@@ -336,7 +336,7 @@ Expected: PASS。
 - [ ] **Step 3: Commit**
 
 ```bash
-git add lib/a2a-core/jsonrpc.ts tests/a2a-core/jsonrpc.test.ts
+git add src/backend/a2a-core/jsonrpc.ts tests/a2a-core/jsonrpc.test.ts
 git commit -m "feat(p2-1): JSON-RPC request/response helpers"
 ```
 
@@ -345,7 +345,7 @@ git commit -m "feat(p2-1): JSON-RPC request/response helpers"
 ## Task 4: SSE Writer（status-update / artifact-update）
 
 **Files:**
-- Create: `lib/a2a-core/sse-writer.ts`
+- Create: `src/backend/a2a-core/sse-writer.ts`
 - Create: `tests/a2a-core/sse-writer.test.ts`
 
 **Context:** A2A v0.3 SSE 事件：
@@ -355,7 +355,7 @@ git commit -m "feat(p2-1): JSON-RPC request/response helpers"
 - [ ] **Step 1: 实现**
 
 ```typescript
-// lib/a2a-core/sse-writer.ts
+// src/backend/a2a-core/sse-writer.ts
 export class A2ASseWriter {
   private encoder = new TextEncoder()
   constructor(
@@ -403,7 +403,7 @@ export class A2ASseWriter {
 
 ```typescript
 import { describe, it, expect } from 'vitest'
-import { A2ASseWriter } from '@/lib/a2a-core/sse-writer'
+import { A2ASseWriter } from '@/backend/a2a-core/sse-writer'
 
 describe('A2ASseWriter', () => {
   it('writes status + artifact frames', async () => {
@@ -440,7 +440,7 @@ Expected: PASS。
 - [ ] **Step 3: Commit**
 
 ```bash
-git add lib/a2a-core/sse-writer.ts tests/a2a-core/sse-writer.test.ts
+git add src/backend/a2a-core/sse-writer.ts tests/a2a-core/sse-writer.test.ts
 git commit -m "feat(p2-1): A2ASseWriter for status/artifact frames"
 ```
 
@@ -449,7 +449,7 @@ git commit -m "feat(p2-1): A2ASseWriter for status/artifact frames"
 ## Task 5: Agent Endpoint 升级到 JSON-RPC `message/stream`
 
 **Files:**
-- Modify: `app/api/agents/[agentId]/message/stream/route.ts`
+- Modify: `src/app/api/agents/[agentId]/message/stream/route.ts`
 - Modify: `tests/api/agent-stream.test.ts`
 
 **Context:** Endpoint 接收 JSON-RPC 请求，方法 `message/stream`，params 里含 `message`。内部调 `runDecision` + SseWriter 输出合规帧。保留 `X-Match-Token` 鉴权；错误走 JSON-RPC error 或 `status-update failed`。
@@ -459,15 +459,15 @@ git commit -m "feat(p2-1): A2ASseWriter for status/artifact frames"
 - [ ] **Step 1: 改 route**
 
 ```typescript
-// app/api/agents/[agentId]/message/stream/route.ts
+// src/app/api/agents/[agentId]/message/stream/route.ts
 import { NextRequest } from 'next/server'
-import { parseRpcRequest, RpcErrors } from '@/lib/a2a-core/jsonrpc'
-import { A2ASseWriter } from '@/lib/a2a-core/sse-writer'
-import { verifyMatchToken } from '@/lib/auth/match-token'
+import { parseRpcRequest, RpcErrors } from '@/backend/a2a-core/jsonrpc'
+import { A2ASseWriter } from '@/backend/a2a-core/sse-writer'
+import { verifyMatchToken } from '@/backend/auth/match-token'
 import { getAgent, getProfile } from '@/db/queries/agents'
-import { runDecision } from '@/lib/agent/llm-runtime'
-import { LlmError } from '@/lib/agent/llm-errors'
-import { getApiKey } from '@/lib/agent/key-cache'
+import { runDecision } from '@/backend/agent/llm-runtime'
+import { LlmError } from '@/backend/agent/llm-errors'
+import { getApiKey } from '@/backend/agent/key-cache'
 import { runBotDecision } from '@/games/poker/agent/bot'
 import { logAgentError } from '@/db/queries/errors'
 
@@ -575,7 +575,7 @@ Expected: PASS。
 - [ ] **Step 3: Commit**
 
 ```bash
-git add app/api/agents/\[agentId\]/message/stream/route.ts tests/api/agent-stream.test.ts
+git add src/app/api/agents/\[agentId\]/message/stream/route.ts tests/api/agent-stream.test.ts
 git commit -m "feat(p2-1): agent endpoint conforms to A2A v0.3 JSON-RPC"
 ```
 
@@ -584,15 +584,15 @@ git commit -m "feat(p2-1): agent endpoint conforms to A2A v0.3 JSON-RPC"
 ## Task 6: A2AClient 封装 + GM 接入
 
 **Files:**
-- Create: `lib/a2a-core/client.ts`
-- Modify: `lib/orchestrator/gm.ts`
+- Create: `src/backend/a2a-core/client.ts`
+- Modify: `src/backend/orchestrator/gm.ts`
 
 **Context:** 封装 `requestAgentDecision(agent, payload, matchToken, onThinking, timeoutMs)`：内部发 JSON-RPC 请求、解析 SSE、回调 thinking delta、返回最终 action。
 
 - [ ] **Step 1: client**
 
 ```typescript
-// lib/a2a-core/client.ts
+// src/backend/a2a-core/client.ts
 export interface AgentDecisionResult {
   action: unknown
   thinkingText: string
@@ -683,7 +683,7 @@ function safeJsonParse(s: string): any | null {
 
 - [ ] **Step 2: GM 接入**
 
-在 `lib/orchestrator/gm.ts` 把之前 `fetch(agentEndpoint, ...)` 的手写代码替换为 `requestAgentDecision(...)`；thinking delta 累积→发 `agent_thinking` 事件逻辑不变。
+在 `src/backend/orchestrator/gm.ts` 把之前 `fetch(agentEndpoint, ...)` 的手写代码替换为 `requestAgentDecision(...)`；thinking delta 累积→发 `agent_thinking` 事件逻辑不变。
 
 - [ ] **Step 3: 手动冒烟**
 
@@ -692,7 +692,7 @@ function safeJsonParse(s: string): any | null {
 - [ ] **Step 4: Commit**
 
 ```bash
-git add lib/a2a-core/client.ts lib/orchestrator/gm.ts
+git add src/backend/a2a-core/client.ts src/backend/orchestrator/gm.ts
 git commit -m "feat(p2-1): GM uses A2AClient with A2A v0.3 frames"
 ```
 

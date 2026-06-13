@@ -65,8 +65,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/zod ./node_modules/z
 
 # Schema + migrations + drizzle config must be present at runtime for
 # drizzle-kit migrate to apply deltas.
-COPY --from=builder --chown=nextjs:nodejs /app/lib/db ./lib/db
-COPY --from=builder --chown=nextjs:nodejs /app/lib/env.ts ./lib/env.ts
+COPY --from=builder --chown=nextjs:nodejs /app/src/platform/db ./src/platform/db
+COPY --from=builder --chown=nextjs:nodejs /app/src/platform/env.ts ./src/platform/env.ts
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
 

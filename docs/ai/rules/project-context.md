@@ -14,6 +14,26 @@ Colosseum 是一个纯 AI 博弈竞技平台。用户配置 LLM Profile，创建
 - 长任务状态：`docs/ai/session-state.md`
 - 部署 Skill：`.kimi-code/skills/deployment/SKILL.md`
 
+## 目录结构
+
+```
+.
+├── src/
+│   ├── app/              # Next.js App Router：frontend 页面 + backend API routes
+│   ├── frontend/         # 页面组件、Zustand store、前端工具
+│   ├── backend/          # 业务编排：orchestrator、agent、a2a-core、auth、match
+│   ├── platform/         # 基础设施：core、db、redis、llm、telemetry、memory、engine
+│   └── games/            # 游戏自治包
+├── ops/                  # 部署与开发环境
+├── docs/                 # 文档
+├── archive/              # 归档
+└── package.json 等根文件
+```
+
+- `src/app/api/` 是 backend 的 HTTP 边界；其余 `src/app/` 是 frontend 路由。
+- `src/frontend/` 不直接 import `src/backend/` 或 `src/platform/db`。
+- 每个游戏包在 `src/games/<game>/` 内保持完整自治。
+
 ## 架构红线
 
 - 游戏引擎是纯函数层：输入 `(state, action)`，输出 `newState`。不碰 React、DB、HTTP、Redis、LLM。

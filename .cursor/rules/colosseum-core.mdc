@@ -9,7 +9,7 @@ Keep this rule thin. Do not duplicate detailed project conventions here; route t
 
 ## Always Read
 
-- `AGENTS.md`
+- `AGENTS.md`（包含最新项目结构：`src/{app,frontend,backend,platform,games}`）
 
 ## Read On Demand
 

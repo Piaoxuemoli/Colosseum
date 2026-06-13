@@ -193,3 +193,22 @@ npm run dev        # 启动 Next.js（另一个终端）
 - 生产 Dockerfile：`ops/deploy/Dockerfile`
 - Caddy 配置：`ops/deploy/Caddyfile`
 - 备份脚本：`scripts/backup.sh`
+
+## 项目结构说明
+
+源码集中在 `src/`，部署流水线集中在 `ops/`：
+
+```
+.
+├── src/
+│   ├── app/              # Next.js App Router（页面 + API routes）
+│   ├── frontend/         # 前端组件与 store
+│   ├── backend/          # orchestrator / agent / a2a-core / auth / match
+│   ├── platform/         # db / redis / llm / telemetry / core / engine / memory
+│   └── games/            # poker / werewolf 自治包
+├── ops/                  # Docker Compose、Caddy、备份 cron、开发环境
+├── scripts/backup.sh     # SQLite 备份脚本
+└── ...
+```
+
+生产镜像构建时，`ops/deploy/Dockerfile` 会将 `src/platform/db/` 与 `src/platform/env.ts` 复制到 runner 阶段以支持 drizzle-kit migrate。

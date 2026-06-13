@@ -8,7 +8,7 @@
 - Moderator 和 Player 共用同一 `/api/agents/:id/...` endpoint（靠 agent.kind 区分）
 - Moderator Context 不读 working/episodic/semantic，只读最近 N 条 game_events
 - Moderator 输出纯 narration（不改 engine 状态）；GM 在每次阶段转换前调一次 Moderator
-- Plugin 注册：`games/werewolf/plugin.ts` 暴露 engine / playerContextBuilder / moderatorContextBuilder / responseParser / botStrategy / memoryModule / meta
+- Plugin 注册：`src/games/werewolf/plugin.ts` 暴露 engine / playerContextBuilder / moderatorContextBuilder / responseParser / botStrategy / memoryModule / meta
 
 **前置条件：** Phase 3-1 + 3-2 完成。
 
@@ -24,20 +24,20 @@
 
 ```
 Colosseum/
-├── games/werewolf/
+├── src/games/werewolf/
 │   ├── agent/
 │   │   ├── moderator-context.ts          # moderatorContextBuilder
 │   │   └── moderator-parser.ts           # 纯 narration 提取
 │   ├── plugin.ts                         # 注册到 gameRegistry
 │   └── events.ts                         # werewolf/* event kind 定义 + visibility
-├── lib/orchestrator/
+├── src/backend/orchestrator/
 │   ├── gm-werewolf.ts                    # GM 狼人杀专用 tick 子逻辑
 │   └── gm.ts                             # Modify: 按 gameType dispatch
 ├── db/seeds/
 │   └── default-moderator.ts              # 写入系统默认 moderator agent（kind='moderator'）
 └── tests/
-    ├── games/werewolf/moderator-context.test.ts
-    ├── games/werewolf/plugin.test.ts
+    ├── src/games/werewolf/moderator-context.test.ts
+    ├── src/games/werewolf/plugin.test.ts
     └── orchestrator/gm-werewolf.test.ts
 ```
 
@@ -46,8 +46,8 @@ Colosseum/
 ## Task 1: Werewolf Event 模型 + visibility
 
 **Files:**
-- Create: `games/werewolf/events.ts`
-- Create: `tests/games/werewolf/events.test.ts`
+- Create: `src/games/werewolf/events.ts`
+- Create: `tests/src/games/werewolf/events.test.ts`
 
 **Context:** spec 5.5 要求跨游戏统一 `GameEvent`；狼人杀对 visibility 尤其敏感。定义帮手工厂：
 
@@ -71,7 +71,7 @@ type WerewolfEventKind =
 - [ ] **Step 1: 实现**
 
 ```typescript
-// games/werewolf/events.ts
+// src/games/werewolf/events.ts
 import type { WerewolfRole } from './engine/types'
 
 export type WerewolfEventKind =
@@ -127,13 +127,13 @@ describe('visibilityForKind', () => {
 })
 ```
 
-Run: `npx vitest run tests/games/werewolf/events.test.ts`
+Run: `npx vitest run tests/src/games/werewolf/events.test.ts`
 Expected: PASS。
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add games/werewolf/events.ts tests/games/werewolf/events.test.ts
+git add src/games/werewolf/events.ts tests/src/games/werewolf/events.test.ts
 git commit -m "feat(p3-3): werewolf event kinds + visibility rules"
 ```
 
@@ -142,16 +142,16 @@ git commit -m "feat(p3-3): werewolf event kinds + visibility rules"
 ## Task 2: Moderator ContextBuilder
 
 **Files:**
-- Create: `games/werewolf/agent/moderator-context.ts`
-- Create: `games/werewolf/agent/moderator-parser.ts`
-- Create: `tests/games/werewolf/moderator-context.test.ts`
+- Create: `src/games/werewolf/agent/moderator-context.ts`
+- Create: `src/games/werewolf/agent/moderator-parser.ts`
+- Create: `tests/src/games/werewolf/moderator-context.test.ts`
 
 **Context:** Moderator 输出主持词（≤80 字），只看最近 N 条 public + role-restricted（对所有人公开）事件，不读任何玩家记忆。
 
 - [ ] **Step 1: moderator-context.ts**
 
 ```typescript
-// games/werewolf/agent/moderator-context.ts
+// src/games/werewolf/agent/moderator-context.ts
 import type { WerewolfState } from '../engine/types'
 
 export interface ModeratorContextInput {
@@ -186,7 +186,7 @@ export function buildModeratorContext(i: ModeratorContextInput): { systemMessage
 - [ ] **Step 2: moderator-parser.ts**
 
 ```typescript
-// games/werewolf/agent/moderator-parser.ts
+// src/games/werewolf/agent/moderator-parser.ts
 export interface ModeratorParseResult {
   narration: string
   error?: string
@@ -237,13 +237,13 @@ describe('parseModeratorResponse', () => {
 })
 ```
 
-Run: `npx vitest run tests/games/werewolf/moderator-context.test.ts`
+Run: `npx vitest run tests/src/games/werewolf/moderator-context.test.ts`
 Expected: PASS。
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add games/werewolf/agent/moderator-context.ts games/werewolf/agent/moderator-parser.ts tests/games/werewolf/moderator-context.test.ts
+git add src/games/werewolf/agent/moderator-context.ts src/games/werewolf/agent/moderator-parser.ts tests/src/games/werewolf/moderator-context.test.ts
 git commit -m "feat(p3-3): moderator context builder + parser"
 ```
 
@@ -252,16 +252,16 @@ git commit -m "feat(p3-3): moderator context builder + parser"
 ## Task 3: Werewolf Plugin 注册
 
 **Files:**
-- Create: `games/werewolf/plugin.ts`
-- Modify: `games/index.ts`（`registerAllGames`）
-- Create: `tests/games/werewolf/plugin.test.ts`
+- Create: `src/games/werewolf/plugin.ts`
+- Modify: `src/games/index.ts`（`registerAllGames`）
+- Create: `tests/src/games/werewolf/plugin.test.ts`
 
 **Context:** 把 engine / player + moderator context / parser / bot / memory 聚合到一个 plugin 对象。
 
 - [ ] **Step 1: plugin.ts**
 
 ```typescript
-// games/werewolf/plugin.ts
+// src/games/werewolf/plugin.ts
 import type { GamePlugin } from '@/core/protocols/plugin'
 import { werewolfEngine } from './engine/werewolf-engine'
 import { buildWerewolfContext } from './agent/werewolf-context'
@@ -292,7 +292,7 @@ export const werewolfPlugin: GamePlugin = {
 - [ ] **Step 2: 注册**
 
 ```typescript
-// games/index.ts
+// src/games/index.ts
 import { gameRegistry } from '@/core/registry/game-registry'
 import { pokerPlugin } from './poker/plugin'
 import { werewolfPlugin } from './werewolf/plugin'
@@ -321,13 +321,13 @@ describe('werewolfPlugin', () => {
 })
 ```
 
-Run: `npx vitest run tests/games/werewolf/plugin.test.ts`
+Run: `npx vitest run tests/src/games/werewolf/plugin.test.ts`
 Expected: PASS。
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add games/werewolf/plugin.ts games/index.ts tests/games/werewolf/plugin.test.ts
+git add src/games/werewolf/plugin.ts src/games/index.ts tests/src/games/werewolf/plugin.test.ts
 git commit -m "feat(p3-3): register werewolf plugin"
 ```
 
@@ -413,8 +413,8 @@ git commit -m "feat(p3-3): default system moderator seed"
 ## Task 5: GM 狼人杀 tick 子逻辑
 
 **Files:**
-- Create: `lib/orchestrator/gm-werewolf.ts`
-- Modify: `lib/orchestrator/gm.ts`
+- Create: `src/backend/orchestrator/gm-werewolf.ts`
+- Modify: `src/backend/orchestrator/gm.ts`
 - Create: `tests/orchestrator/gm-werewolf.test.ts`
 
 **Context:** 通用 GM 在 tick 开始后按 gameType dispatch：
@@ -428,18 +428,18 @@ git commit -m "feat(p3-3): default system moderator seed"
 - [ ] **Step 1: gm-werewolf.ts 骨架**
 
 ```typescript
-// lib/orchestrator/gm-werewolf.ts
+// src/backend/orchestrator/gm-werewolf.ts
 import { werewolfEngine } from '@/games/werewolf/engine/werewolf-engine'
 import { visibilityForKind } from '@/games/werewolf/events'
-import { requestAgentDecision } from '@/lib/a2a-core/client'
+import { requestAgentDecision } from '@/backend/a2a-core/client'
 import { werewolfMemory } from '@/games/werewolf/agent/werewolf-memory'
 import { loadMatch, saveMatchState, publishEvent } from './match-store'
 import { logger } from '@/lib/obs/logger'
 import { parseWerewolfResponse } from '@/games/werewolf/agent/werewolf-parser'
 import { parseModeratorResponse } from '@/games/werewolf/agent/moderator-parser'
 import { decideWerewolfBot } from '@/games/werewolf/agent/werewolf-bot'
-import { signMatchToken } from '@/lib/auth/match-token'
-import { dropMatch as dropKeyCache } from '@/lib/agent/key-cache'
+import { signMatchToken } from '@/backend/auth/match-token'
+import { dropMatch as dropKeyCache } from '@/backend/agent/key-cache'
 import { recentPublicEvents } from './event-query'
 
 export async function tickWerewolf(matchId: string) {
@@ -635,7 +635,7 @@ function advanceAndNarrate(state: any) {
 - [ ] **Step 2: 补 `event-query.ts`**
 
 ```typescript
-// lib/orchestrator/event-query.ts
+// src/backend/orchestrator/event-query.ts
 import { db } from '@/db'
 import { gameEvents } from '@/db/schema'
 import { and, eq, desc } from 'drizzle-orm'
@@ -651,7 +651,7 @@ export async function recentPublicEvents(matchId: string, limit = 8) {
 - [ ] **Step 3: gm.ts dispatch**
 
 ```typescript
-// lib/orchestrator/gm.ts
+// src/backend/orchestrator/gm.ts
 import { tickWerewolf } from './gm-werewolf'
 import { tickPoker } from './gm-poker'
 
@@ -668,11 +668,11 @@ export async function tickMatch(matchId: string) {
 ```typescript
 import { describe, it, expect, vi } from 'vitest'
 
-vi.mock('@/lib/a2a-core/client', () => ({
+vi.mock('@/backend/a2a-core/client', () => ({
   requestAgentDecision: vi.fn(async () => ({ action: { type: 'day/vote', targetId: null }, thinkingText: '<action>{"type":"day/vote","targetId":null}</action>' })),
 }))
 
-import { tickWerewolf } from '@/lib/orchestrator/gm-werewolf'
+import { tickWerewolf } from '@/backend/orchestrator/gm-werewolf'
 
 describe('tickWerewolf', () => {
   it('processes a boundary tick (moderator narration)', async () => {
@@ -691,7 +691,7 @@ Expected: PASS。
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lib/orchestrator/gm-werewolf.ts lib/orchestrator/event-query.ts lib/orchestrator/gm.ts tests/orchestrator/gm-werewolf.test.ts
+git add src/backend/orchestrator/gm-werewolf.ts src/backend/orchestrator/event-query.ts src/backend/orchestrator/gm.ts tests/orchestrator/gm-werewolf.test.ts
 git commit -m "feat(p3-3): GM werewolf tick branch + dispatch"
 ```
 
@@ -700,13 +700,13 @@ git commit -m "feat(p3-3): GM werewolf tick branch + dispatch"
 ## Task 6: match 创建校验：werewolf 需 moderator + 6 agents
 
 **Files:**
-- Modify: `app/api/matches/route.ts`（或相应的 match-lifecycle）
-- Modify: `lib/orchestrator/match-lifecycle.ts`
+- Modify: `src/app/api/matches/route.ts`（或相应的 match-lifecycle）
+- Modify: `src/backend/orchestrator/match-lifecycle.ts`
 
 - [ ] **Step 1: 校验函数**
 
 ```typescript
-// lib/orchestrator/match-lifecycle.ts 内部
+// src/backend/orchestrator/match-lifecycle.ts 内部
 export function validateWerewolfCreate(input: { agents: string[]; moderatorAgentId: string | null }) {
   if (input.agents.length !== 6) throw new Error('werewolf requires exactly 6 player agents')
   if (!input.moderatorAgentId) throw new Error('werewolf requires moderatorAgentId')
@@ -729,7 +729,7 @@ it('rejects werewolf match with 5 agents', async () => { /* ... */ })
 - [ ] **Step 3: Commit**
 
 ```bash
-git add app/api/matches/route.ts lib/orchestrator/match-lifecycle.ts tests/api/matches-create-werewolf.test.ts
+git add src/app/api/matches/route.ts src/backend/orchestrator/match-lifecycle.ts tests/api/matches-create-werewolf.test.ts
 git commit -m "feat(p3-3): werewolf match creation validation"
 ```
 
@@ -737,7 +737,7 @@ git commit -m "feat(p3-3): werewolf match creation validation"
 
 ## Done criteria (Phase 3-3)
 
-- [ ] `games/werewolf/events.ts` visibility 规则单测全绿
+- [ ] `src/games/werewolf/events.ts` visibility 规则单测全绿
 - [ ] Moderator ContextBuilder / Parser 单测全绿
 - [ ] Werewolf plugin 注册到 registry
 - [ ] 默认系统 moderator seed 脚本可 idempotent 运行

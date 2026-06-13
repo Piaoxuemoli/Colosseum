@@ -79,6 +79,22 @@ curl -N -X POST http://localhost:3000/api/agents/toy-poker/message/stream \
   -d "{\"message\":{\"messageId\":\"m1\",\"taskId\":\"t1\",\"role\":\"user\",\"parts\":[{\"kind\":\"data\",\"data\":{}}]}}"
 ```
 
+## Project Layout
+
+```
+.
+├── src/
+│   ├── app/              # Next.js App Router (pages + API routes)
+│   ├── frontend/         # Components, stores, client utilities
+│   ├── backend/          # Orchestrator, agent runtime, A2A core, auth, match logic
+│   ├── platform/         # DB, Redis, LLM gateway, telemetry, core registry, engine contracts
+│   └── games/            # Self-contained poker and werewolf packages
+├── ops/                  # Docker Compose, Caddy, backup cron, dev environment
+├── docs/                 # AI rules, specs, plans, deployment guides
+├── archive/              # Archived old project and stale docs
+└── package.json, tsconfig.json, next.config.ts, eslint.config.mjs
+```
+
 ## Key Docs
 
 - `AGENTS.md`: stable AI collaboration entry point
@@ -86,4 +102,4 @@ curl -N -X POST http://localhost:3000/api/agents/toy-poker/message/stream \
 - `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`: brief design
 - `docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`: full technical design
 - `docs/superpowers/plans/`: implementation plans
-- `old/`: archived reference project
+- `archive/old/`: archived reference project

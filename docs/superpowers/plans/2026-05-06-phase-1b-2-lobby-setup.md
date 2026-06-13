@@ -25,7 +25,7 @@
 
 ```
 Colosseum/
-├── app/
+├── src/app/
 │   ├── page.tsx                               # Lobby (Server Component)
 │   ├── profiles/
 │   │   └── page.tsx                           # Profiles 管理
@@ -50,7 +50,7 @@ Colosseum/
 │       ├── ProfileForm.tsx                    # 创建/编辑 profile
 │       ├── AgentForm.tsx                      # 创建/编辑 agent
 │       └── MatchSetupForm.tsx                 # 创建对局表单
-├── store/
+├── src/frontend/store/
 │   └── profile-keys-store.ts                  # localStorage keyring（仅客户端）
 ├── lib/
 │   └── client/                                # client-only utilities
@@ -67,7 +67,7 @@ Colosseum/
 
 ## Task 1: 安装 shadcn/ui 组件（按需）
 
-**Context:** shadcn/ui 不是 npm 包，而是 CLI 把组件源码复制到 `components/ui/`。每个组件独立，可直接修改。
+**Context:** shadcn/ui 不是 npm 包，而是 CLI 把组件源码复制到 `src/frontend/components/ui/`。每个组件独立，可直接修改。
 
 - [x] **Step 1: 初始化 shadcn（首次）**
 
@@ -85,7 +85,7 @@ npx shadcn@latest init
 - alias for components: `@/components`
 - alias for utils: `@/lib/utils`
 
-Expected: 在 `components/ui/` 下生成基础文件，`lib/utils.ts` 出现 `cn()` helper。
+Expected: 在 `src/frontend/components/ui/` 下生成基础文件，`src/platform/utils.ts` 出现 `cn()` helper。
 
 - [x] **Step 2: 按需安装组件**
 
@@ -94,15 +94,15 @@ Run:
 npx shadcn@latest add button input label select dialog card badge textarea avatar
 ```
 
-Expected: 每个组件对应 `components/ui/<name>.tsx` 出现。
+Expected: 每个组件对应 `src/frontend/components/ui/<name>.tsx` 出现。
 
 - [x] **Step 3: 验证可 import**
 
-Create `app/_probe/page.tsx`（临时用，验证后删）：
+Create `src/app/_probe/page.tsx`（临时用，验证后删）：
 
 ```typescript
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
+import { Badge } from '@/frontend/src/frontend/components/ui/badge'
 
 export default function Probe() {
   return (
@@ -116,12 +116,12 @@ export default function Probe() {
 
 Run `npm run dev`，访问 http://localhost:3000/_probe，应看到 Button 和 Badge。
 
-**删除 probe 文件**：`rm -rf app/_probe`。
+**删除 probe 文件**：`rm -rf src/app/_probe`。
 
 - [x] **Step 4: Commit**
 
 ```bash
-git add components/ui/ lib/utils.ts components.json
+git add src/frontend/components/ui/ src/platform/utils.ts components.json
 git commit -m "feat(p1b): install shadcn/ui base components"
 ```
 
@@ -238,7 +238,7 @@ Create `tests/lib/client/keyring.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest'
-import { keyring } from '@/lib/client/keyring'
+import { keyring } from '@/frontend/lib/client/keyring'
 
 describe('keyring', () => {
   beforeEach(() => localStorage.clear())
@@ -279,7 +279,7 @@ git commit -m "feat(p1b): client api wrapper + localStorage keyring"
 ## Task 3: 全局 Sidebar + layout
 
 **Files:**
-- Modify: `app/layout.tsx`（加 Sidebar）
+- Modify: `src/app/layout.tsx`（加 Sidebar）
 - Create: `components/layout/Sidebar.tsx`
 
 - [x] **Step 1: 写 Sidebar**
@@ -319,11 +319,11 @@ export function Sidebar() {
 
 - [x] **Step 2: 改 layout.tsx**
 
-替换 `app/layout.tsx` 内容：
+替换 `src/app/layout.tsx` 内容：
 
 ```typescript
 import './globals.css'
-import { Sidebar } from '@/components/layout/Sidebar'
+import { Sidebar } from '@/frontend/components/layout/Sidebar'
 
 export const metadata = {
   title: 'Colosseum',
@@ -351,7 +351,7 @@ Run: `npm run dev`，访问 http://localhost:3000，应看到左侧 sidebar 4 �
 - [x] **Step 4: Commit**
 
 ```bash
-git add app/layout.tsx components/layout/Sidebar.tsx
+git add src/app/layout.tsx components/layout/Sidebar.tsx
 git commit -m "feat(p1b): sidebar + global layout"
 ```
 
@@ -360,20 +360,20 @@ git commit -m "feat(p1b): sidebar + global layout"
 ## Task 4: Lobby 页（大厅，展示对局列表）
 
 **Files:**
-- Modify: `app/page.tsx`（Server Component，直接查 DB）
+- Modify: `src/app/page.tsx`（Server Component，直接查 DB）
 
 - [x] **Step 1: 写 Lobby**
 
-覆盖 `app/page.tsx`:
+覆盖 `src/app/page.tsx`:
 
 ```typescript
 import Link from 'next/link'
-import { db } from '@/lib/db/client'
-import { matches } from '@/lib/db/schema.sqlite'
+import { db } from '@/platform/db/client'
+import { matches } from '@/platform/db/schema.sqlite'
 import { desc } from 'drizzle-orm'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
+import { Badge } from '@/frontend/src/frontend/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/src/frontend/components/ui/card'
 
 export const dynamic = 'force-dynamic'
 
@@ -434,7 +434,7 @@ Run: `npm run dev`。如果 DB 有 match，应能看到卡片；点击卡片会 
 - [x] **Step 3: Commit**
 
 ```bash
-git add app/page.tsx
+git add src/app/page.tsx
 git commit -m "feat(p1b): lobby page (server component with match list)"
 ```
 
@@ -443,7 +443,7 @@ git commit -m "feat(p1b): lobby page (server component with match list)"
 ## Task 5: Profile 管理页
 
 **Files:**
-- Create: `app/profiles/page.tsx`（Server Component 列表 + Client 表单）
+- Create: `src/app/profiles/page.tsx`（Server Component 列表 + Client 表单）
 - Create: `components/forms/ProfileForm.tsx`（Client）
 
 - [x] **Step 1: 写 ProfileForm（Client）**
@@ -454,15 +454,15 @@ Create `components/forms/ProfileForm.tsx`:
 'use client'
 
 import { useState, useEffect } from 'react'
-import { api } from '@/lib/client/api'
-import { keyring } from '@/lib/client/keyring'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { api } from '@/frontend/lib/client/api'
+import { keyring } from '@/frontend/lib/client/keyring'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
+import { Input } from '@/frontend/src/frontend/components/ui/input'
+import { Label } from '@/frontend/src/frontend/components/ui/label'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+} from '@/frontend/src/frontend/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/frontend/src/frontend/components/ui/dialog'
 
 type ProviderEntry = {
   id: string; displayName: string; baseUrl: string; models: string[]; kind: string
@@ -587,15 +587,15 @@ export function ProfileForm({ onCreated }: { onCreated?: () => void }) {
 
 - [x] **Step 2: 写 Profiles 页**
 
-Create `app/profiles/page.tsx`（混合：Server 列表 + Client 表单 + Client 删除按钮）：
+Create `src/app/profiles/page.tsx`（混合：Server 列表 + Client 表单 + Client 删除按钮）：
 
 ```typescript
-import { db } from '@/lib/db/client'
-import { apiProfiles } from '@/lib/db/schema.sqlite'
+import { db } from '@/platform/db/client'
+import { apiProfiles } from '@/platform/db/schema.sqlite'
 import { desc } from 'drizzle-orm'
-import { ProfileForm } from '@/components/forms/ProfileForm'
-import { ProfileRowActions } from '@/components/forms/ProfileRowActions'
-import { Card, CardContent } from '@/components/ui/card'
+import { ProfileForm } from '@/frontend/components/forms/ProfileForm'
+import { ProfileRowActions } from '@/frontend/components/forms/ProfileRowActions'
+import { Card, CardContent } from '@/frontend/src/frontend/components/ui/card'
 
 export const dynamic = 'force-dynamic'
 
@@ -648,10 +648,10 @@ Create `components/forms/ProfileRowActions.tsx`:
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { api } from '@/lib/client/api'
-import { keyring } from '@/lib/client/keyring'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { api } from '@/frontend/lib/client/api'
+import { keyring } from '@/frontend/lib/client/keyring'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
+import { Badge } from '@/frontend/src/frontend/components/ui/badge'
 
 export function ProfileRowActions({ profileId }: { profileId: string }) {
   const router = useRouter()
@@ -710,7 +710,7 @@ Run: `npm run dev`，访问 `/profiles`：
 - [x] **Step 5: Commit**
 
 ```bash
-git add app/profiles/ components/forms/ProfileForm.tsx components/forms/ProfileRowActions.tsx
+git add src/app/profiles/ components/forms/ProfileForm.tsx components/forms/ProfileRowActions.tsx
 git commit -m "feat(p1b): profiles management page (list + create dialog + actions)"
 ```
 
@@ -719,7 +719,7 @@ git commit -m "feat(p1b): profiles management page (list + create dialog + actio
 ## Task 6: Agent 管理页
 
 **Files:**
-- Create: `app/agents/page.tsx`
+- Create: `src/app/agents/page.tsx`
 - Create: `components/forms/AgentForm.tsx`
 - Create: `components/forms/AgentRowActions.tsx`
 
@@ -732,15 +732,15 @@ Create `components/forms/AgentForm.tsx`:
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { api } from '@/lib/client/api'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { api } from '@/frontend/lib/client/api'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
+import { Input } from '@/frontend/src/frontend/components/ui/input'
+import { Label } from '@/frontend/src/frontend/components/ui/label'
+import { Textarea } from '@/frontend/src/frontend/components/ui/textarea'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+} from '@/frontend/src/frontend/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/frontend/src/frontend/components/ui/dialog'
 
 type Profile = { id: string; displayName: string; providerId: string; model: string }
 
@@ -859,8 +859,8 @@ Create `components/forms/AgentRowActions.tsx`:
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { api } from '@/lib/client/api'
-import { Button } from '@/components/ui/button'
+import { api } from '@/frontend/lib/client/api'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
 
 export function AgentRowActions({ agentId }: { agentId: string }) {
   const router = useRouter()
@@ -887,16 +887,16 @@ export function AgentRowActions({ agentId }: { agentId: string }) {
 
 - [x] **Step 3: 写 Agents 页**
 
-Create `app/agents/page.tsx`:
+Create `src/app/agents/page.tsx`:
 
 ```typescript
-import { db } from '@/lib/db/client'
-import { agents, apiProfiles } from '@/lib/db/schema.sqlite'
+import { db } from '@/platform/db/client'
+import { agents, apiProfiles } from '@/platform/db/schema.sqlite'
 import { eq } from 'drizzle-orm'
-import { AgentForm } from '@/components/forms/AgentForm'
-import { AgentRowActions } from '@/components/forms/AgentRowActions'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { AgentForm } from '@/frontend/components/forms/AgentForm'
+import { AgentRowActions } from '@/frontend/components/forms/AgentRowActions'
+import { Card, CardContent } from '@/frontend/src/frontend/components/ui/card'
+import { Badge } from '@/frontend/src/frontend/components/ui/badge'
 
 export const dynamic = 'force-dynamic'
 
@@ -968,7 +968,7 @@ Run: `npm run dev`，访问 `/agents`：
 - [x] **Step 5: Commit**
 
 ```bash
-git add app/agents/ components/forms/AgentForm.tsx components/forms/AgentRowActions.tsx
+git add src/app/agents/ components/forms/AgentForm.tsx components/forms/AgentRowActions.tsx
 git commit -m "feat(p1b): agents management page (list + create + delete)"
 ```
 
@@ -977,7 +977,7 @@ git commit -m "feat(p1b): agents management page (list + create + delete)"
 ## Task 7: 创建对局页 `/matches/new`
 
 **Files:**
-- Create: `app/matches/new/page.tsx`（Server component 外壳）
+- Create: `src/app/matches/new/page.tsx`（Server component 外壳）
 - Create: `components/forms/MatchSetupForm.tsx`（Client 主体）
 
 **Context:** 这页是最复杂的前端。需要：
@@ -996,13 +996,13 @@ Create `components/forms/MatchSetupForm.tsx`:
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { api } from '@/lib/client/api'
-import { keyring } from '@/lib/client/keyring'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { api } from '@/frontend/lib/client/api'
+import { keyring } from '@/frontend/lib/client/keyring'
+import { Button } from '@/frontend/src/frontend/components/ui/button'
+import { Input } from '@/frontend/src/frontend/components/ui/input'
+import { Label } from '@/frontend/src/frontend/components/ui/label'
+import { Card, CardContent } from '@/frontend/src/frontend/components/ui/card'
+import { Badge } from '@/frontend/src/frontend/components/ui/badge'
 
 type Agent = {
   id: string; displayName: string; avatarEmoji: string | null;
@@ -1184,10 +1184,10 @@ export function MatchSetupForm() {
 
 - [x] **Step 2: 写页面**
 
-Create `app/matches/new/page.tsx`:
+Create `src/app/matches/new/page.tsx`:
 
 ```typescript
-import { MatchSetupForm } from '@/components/forms/MatchSetupForm'
+import { MatchSetupForm } from '@/frontend/components/forms/MatchSetupForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -1217,7 +1217,7 @@ Run: `npm run dev`，访问 `/matches/new`：
 - [x] **Step 4: Commit**
 
 ```bash
-git add app/matches/new/ components/forms/MatchSetupForm.tsx
+git add src/app/matches/new/ components/forms/MatchSetupForm.tsx
 git commit -m "feat(p1b): match setup page (select 6 agents + config + key check)"
 ```
 

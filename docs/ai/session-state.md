@@ -163,6 +163,7 @@
 | 2026-06-13 | `npm run doctor` + `npm run check` | Passed | `sync` skipped because working tree is dirty; `doctor` passed. `check` passed after adding ESLint ignore for `**/.pytest_cache/**`: lint, typecheck, Next production build. Build still reports existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings. |
 | 2026-06-13 | `npm run lint` + `npm run typecheck` + `npm run check` | Passed | Frontend polish gate passed. Build route sizes stayed stable (`/matches/[matchId]` first load 316 kB). Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
 | 2026-06-13 | Production deploy via SSH key + Docker Compose | Passed | `docker compose up -d --build nextjs` succeeded on `43.156.230.108`; `/api/health` returned `{"ok":true,"db":"ok","redis":"ok"}`; `/`, `/agents`, `/matches/new`, `/api/providers`, and `/api/agents?gameType=poker` returned 200. Backup script attempt returned `Permission denied`. |
+| 2026-06-13 | Project structure refactor gate | Passed | `npm run lint` + `npm run typecheck` + `npm run build` passed after moving source into `src/{app,frontend,backend,platform,games}` and archive into `archive/old/`. Local Docker unavailable so `npm run infra:up` / full poker UI smoke skipped; will verify on production after merge. |
 
 ## Open Questions / Blockers
 
@@ -176,6 +177,7 @@
 - in-app Browser verification remains unavailable in this environment: Browser plugin returns `Browser is not available: iab`; production UI was verified with HTTP responses and server-side event payload checks instead.
 - 2026-06-13 deploy note: `ops/private/puke.pem` / `ops/private/deploy.env` are still absent and `rsync` is unavailable locally, but deployment works with `C:/Users/Qoobeewang/Downloads/hermesqoobee.pem` after copying to a temporary ACL-restricted key. The temporary local key copy was removed after deployment.
 - 2026-06-13 ops follow-up: `/opt/colosseum/scripts/backup.sh` on production returned `Permission denied` when invoked as part of deployment. Check executable bit / mount permissions before the next release.
+- 2026-06-13 项目结构重组完成：源码迁入 `src/{app,frontend,backend,platform,games}`，归档整合到 `archive/old/`，`tsconfig.json` paths 改为 `@/*` → `./src/*`，`ops/deploy/Dockerfile` 同步复制 `src/platform/db/` 与 `src/platform/env.ts`；纲领文档 `AGENTS.md`、`docs/ai/rules/project-context.md`、`docs/ai/rules/frontend-backend.md`、`.kimi-code/skills/deployment/SKILL.md`、`README.md`、`.cursor/.claude rules` 已更新。
 
 ## SDK / Plan Drift Notes
 
