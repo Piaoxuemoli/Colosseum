@@ -1,13 +1,13 @@
 'use client'
 
-import { useRef } from 'react'
+import { memo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import type { PokerUiPlayer } from '@/store/match-view-store'
 import { PlayingCard } from './PlayingCard'
 import { ThinkingBubble } from './ThinkingBubble'
 
-export function PlayerSeat({
+export const PlayerSeat = memo(function PlayerSeat({
   player,
   isCurrentActor,
   isDealer,
@@ -52,4 +52,4 @@ export function PlayerSeat({
       <ThinkingBubble anchorRef={anchorRef} text={thinking ?? ''} visible={Boolean(thinking) || isCurrentActor} />
     </div>
   )
-}
+})

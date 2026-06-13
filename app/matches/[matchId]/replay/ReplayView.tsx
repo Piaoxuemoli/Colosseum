@@ -10,10 +10,7 @@ import { ReplayControls } from '@/components/match/ReplayControls'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
 import type { GameEvent } from '@/lib/core/types'
-import {
-  useMatchViewStore,
-  type PokerUiPlayer,
-} from '@/store/match-view-store'
+import { useMatchViewStore, type PokerUiPlayer } from '@/store/match-view-store'
 import { useReplayStore } from '@/store/replay-store'
 
 type Props = {
@@ -46,7 +43,6 @@ export function ReplayView({
   const dealerIndex = useMatchViewStore((s) => s.dealerIndex)
   const smallBlindIndex = useMatchViewStore((s) => s.smallBlindIndex)
   const bigBlindIndex = useMatchViewStore((s) => s.bigBlindIndex)
-  const thinkingByAgent = useMatchViewStore((s) => s.thinkingByAgent)
   const werewolfDay = useMatchViewStore((s) => s.werewolf.day)
   const werewolfPhase = useMatchViewStore((s) => s.werewolf.phase)
 
@@ -59,8 +55,7 @@ export function ReplayView({
     }
   }, [events, initialPlayers, load, matchId, reset])
 
-  const werewolfPlayers =
-    players.length > 0 ? players : initialPlayers
+  const werewolfPlayers = players.length > 0 ? players : initialPlayers
 
   return (
     <div
@@ -106,7 +101,6 @@ export function ReplayView({
             bigBlindIndex={bigBlindIndex}
             streetPots={streetPots}
             sidePots={sidePots}
-            thinkingByAgent={thinkingByAgent}
           />
         ) : (
           <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />

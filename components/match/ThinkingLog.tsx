@@ -1,13 +1,23 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useMatchViewStore } from '@/store/match-view-store'
+import { useThinkingStore } from '@/store/thinking-store'
+
+const MAX_THINKING_LENGTH = 2000
 
 export function ThinkingLog() {
-  const thinkingByAgent = useMatchViewStore((state) => state.thinkingByAgent)
+  const thinkingByAgent = useThinkingStore((s) => s.thinkingByAgent)
   const players = useMatchViewStore((state) => state.players)
   const ref = useRef<HTMLDivElement>(null)
-  const entries = Object.entries(thinkingByAgent).filter(([, text]) => text.trim().length > 0)
+
+  const entries = useMemo(
+    () =>
+      Object.entries(thinkingByAgent)
+        .map(([agentId, text]) => [agentId, text.length > MAX_THINKING_LENGTH ? `${text.slice(0, MAX_THINKING_LENGTH)}…` : text] as const)
+        .filter(([, text]) => text.trim().length > 0),
+    [thinkingByAgent],
+  )
 
   useEffect(() => {
     ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' })

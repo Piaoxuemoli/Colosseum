@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
@@ -17,7 +18,7 @@ const SUIT_SYMBOL: Record<string, string> = {
 
 const RED_SUITS = new Set(['hearts', 'diamonds'])
 
-export function PlayingCard({
+export const PlayingCard = memo(function PlayingCard({
   card,
   faceDown,
   size = 'md',
@@ -66,4 +67,4 @@ export function PlayingCard({
       <div>{SUIT_SYMBOL[card.suit] ?? '?'}</div>
     </motion.div>
   )
-}
+})

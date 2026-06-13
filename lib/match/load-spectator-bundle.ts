@@ -56,7 +56,7 @@ export async function loadMatchSpectatorBundle(
     holeCards: [],
   }))
 
-  const initialEvents = await listMatchEvents(matchId, { visibility: 'public' })
+  const initialEvents = await listMatchEvents(matchId, { visibility: 'public', limit: 100 })
 
   return { match, initialPlayers, initialEvents, initialChips: INITIAL_CHIPS }
 }

@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, type RefObject } from 'react'
+import { memo, useEffect, type RefObject } from 'react'
 import { autoPlacement, offset, shift, useFloating, useTransitionStyles } from '@floating-ui/react'
 
-export function ThinkingBubble({
+export const ThinkingBubble = memo(function ThinkingBubble({
   anchorRef,
   text,
   visible,
@@ -38,4 +38,4 @@ export function ThinkingBubble({
       {text ? text : <span className="italic text-cyan-100/60">思考中...</span>}
     </div>
   )
-}
+})
