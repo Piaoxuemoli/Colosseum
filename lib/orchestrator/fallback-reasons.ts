@@ -12,6 +12,13 @@ export const KNOWN_FALLBACK_REASONS = new Set([
   'agent-api_error',
   'agent-parse_fail',
   'agent-abort',
+  'llm-invalid-action',
+  'llm-profile-missing',
+  'llm-api-key-missing',
+  'llm-timeout',
+  'llm-api_error',
+  'llm-parse_fail',
+  'llm-abort',
 ])
 
 export function bucketizeFallbackReason(rawCode: string): string {

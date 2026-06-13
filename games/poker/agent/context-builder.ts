@@ -32,6 +32,8 @@ Output format (STRICT — the parser depends on this):
 Your final <action> block MUST be a valid JSON object with a string "type"
 field matching one of the legal actions listed below. "amount" is optional
 for fold/check/call and required for bet/raise/allIn.
+If "check" is legal, do not fold just because the hand is weak; checking is
+the legal free-pass action.
 
 If your model natively emits its own reasoning tag (e.g. <think>...</think>),
 that is fine — the parser accepts both <think> and <thinking>. But you
