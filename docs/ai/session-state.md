@@ -32,6 +32,7 @@
 - Docker is available locally as of 2026-06-05 `npm run doctor`; production smoke can still use the server Docker stack for parity.
 - 2026-06-13 德扑持续桌语义重新更正为“持续打下去”：文档中的“一手/一局结束即 completed”已改为手结束后自动开下一手，只有“本手后结束”/ stopRequested 才 completed；右侧栏已改为固定高度 Tab；Agent 动作容错新增 free fold→check 与金额规范化，agent endpoint 已记录的 `llm-*` fallback 不再被 GM 重复记为 `agent-invalid-action`。
 - 2026-06-13 前端 polish 已完成：左侧导航基于 pathname + 点击乐观高亮，新增全局与观战页 loading skeleton，Tabs/Card/Dialog/Popover/右栏/牌桌座位收敛为紧凑控制台风格，右侧 Tab 内容按当前 Tab 懒挂载，UI 纲领更新为 React + Next.js + Tailwind CSS + shadcn/ui + Radix UI + lucide-react 的 award-grade arena console。
+- 2026-06-13 已用 `C:/Users/Qoobeewang/Downloads/hermesqoobee.pem` 部署到 `http://43.156.230.108`：通过本地 `git archive HEAD` 上传到服务器解包，`docker compose up -d --build nextjs` 重建启动；健康检查和核心页面/API smoke 均通过。部署前尝试 `/opt/colosseum/scripts/backup.sh` 返回 `Permission denied`，未阻塞部署。
 
 ## Validation Log
 
@@ -161,6 +162,7 @@
 | 2026-06-13 | Deployment skill + archive stale docs | Passed | Created `.kimi-code/skills/deployment/SKILL.md`; moved `docs/superpowers/plans/2026-05-06-phase-4-deployment.md`, `docs/ai/phase-6-server-verify-plan.md`, `docs/superpowers/notes/phase-0-complete.md`, and 4 `docs/demo/*` checklists into `old/docs-archive/`; added `old/docs-archive/README.md`; updated `AGENTS.md` with deployment section. `npm run lint` + `npm run typecheck` + `npm run build` passed. |
 | 2026-06-13 | `npm run doctor` + `npm run check` | Passed | `sync` skipped because working tree is dirty; `doctor` passed. `check` passed after adding ESLint ignore for `**/.pytest_cache/**`: lint, typecheck, Next production build. Build still reports existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings. |
 | 2026-06-13 | `npm run lint` + `npm run typecheck` + `npm run check` | Passed | Frontend polish gate passed. Build route sizes stayed stable (`/matches/[matchId]` first load 316 kB). Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
+| 2026-06-13 | Production deploy via SSH key + Docker Compose | Passed | `docker compose up -d --build nextjs` succeeded on `43.156.230.108`; `/api/health` returned `{"ok":true,"db":"ok","redis":"ok"}`; `/`, `/agents`, `/matches/new`, `/api/providers`, and `/api/agents?gameType=poker` returned 200. Backup script attempt returned `Permission denied`. |
 
 ## Open Questions / Blockers
 
@@ -172,7 +174,8 @@
 - Real M1 LLM curl was not run because no real `TEST_LLM_*` key was used; mocked SSE path is verified.
 - Default system moderator seed (`db/seeds/default-moderator.ts`) still deferred — 服务器首次运行时 `matches` / `agents` 表空,创建 werewolf match 前需先手动建一个 moderator agent(通过 UI)。
 - in-app Browser verification remains unavailable in this environment: Browser plugin returns `Browser is not available: iab`; production UI was verified with HTTP responses and server-side event payload checks instead.
-- 2026-06-13 deployment blocked locally: `ops/private/puke.pem` / `ops/private/deploy.env` are absent, `rsync` is unavailable, and direct `ssh root@43.156.230.108` fails with publickey authentication. Local code is verified but not deployed from this session.
+- 2026-06-13 deploy note: `ops/private/puke.pem` / `ops/private/deploy.env` are still absent and `rsync` is unavailable locally, but deployment works with `C:/Users/Qoobeewang/Downloads/hermesqoobee.pem` after copying to a temporary ACL-restricted key. The temporary local key copy was removed after deployment.
+- 2026-06-13 ops follow-up: `/opt/colosseum/scripts/backup.sh` on production returned `Permission denied` when invoked as part of deployment. Check executable bit / mount permissions before the next release.
 
 ## SDK / Plan Drift Notes
 
