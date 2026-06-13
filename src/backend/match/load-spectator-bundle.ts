@@ -21,7 +21,16 @@ export type MatchSpectatorBundle = {
   initialChips: number
 }
 
-const INITIAL_CHIPS = 200
+const FALLBACK_INITIAL_CHIPS = 200
+
+function extractStartingChips(events: GameEvent[]): number {
+  const stateEvent = events.find((event) => event.kind === 'poker/state')
+  const payload = stateEvent?.payload as Record<string, unknown> | undefined
+  if (payload && typeof payload.startingChips === 'number') {
+    return payload.startingChips
+  }
+  return FALLBACK_INITIAL_CHIPS
+}
 
 export async function loadMatchSpectatorBundle(
   matchId: string,
@@ -45,18 +54,19 @@ export async function loadMatchSpectatorBundle(
     .where(eq(matchParticipants.matchId, matchId))
     .orderBy(asc(matchParticipants.seatIndex))
 
+  const initialEvents = await listMatchEvents(matchId, { visibility: 'public', limit: 100 })
+  const initialChips = extractStartingChips(initialEvents)
+
   const initialPlayers: PokerUiPlayer[] = participants.map((p) => ({
     agentId: p.agentId,
     displayName: p.agentName ?? p.agentId,
     avatarEmoji: p.agentAvatar ?? '🃏',
     seatIndex: p.seatIndex,
-    chips: INITIAL_CHIPS,
+    chips: initialChips,
     currentBet: 0,
     status: 'active',
     holeCards: [],
   }))
 
-  const initialEvents = await listMatchEvents(matchId, { visibility: 'public', limit: 100 })
-
-  return { match, initialPlayers, initialEvents, initialChips: INITIAL_CHIPS }
+  return { match, initialPlayers, initialEvents, initialChips }
 }

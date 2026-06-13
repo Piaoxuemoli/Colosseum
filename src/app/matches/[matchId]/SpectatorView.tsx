@@ -223,7 +223,7 @@ export function SpectatorView({
         ) : null}
       </main>
 
-      <RightPanel matchId={matchId} gameType={gameType} />
+      <RightPanel matchId={matchId} gameType={gameType} startingChips={initialChips} />
       <RankingPanel initialChips={initialChips} />
     </div>
   )
