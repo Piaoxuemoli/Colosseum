@@ -208,6 +208,8 @@ type AgentDecisionResult = {
   errorCode?: string
 }
 
+const THINKING_BATCH_MS = 100
+
 async function requestAgentDecision(input: {
   matchId: string
   agentId: string
@@ -222,6 +224,28 @@ async function requestAgentDecision(input: {
   }
 
   const thinkingPublishes: Array<Promise<void>> = []
+  let thinkingBuffer = ''
+  let thinkingTimer: ReturnType<typeof setTimeout> | null = null
+
+  const flushThinking = () => {
+    if (thinkingTimer) {
+      clearTimeout(thinkingTimer)
+      thinkingTimer = null
+    }
+    if (thinkingBuffer) {
+      thinkingPublishes.push(
+        publishSse(input.matchId, { kind: 'thinking-delta', agentId: input.agentId, delta: thinkingBuffer }),
+      )
+      thinkingBuffer = ''
+    }
+  }
+
+  const onThinking = (delta: string) => {
+    thinkingBuffer += delta
+    if (!thinkingTimer) {
+      thinkingTimer = setTimeout(flushThinking, THINKING_BATCH_MS)
+    }
+  }
 
   try {
     const env = loadEnv()
@@ -236,10 +260,9 @@ async function requestAgentDecision(input: {
         role: 'user',
         parts: [{ kind: 'data', data: { state: input.state, validActions: input.validActions } }],
       },
-      onThinking(delta) {
-        thinkingPublishes.push(publishSse(input.matchId, { kind: 'thinking-delta', agentId: input.agentId, delta }))
-      },
+      onThinking,
     })
+    flushThinking()
     await Promise.allSettled(thinkingPublishes)
     if (!decision.action) {
       return { action: input.fallback(), fallback: true, errorCode: 'agent-no-action' }
@@ -250,6 +273,7 @@ async function requestAgentDecision(input: {
       errorCode: decision.errorKind ? `agent-${decision.errorKind}` : undefined,
     }
   } catch (err) {
+    flushThinking()
     await Promise.allSettled(thinkingPublishes)
     log.warn('agent endpoint request failed, using bot fallback', {
       matchId: input.matchId,

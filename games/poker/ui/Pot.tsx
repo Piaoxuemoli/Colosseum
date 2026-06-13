@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import type { PokerSidePot, PokerStreetPots } from '@/store/match-view-store'
 
@@ -10,7 +11,7 @@ const STREET_LABEL: Record<string, string> = {
   river: '河牌',
 }
 
-export function Pot({
+export const Pot = memo(function Pot({
   amount,
   phase,
   streetPots,
@@ -25,7 +26,6 @@ export function Pot({
   return (
     <div className="flex flex-col items-center gap-2">
       <motion.div
-        key={amount}
         initial={{ scale: 1.12 }}
         animate={{ scale: 1 }}
         transition={{ duration: 0.2 }}
@@ -40,4 +40,4 @@ export function Pot({
       </div>
     </div>
   )
-}
+})

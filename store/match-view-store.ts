@@ -83,7 +83,6 @@ export type MatchViewState = {
   status: 'waiting' | 'live' | 'settled'
   matchComplete: boolean
   winnerAgentId: string | null
-  thinkingByAgent: Record<string, string>
   fallbackCount: number
   chipHistory: ChipSnapshot[]
   errorCount: number
@@ -91,8 +90,6 @@ export type MatchViewState = {
   reset(): void
   init(input: { matchId: string; players: PokerUiPlayer[] }): void
   ingestEvent(event: GameEvent): void
-  appendThinking(agentId: string, delta: string): void
-  clearThinking(agentId: string): void
   setMatchEnd(winnerAgentId: string | null): void
   recordHandSnapshot(handNumber: number, chips: Record<string, number>): void
   incrementError(): void
@@ -128,7 +125,6 @@ const initialState = {
   status: 'waiting' as const,
   matchComplete: false,
   winnerAgentId: null as string | null,
-  thinkingByAgent: {} as Record<string, string>,
   fallbackCount: 0,
   chipHistory: [] as ChipSnapshot[],
   errorCount: 0,
@@ -185,36 +181,108 @@ function parseCards(value: unknown): CardVisual[] {
   })
 }
 
-function playersFromPublicState(payload: Record<string, unknown>, currentPlayers: PokerUiPlayer[]): PokerUiPlayer[] {
+function playerFromPublicState(raw: Record<string, unknown>, existing: PokerUiPlayer | undefined): PokerUiPlayer {
+  const agentId = typeof raw.id === 'string' ? raw.id : (existing?.agentId ?? '')
+  const statusRaw = raw.status
+  const status =
+    statusRaw === 'active' ||
+    statusRaw === 'folded' ||
+    statusRaw === 'allIn' ||
+    statusRaw === 'eliminated' ||
+    statusRaw === 'sittingOut'
+      ? statusRaw
+      : (existing?.status ?? 'active')
+  return {
+    agentId,
+    displayName: existing?.displayName ?? agentId,
+    avatarEmoji: existing?.avatarEmoji ?? '🃏',
+    seatIndex: numberOr(raw.seatIndex, existing?.seatIndex ?? 0),
+    chips: numberOr(raw.chips, existing?.chips ?? 0),
+    currentBet: numberOr(raw.currentBet, existing?.currentBet ?? 0),
+    status,
+    holeCards: parseCards(raw.holeCards),
+  }
+}
+
+function playersFromPublicState(
+  payload: Record<string, unknown>,
+  currentPlayers: PokerUiPlayer[],
+): PokerUiPlayer[] {
   if (!Array.isArray(payload.players)) return currentPlayers
-  return payload.players.flatMap((item) => {
+  const next = payload.players.flatMap((item) => {
     if (!item || typeof item !== 'object') return []
     const raw = item as Record<string, unknown>
     const agentId = typeof raw.id === 'string' ? raw.id : null
     if (!agentId) return []
     const existing = currentPlayers.find((player) => player.agentId === agentId)
-    const statusRaw = raw.status
-    const status =
-      statusRaw === 'active' ||
-      statusRaw === 'folded' ||
-      statusRaw === 'allIn' ||
-      statusRaw === 'eliminated' ||
-      statusRaw === 'sittingOut'
-        ? statusRaw
-        : (existing?.status ?? 'active')
-    return [
-      {
-        agentId,
-        displayName: existing?.displayName ?? agentId,
-        avatarEmoji: existing?.avatarEmoji ?? '🃏',
-        seatIndex: numberOr(raw.seatIndex, existing?.seatIndex ?? 0),
-        chips: numberOr(raw.chips, existing?.chips ?? 0),
-        currentBet: numberOr(raw.currentBet, existing?.currentBet ?? 0),
-        status,
-        holeCards: parseCards(raw.holeCards),
-      },
-    ]
+    return [playerFromPublicState(raw, existing)]
   })
+  // Keep reference equality if the serialized state is identical.
+  if (next.length === currentPlayers.length) {
+    let changed = false
+    for (let i = 0; i < next.length; i++) {
+      const a = next[i]
+      const b = currentPlayers[i]
+      if (
+        a.agentId !== b.agentId ||
+        a.displayName !== b.displayName ||
+        a.avatarEmoji !== b.avatarEmoji ||
+        a.seatIndex !== b.seatIndex ||
+        a.chips !== b.chips ||
+        a.currentBet !== b.currentBet ||
+        a.status !== b.status ||
+        a.holeCards.length !== b.holeCards.length ||
+        a.holeCards.some((c, idx) => c.rank !== b.holeCards[idx]?.rank || c.suit !== b.holeCards[idx]?.suit)
+      ) {
+        changed = true
+        break
+      }
+    }
+    if (!changed) return currentPlayers
+  }
+  return next
+}
+
+function updatePlayersOnAction(
+  players: PokerUiPlayer[],
+  actorId: string,
+  action: Record<string, unknown>,
+): { nextPlayers: PokerUiPlayer[]; potDelta: number } {
+  const index = players.findIndex((player) => player.agentId === actorId)
+  if (index < 0) return { nextPlayers: players, potDelta: 0 }
+
+  const player = players[index]
+  const type = action.type
+  const contribution = actionContribution(action, player)
+
+  // Rebuild only when at least one field actually changes.
+  if (type === 'fold' && player.status !== 'folded') {
+    const next = players.slice()
+    next[index] = { ...player, status: 'folded' }
+    return { nextPlayers: next, potDelta: 0 }
+  }
+
+  if (type === 'allIn') {
+    if (player.status === 'allIn' && player.chips === 0 && contribution === 0) {
+      return { nextPlayers: players, potDelta: 0 }
+    }
+    const next = players.slice()
+    next[index] = { ...player, status: 'allIn', chips: 0, currentBet: player.currentBet + contribution }
+    return { nextPlayers: next, potDelta: contribution }
+  }
+
+  if (contribution > 0) {
+    const nextChips = Math.max(0, player.chips - contribution)
+    const nextCurrentBet = player.currentBet + contribution
+    if (nextChips === player.chips && nextCurrentBet === player.currentBet) {
+      return { nextPlayers: players, potDelta: 0 }
+    }
+    const next = players.slice()
+    next[index] = { ...player, chips: nextChips, currentBet: nextCurrentBet }
+    return { nextPlayers: next, potDelta: contribution }
+  }
+
+  return { nextPlayers: players, potDelta: 0 }
 }
 
 export const useMatchViewStore = create<MatchViewState>((set) => ({
@@ -251,12 +319,11 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
       let stopRequested = state.stopRequested
       let matchComplete = state.matchComplete
       let winnerAgentId = state.winnerAgentId
-      let thinkingByAgent = state.thinkingByAgent
       let status = state.status
       let chipHistory = state.chipHistory
       let errorCount = state.errorCount
       let werewolf = state.werewolf
-      const players = state.players.map((player) => ({ ...player }))
+      let players = state.players
 
       switch (event.kind) {
         case 'agent_error':
@@ -281,8 +348,7 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           stopRequested = Boolean(event.payload.stopRequested)
           matchComplete = Boolean(event.payload.matchComplete)
           if (matchComplete) status = 'settled'
-          const snapshotPlayers = playersFromPublicState(event.payload, players)
-          players.splice(0, players.length, ...snapshotPlayers)
+          players = playersFromPublicState(event.payload, players)
           break
         }
         case 'poker/deal-flop':
@@ -298,30 +364,9 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           communityCards = [...communityCards, ...cardsFromPayload(event.payload)]
           break
         case 'poker/action': {
-          const actorId = event.actorAgentId
-          const index = players.findIndex((player) => player.agentId === actorId)
-          if (index >= 0) {
-            const player = players[index]
-            const action = event.payload
-            const type = action.type
-            const contribution = actionContribution(action, player)
-            if (type === 'fold') {
-              player.status = 'folded'
-            } else if (type === 'allIn') {
-              player.status = 'allIn'
-              player.chips = 0
-              player.currentBet += contribution
-              pot += contribution
-            } else if (contribution > 0) {
-              player.chips = Math.max(0, player.chips - contribution)
-              player.currentBet += contribution
-              pot += contribution
-            }
-          }
-          if (actorId) {
-            thinkingByAgent = { ...thinkingByAgent }
-            delete thinkingByAgent[actorId]
-          }
+          const result = updatePlayersOnAction(players, event.actorAgentId ?? '', event.payload)
+          players = result.nextPlayers
+          pot += result.potDelta
           break
         }
         case 'poker/showdown':
@@ -332,11 +377,23 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
           const winnerIds = Array.isArray(event.payload.winnerIds) ? (event.payload.winnerIds as string[]) : []
           const amount = typeof event.payload.potAmount === 'number' ? event.payload.potAmount : pot
           const share = winnerIds.length > 0 ? Math.floor(amount / winnerIds.length) : 0
-          for (const winnerId of winnerIds) {
-            const index = players.findIndex((player) => player.agentId === winnerId)
-            if (index >= 0) players[index].chips += share
-          }
-          for (const player of players) player.currentBet = 0
+
+          let playersChanged = false
+          const awarded = players.map((player) => {
+            if (winnerIds.includes(player.agentId)) {
+              if (share !== 0) {
+                playersChanged = true
+                return { ...player, chips: player.chips + share }
+              }
+            }
+            if (player.currentBet !== 0) {
+              playersChanged = true
+              return { ...player, currentBet: 0 }
+            }
+            return player
+          })
+          if (playersChanged) players = awarded
+
           pot = 0
           chipHistory = [
             ...chipHistory,
@@ -436,29 +493,10 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
         status,
         matchComplete,
         winnerAgentId,
-        thinkingByAgent,
         chipHistory,
         errorCount,
         werewolf,
       }
-    })
-  },
-
-  appendThinking(agentId, delta) {
-    set((state) => ({
-      thinkingByAgent: {
-        ...state.thinkingByAgent,
-        [agentId]: (state.thinkingByAgent[agentId] ?? '') + delta,
-      },
-      currentActor: agentId,
-    }))
-  },
-
-  clearThinking(agentId) {
-    set((state) => {
-      const thinkingByAgent = { ...state.thinkingByAgent }
-      delete thinkingByAgent[agentId]
-      return { thinkingByAgent }
     })
   },
 

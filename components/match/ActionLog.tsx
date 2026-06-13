@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useMatchViewStore } from '@/store/match-view-store'
 import type { GameEvent } from '@/lib/core/types'
+
+const RECENT_EVENT_LIMIT = 200
 
 function formatAmount(value: unknown): string {
   return typeof value === 'number' ? ` ${value}` : ''
@@ -24,11 +26,21 @@ export function ActionLog() {
   const events = useMatchViewStore((state) => state.events)
   const players = useMatchViewStore((state) => state.players)
   const ref = useRef<HTMLDivElement>(null)
-  const actions = events.filter((event) =>
-    ['poker/action', 'poker/rejection', 'poker/deal-flop', 'poker/deal-turn', 'poker/deal-river', 'poker/showdown', 'poker/pot-award'].includes(
-      event.kind,
-    ),
-  )
+
+  const actions = useMemo(() => {
+    const recent = events.slice(-RECENT_EVENT_LIMIT)
+    return recent.filter((event) =>
+      [
+        'poker/action',
+        'poker/rejection',
+        'poker/deal-flop',
+        'poker/deal-turn',
+        'poker/deal-river',
+        'poker/showdown',
+        'poker/pot-award',
+      ].includes(event.kind),
+    )
+  }, [events])
 
   useEffect(() => {
     if (typeof ref.current?.scrollTo === 'function') {

@@ -1,18 +1,19 @@
 'use client'
 
+import { memo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { PlayingCard, type CardVisual } from './PlayingCard'
 
-export function CommunityCards({ cards }: { cards: CardVisual[] }) {
+export const CommunityCards = memo(function CommunityCards({ cards }: { cards: CardVisual[] }) {
   return (
     <div className="flex min-h-28 items-center justify-center gap-2">
       <AnimatePresence>
-        {cards.map((card, index) => (
+        {cards.map((card) => (
           <motion.div
-            key={`${index}-${card.rank}-${card.suit}`}
+            key={`${card.rank}-${card.suit}`}
             initial={{ y: -40, opacity: 0, rotate: -3 }}
             animate={{ y: 0, opacity: 1, rotate: 0 }}
-            transition={{ delay: index * 0.12, duration: 0.28 }}
+            transition={{ duration: 0.28 }}
           >
             <PlayingCard card={card} size="lg" />
           </motion.div>
@@ -23,4 +24,4 @@ export function CommunityCards({ cards }: { cards: CardVisual[] }) {
       ))}
     </div>
   )
-}
+})

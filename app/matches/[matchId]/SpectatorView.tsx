@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { FinishAfterHandButton } from '@/components/match/FinishAfterHandButton'
 import { RightPanel } from '@/components/match/RightPanel'
@@ -12,6 +12,9 @@ import { WerewolfResultPanel } from '@/games/werewolf/ui/WerewolfResultPanel'
 import { useMatchStream } from '@/lib/client/sse'
 import type { GameEvent } from '@/lib/core/types'
 import { useMatchViewStore, type PokerUiPlayer } from '@/store/match-view-store'
+import { useThinkingStore } from '@/store/thinking-store'
+
+const THINKING_BATCH_MS = 80
 
 type SseMessage =
   | { kind: 'event'; event: GameEvent }
@@ -36,8 +39,10 @@ export function SpectatorView({
 }) {
   const init = useMatchViewStore((state) => state.init)
   const ingestEvent = useMatchViewStore((state) => state.ingestEvent)
-  const appendThinking = useMatchViewStore((state) => state.appendThinking)
   const setMatchEnd = useMatchViewStore((state) => state.setMatchEnd)
+  const appendThinking = useThinkingStore((state) => state.appendThinking)
+  const clearThinking = useThinkingStore((state) => state.clearThinking)
+
   const handNumber = useMatchViewStore((state) => state.handNumber)
   const players = useMatchViewStore((state) => state.players)
   const communityCards = useMatchViewStore((state) => state.communityCards)
@@ -49,11 +54,31 @@ export function SpectatorView({
   const dealerIndex = useMatchViewStore((state) => state.dealerIndex)
   const smallBlindIndex = useMatchViewStore((state) => state.smallBlindIndex)
   const bigBlindIndex = useMatchViewStore((state) => state.bigBlindIndex)
-  const thinkingByAgent = useMatchViewStore((state) => state.thinkingByAgent)
   const matchComplete = useMatchViewStore((state) => state.matchComplete)
   const winnerAgentId = useMatchViewStore((state) => state.winnerAgentId)
   const werewolfDay = useMatchViewStore((state) => state.werewolf.day)
   const werewolfPhase = useMatchViewStore((state) => state.werewolf.phase)
+
+  const thinkingBuffer = useRef<Record<string, string>>({})
+  const thinkingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const flushThinking = useCallback(() => {
+    if (thinkingTimer.current) {
+      clearTimeout(thinkingTimer.current)
+      thinkingTimer.current = null
+    }
+    const buffer = thinkingBuffer.current
+    thinkingBuffer.current = {}
+    for (const [agentId, delta] of Object.entries(buffer)) {
+      if (delta) appendThinking(agentId, delta)
+    }
+  }, [appendThinking])
+
+  useEffect(() => {
+    return () => {
+      flushThinking()
+    }
+  }, [flushThinking])
 
   useEffect(() => {
     init({ matchId, players: initialPlayers })
@@ -66,16 +91,28 @@ export function SpectatorView({
       switch (message.kind) {
         case 'event':
           ingestEvent(message.event)
+          if (message.event.kind === 'poker/action' && message.event.actorAgentId) {
+            clearThinking(message.event.actorAgentId)
+          }
           break
-        case 'thinking-delta':
-          appendThinking(message.agentId, message.delta)
+        case 'thinking-delta': {
+          const buffer = thinkingBuffer.current
+          buffer[message.agentId] = (buffer[message.agentId] ?? '') + message.delta
+          if (!thinkingTimer.current) {
+            thinkingTimer.current = setTimeout(() => {
+              thinkingTimer.current = null
+              flushThinking()
+            }, THINKING_BATCH_MS)
+          }
           break
+        }
         case 'match-end':
+          flushThinking()
           setMatchEnd(message.winnerAgentId)
           break
       }
     },
-    [appendThinking, ingestEvent, setMatchEnd],
+    [clearThinking, flushThinking, ingestEvent, setMatchEnd],
   )
 
   useMatchStream(matchId, onMessage)
@@ -161,7 +198,6 @@ export function SpectatorView({
           bigBlindIndex={bigBlindIndex}
           streetPots={streetPots}
           sidePots={sidePots}
-          thinkingByAgent={thinkingByAgent}
         />
 
         {matchComplete ? (

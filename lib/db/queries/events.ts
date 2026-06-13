@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, lte } from 'drizzle-orm'
 import type { GameEvent, GameType, Visibility } from '@/lib/core/types'
 import { db } from '@/lib/db/client'
 import { gameEvents } from '@/lib/db/schema.sqlite'
@@ -37,19 +37,38 @@ export async function appendEvents(events: GameEvent[]): Promise<void> {
 
 export async function listMatchEvents(
   matchId: string,
-  options?: { fromSeq?: number; toSeq?: number; visibility?: Visibility },
+  options?: { fromSeq?: number; toSeq?: number; visibility?: Visibility; limit?: number },
 ): Promise<GameEvent[]> {
   const conditions = [eq(gameEvents.matchId, matchId)]
   if (options?.fromSeq !== undefined) conditions.push(gte(gameEvents.seq, options.fromSeq))
   if (options?.toSeq !== undefined) conditions.push(lte(gameEvents.seq, options.toSeq))
   if (options?.visibility) conditions.push(eq(gameEvents.visibility, options.visibility))
 
-  const rows = await db
+  let query = db
     .select()
     .from(gameEvents)
     .where(conditions.length === 1 ? conditions[0] : and(...conditions))
-    .orderBy(asc(gameEvents.seq))
 
+  if (options?.limit !== undefined && options.limit > 0) {
+    query = query.orderBy(desc(gameEvents.seq)).limit(options.limit) as unknown as typeof query
+    const rows = await query
+    return rows
+      .reverse()
+      .map((row) => ({
+        id: row.id,
+        matchId: row.matchId,
+        gameType: inferGameTypeFromKind(row.kind),
+        seq: row.seq,
+        occurredAt: row.occurredAt.toISOString(),
+        kind: row.kind,
+        actorAgentId: row.actorAgentId,
+        payload: row.payload,
+        visibility: row.visibility as Visibility,
+        restrictedTo: row.restrictedTo,
+      }))
+  }
+
+  const rows = await query.orderBy(asc(gameEvents.seq))
   return rows.map((row) => ({
     id: row.id,
     matchId: row.matchId,
@@ -70,7 +89,10 @@ function inferGameTypeFromKind(kind: string): GameType {
 }
 
 export async function nextSeq(matchId: string): Promise<number> {
-  const rows = await db.select({ seq: gameEvents.seq }).from(gameEvents).where(eq(gameEvents.matchId, matchId))
-  if (rows.length === 0) return 1
-  return Math.max(...rows.map((row) => row.seq)) + 1
+  const rows = await db
+    .select({ max: gameEvents.seq })
+    .from(gameEvents)
+    .where(eq(gameEvents.matchId, matchId))
+  const max = rows[0]?.max ?? 0
+  return max + 1
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Skull } from 'lucide-react'
 
@@ -35,7 +36,7 @@ const DEATH_LABEL: Record<string, string> = {
   vote: '票出',
 }
 
-export function PlayerCard(props: PlayerCardProps) {
+export const PlayerCard = memo(function PlayerCard(props: PlayerCardProps) {
   const { name, alive, deathCause, claimedRole, revealedRole, isCurrentActor } = props
   const border = isCurrentActor
     ? 'border-emerald-400 ring-2 ring-emerald-400/40'
@@ -78,4 +79,4 @@ export function PlayerCard(props: PlayerCardProps) {
       ) : null}
     </motion.div>
   )
-}
+})

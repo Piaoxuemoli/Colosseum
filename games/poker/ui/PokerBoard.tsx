@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react'
 import type { CardVisual, PokerSidePot, PokerStreetPots, PokerUiPlayer } from '@/store/match-view-store'
+import { useThinkingStore } from '@/store/thinking-store'
 import { CommunityCards } from './CommunityCards'
 import { PlayerSeat } from './PlayerSeat'
 import { Pot } from './Pot'
@@ -26,7 +27,6 @@ export function PokerBoard({
   bigBlindIndex,
   streetPots,
   sidePots,
-  thinkingByAgent,
 }: {
   players: PokerUiPlayer[]
   communityCards: CardVisual[]
@@ -38,8 +38,8 @@ export function PokerBoard({
   bigBlindIndex: number
   streetPots: PokerStreetPots
   sidePots: PokerSidePot[]
-  thinkingByAgent: Record<string, string>
 }) {
+  const thinkingByAgent = useThinkingStore((s) => s.thinkingByAgent)
   const blindRole = (seatIndex: number) =>
     seatIndex === smallBlindIndex ? 'SB' : seatIndex === bigBlindIndex ? 'BB' : undefined
 
