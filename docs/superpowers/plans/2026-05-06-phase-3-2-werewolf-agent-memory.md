@@ -5,7 +5,7 @@
 **Goal:** 实现狼人杀的 Player Agent 四契约（ContextBuilder / ResponseParser / BotStrategy / Memory）。核心差异化：beliefState 外化——LLM 输出必须含更新后的信念分布。
 
 **Architecture:**
-- `games/werewolf/agent/`：context / parser / bot / memory
+- `src/games/werewolf/agent/`：context / parser / bot / memory
 - `memoryContext` 针对 role 定制（狼知道同伴，seer 有验人结果，witch 知道药）
 - `beliefState`：存在 working memory；ResponseParser 从 LLM `<belief>{...}</belief>` 区块提取
 - 记忆读写接口对齐 P1a-5 的 `MemoryModule<WorkingMemory, EpisodicEntry, SemanticProfile>`
@@ -24,13 +24,13 @@
 
 ```
 Colosseum/
-├── games/werewolf/agent/
+├── src/games/werewolf/agent/
 │   ├── werewolf-context.ts         # playerContextBuilder
 │   ├── werewolf-parser.ts          # 提取 action + beliefState
 │   ├── werewolf-bot.ts             # fallback 策略
 │   ├── werewolf-memory.ts          # Memory 实现
 │   └── types.ts                    # WerewolfWorkingMemory / EpisodicEntry / SemanticProfile
-└── tests/games/werewolf/agent/
+└── tests/src/games/werewolf/agent/
     ├── werewolf-context.test.ts
     ├── werewolf-parser.test.ts
     ├── werewolf-bot.test.ts
@@ -42,12 +42,12 @@ Colosseum/
 ## Task 1: 记忆类型 + 骨架
 
 **Files:**
-- Create: `games/werewolf/agent/types.ts`
+- Create: `src/games/werewolf/agent/types.ts`
 
 - [ ] **Step 1: 类型（严格对齐 spec 6.4）**
 
 ```typescript
-// games/werewolf/agent/types.ts
+// src/games/werewolf/agent/types.ts
 import type { WerewolfRole, SpeechRecord, VoteRecord, SeerResult } from '../engine/types'
 
 export interface BeliefEntry {
@@ -118,7 +118,7 @@ export interface WerewolfSemanticProfile {
 - [ ] **Step 2: Commit**
 
 ```bash
-git add games/werewolf/agent/types.ts
+git add src/games/werewolf/agent/types.ts
 git commit -m "feat(p3-2): werewolf memory types"
 ```
 
@@ -127,8 +127,8 @@ git commit -m "feat(p3-2): werewolf memory types"
 ## Task 2: Bot 策略（fallback）
 
 **Files:**
-- Create: `games/werewolf/agent/werewolf-bot.ts`
-- Create: `tests/games/werewolf/agent/werewolf-bot.test.ts`
+- Create: `src/games/werewolf/agent/werewolf-bot.ts`
+- Create: `tests/src/games/werewolf/agent/werewolf-bot.test.ts`
 
 **Context:** LLM 失败时快速产出合法动作。策略：
 - 狼杀：随机选一个非狼活人
@@ -140,7 +140,7 @@ git commit -m "feat(p3-2): werewolf memory types"
 - [ ] **Step 1: 实现**
 
 ```typescript
-// games/werewolf/agent/werewolf-bot.ts
+// src/games/werewolf/agent/werewolf-bot.ts
 import type { WerewolfAction, WerewolfState, WerewolfRole } from '../engine/types'
 
 export function decideWerewolfBot(
@@ -222,13 +222,13 @@ describe('decideWerewolfBot', () => {
 })
 ```
 
-Run: `npx vitest run tests/games/werewolf/agent/werewolf-bot.test.ts`
+Run: `npx vitest run tests/src/games/werewolf/agent/werewolf-bot.test.ts`
 Expected: PASS。
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add games/werewolf/agent/werewolf-bot.ts tests/games/werewolf/agent/werewolf-bot.test.ts
+git add src/games/werewolf/agent/werewolf-bot.ts tests/src/games/werewolf/agent/werewolf-bot.test.ts
 git commit -m "feat(p3-2): werewolf bot fallback strategy"
 ```
 
@@ -237,8 +237,8 @@ git commit -m "feat(p3-2): werewolf bot fallback strategy"
 ## Task 3: ResponseParser（提取 action + beliefState）
 
 **Files:**
-- Create: `games/werewolf/agent/werewolf-parser.ts`
-- Create: `tests/games/werewolf/agent/werewolf-parser.test.ts`
+- Create: `src/games/werewolf/agent/werewolf-parser.ts`
+- Create: `tests/src/games/werewolf/agent/werewolf-parser.test.ts`
 
 **Context:** LLM 输出协议：
 
@@ -260,7 +260,7 @@ parser 产出：
 - [ ] **Step 1: 实现**
 
 ```typescript
-// games/werewolf/agent/werewolf-parser.ts
+// src/games/werewolf/agent/werewolf-parser.ts
 import type { WerewolfAction } from '../engine/types'
 import type { BeliefEntry } from './types'
 
@@ -328,13 +328,13 @@ describe('parseWerewolfResponse', () => {
 })
 ```
 
-Run: `npx vitest run tests/games/werewolf/agent/werewolf-parser.test.ts`
+Run: `npx vitest run tests/src/games/werewolf/agent/werewolf-parser.test.ts`
 Expected: PASS。
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add games/werewolf/agent/werewolf-parser.ts tests/games/werewolf/agent/werewolf-parser.test.ts
+git add src/games/werewolf/agent/werewolf-parser.ts tests/src/games/werewolf/agent/werewolf-parser.test.ts
 git commit -m "feat(p3-2): werewolf response parser with belief extraction"
 ```
 
@@ -343,15 +343,15 @@ git commit -m "feat(p3-2): werewolf response parser with belief extraction"
 ## Task 4: ContextBuilder（按角色差异化）
 
 **Files:**
-- Create: `games/werewolf/agent/werewolf-context.ts`
-- Create: `tests/games/werewolf/agent/werewolf-context.test.ts`
+- Create: `src/games/werewolf/agent/werewolf-context.ts`
+- Create: `tests/src/games/werewolf/agent/werewolf-context.test.ts`
 
 **Context:** 输出中文 system+user。system 中强制指定输出格式 + 角色专属私密信息 + 当前信念分布。
 
 - [ ] **Step 1: 实现**
 
 ```typescript
-// games/werewolf/agent/werewolf-context.ts
+// src/games/werewolf/agent/werewolf-context.ts
 import type { WerewolfState, WerewolfRole } from '../engine/types'
 import type { WerewolfWorkingMemory, WerewolfEpisodicEntry, WerewolfSemanticProfile } from './types'
 
@@ -487,13 +487,13 @@ describe('buildWerewolfContext', () => {
 })
 ```
 
-Run: `npx vitest run tests/games/werewolf/agent/werewolf-context.test.ts`
+Run: `npx vitest run tests/src/games/werewolf/agent/werewolf-context.test.ts`
 Expected: PASS。
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add games/werewolf/agent/werewolf-context.ts tests/games/werewolf/agent/werewolf-context.test.ts
+git add src/games/werewolf/agent/werewolf-context.ts tests/src/games/werewolf/agent/werewolf-context.test.ts
 git commit -m "feat(p3-2): werewolf context builder (role-specific private info)"
 ```
 
@@ -502,8 +502,8 @@ git commit -m "feat(p3-2): werewolf context builder (role-specific private info)
 ## Task 5: Memory 模块（三层）
 
 **Files:**
-- Create: `games/werewolf/agent/werewolf-memory.ts`
-- Create: `tests/games/werewolf/agent/werewolf-memory.test.ts`
+- Create: `src/games/werewolf/agent/werewolf-memory.ts`
+- Create: `tests/src/games/werewolf/agent/werewolf-memory.test.ts`
 
 **Context:** 实现 P1a-5 的 `MemoryModule<W, E, S>` 三接口：
 - `loadForDecision(matchId, agentId)` → `{ working, episodic[], semantic{}  }`
@@ -515,7 +515,7 @@ Working 存 Redis；Episodic / Semantic 存 DB (JSONB)。
 - [ ] **Step 1: 接口实现骨架**
 
 ```typescript
-// games/werewolf/agent/werewolf-memory.ts
+// src/games/werewolf/agent/werewolf-memory.ts
 import type { MemoryModule } from '@/core/protocols/memory'
 import type { WerewolfWorkingMemory, WerewolfEpisodicEntry, WerewolfSemanticProfile, BeliefEntry } from './types'
 import type { WerewolfState, WerewolfRole } from '../engine/types'
@@ -713,13 +713,13 @@ describe('werewolfMemory', () => {
 })
 ```
 
-Run: `npx vitest run tests/games/werewolf/agent/werewolf-memory.test.ts`
+Run: `npx vitest run tests/src/games/werewolf/agent/werewolf-memory.test.ts`
 Expected: PASS（需 docker compose redis / dev db）。
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add games/werewolf/agent/werewolf-memory.ts db/schema.ts tests/games/werewolf/agent/werewolf-memory.test.ts
+git add src/games/werewolf/agent/werewolf-memory.ts db/schema.ts tests/src/games/werewolf/agent/werewolf-memory.test.ts
 git commit -m "feat(p3-2): werewolf memory module (working/episodic/semantic)"
 ```
 

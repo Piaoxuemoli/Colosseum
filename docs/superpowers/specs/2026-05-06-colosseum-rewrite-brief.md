@@ -104,7 +104,7 @@ flowchart LR
     E[通用 UI 组件<br/>ThinkingBubble / ActionLog / Scoreboard]
   end
 
-  subgraph 德扑自治[games/poker/]
+  subgraph 德扑自治[src/games/poker/]
     P1[engine]
     P2[agent context+parser+bot]
     P3[memory 三层]
@@ -112,7 +112,7 @@ flowchart LR
     P5[plugin]
   end
 
-  subgraph 狼人杀自治[games/werewolf/]
+  subgraph 狼人杀自治[src/games/werewolf/]
     W1[engine]
     W2[agent player+moderator]
     W3[memory 三层]

@@ -15,20 +15,20 @@
 ## Task 1: UUID + ID 前缀工具
 
 **Files:**
-- Create: `lib/core/ids.ts`
-- Create: `tests/lib/core/ids.test.ts`
+- Create: `src/platform/core/ids.ts`
+- Create: `tests/src/platform/core/ids.test.ts`
 
 **Context:** 所有表主键是 UUID。为了人类可读（面试演示时），给 matchId/agentId/taskId 加短前缀。
 
 - [x] **Step 1: 写失败的测试**
 
-Create `tests/lib/core/ids.test.ts`:
+Create `tests/src/platform/core/ids.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
-import { newId, newMatchId, newTaskId, parsePrefix } from '@/lib/core/ids'
+import { newId, newMatchId, newTaskId, parsePrefix } from '@/platform/core/ids'
 
-describe('lib/core/ids', () => {
+describe('src/platform/core/ids', () => {
   it('newId returns a uuid v4 string', () => {
     const id = newId()
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)
@@ -56,14 +56,14 @@ describe('lib/core/ids', () => {
 
 Run:
 ```bash
-npm test tests/lib/core/ids.test.ts
+npm test tests/src/platform/core/ids.test.ts
 ```
 
-Expected: 失败 `Cannot find module '@/lib/core/ids'`。
+Expected: 失败 `Cannot find module '@/platform/core/ids'`。
 
 - [x] **Step 3: 写实现**
 
-Create `lib/core/ids.ts`:
+Create `src/platform/core/ids.ts`:
 
 ```typescript
 import { randomUUID } from 'node:crypto'
@@ -121,7 +121,7 @@ export function parsePrefix(id: string): string | null {
 
 Run:
 ```bash
-npm test tests/lib/core/ids.test.ts
+npm test tests/src/platform/core/ids.test.ts
 ```
 
 Expected: 4 passed。
@@ -129,7 +129,7 @@ Expected: 4 passed。
 - [x] **Step 5: Commit**
 
 ```bash
-git add lib/core/ids.ts tests/lib/core/
+git add src/platform/core/ids.ts tests/src/platform/core/
 git commit -m "feat(p1a): core ID utilities with prefixes + match token"
 ```
 
@@ -138,20 +138,20 @@ git commit -m "feat(p1a): core ID utilities with prefixes + match token"
 ## Task 2: 通用核心类型（GameEvent / MatchConfig / MatchResult）
 
 **Files:**
-- Create: `lib/core/types.ts`
-- Create: `tests/lib/core/types.test.ts`
+- Create: `src/platform/core/types.ts`
+- Create: `tests/src/platform/core/types.test.ts`
 
 **Context:** spec 第 5.5 节定义 `GameEvent`，第 7.4 节定义 `MatchConfig`。这些是跨游戏共享的。
 
 - [x] **Step 1: 写失败的测试**
 
-Create `tests/lib/core/types.test.ts`:
+Create `tests/src/platform/core/types.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
-import { gameEventSchema, matchConfigSchema, defaultMatchConfig } from '@/lib/core/types'
+import { gameEventSchema, matchConfigSchema, defaultMatchConfig } from '@/platform/core/types'
 
-describe('lib/core/types', () => {
+describe('src/platform/core/types', () => {
   it('gameEventSchema accepts a valid public poker event', () => {
     const ok = gameEventSchema.safeParse({
       id: 'evt_1',
@@ -198,14 +198,14 @@ describe('lib/core/types', () => {
 
 Run:
 ```bash
-npm test tests/lib/core/types.test.ts
+npm test tests/src/platform/core/types.test.ts
 ```
 
 Expected: 失败。
 
 - [x] **Step 3: 写实现**
 
-Create `lib/core/types.ts`:
+Create `src/platform/core/types.ts`:
 
 ```typescript
 import { z } from 'zod'
@@ -260,7 +260,7 @@ export type MatchResult = {
 export const agentKindSchema = z.enum(['player', 'moderator'])
 export type AgentKind = z.infer<typeof agentKindSchema>
 
-// === Provider kind（呼应 lib/llm/catalog.ts） ===
+// === Provider kind（呼应 src/platform/llm/catalog.ts） ===
 export const providerKindSchema = z.enum(['openai-compatible', 'anthropic', 'custom'])
 export type ProviderKind = z.infer<typeof providerKindSchema>
 ```
@@ -269,7 +269,7 @@ export type ProviderKind = z.infer<typeof providerKindSchema>
 
 Run:
 ```bash
-npm test tests/lib/core/types.test.ts
+npm test tests/src/platform/core/types.test.ts
 ```
 
 Expected: 4 passed。
@@ -277,7 +277,7 @@ Expected: 4 passed。
 - [x] **Step 5: Commit**
 
 ```bash
-git add lib/core/types.ts tests/lib/core/types.test.ts
+git add src/platform/core/types.ts tests/src/platform/core/types.test.ts
 git commit -m "feat(p1a): core types (GameEvent / MatchConfig / MatchResult)"
 ```
 
@@ -286,20 +286,20 @@ git commit -m "feat(p1a): core types (GameEvent / MatchConfig / MatchResult)"
 ## Task 3: Redis 键命名空间辅助
 
 **Files:**
-- Create: `lib/redis/keys.ts`
-- Create: `tests/lib/redis/keys.test.ts`
+- Create: `src/platform/redis/keys.ts`
+- Create: `tests/src/platform/redis/keys.test.ts`
 
 **Context:** spec 第 8.3 节定义了 Redis 键约定。封成函数防止 typo。
 
 - [x] **Step 1: 写失败的测试**
 
-Create `tests/lib/redis/keys.test.ts`:
+Create `tests/src/platform/redis/keys.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
-import { keys } from '@/lib/redis/keys'
+import { keys } from '@/platform/redis/keys'
 
-describe('lib/redis/keys', () => {
+describe('src/platform/redis/keys', () => {
   it('generates expected key patterns', () => {
     expect(keys.matchState('m1')).toBe('match:m1:state')
     expect(keys.matchToken('m1')).toBe('match:m1:token')
@@ -313,12 +313,12 @@ describe('lib/redis/keys', () => {
 
 - [x] **Step 2: 运行确认失败**
 
-Run: `npm test tests/lib/redis/keys.test.ts`
+Run: `npm test tests/src/platform/redis/keys.test.ts`
 Expected: 失败。
 
 - [x] **Step 3: 写实现**
 
-Create `lib/redis/keys.ts`:
+Create `src/platform/redis/keys.ts`:
 
 ```typescript
 /**
@@ -338,13 +338,13 @@ export const keys = {
 
 - [x] **Step 4: 跑测试**
 
-Run: `npm test tests/lib/redis/keys.test.ts`
+Run: `npm test tests/src/platform/redis/keys.test.ts`
 Expected: 1 passed。
 
 - [x] **Step 5: Commit**
 
 ```bash
-git add lib/redis/keys.ts tests/lib/redis/keys.test.ts
+git add src/platform/redis/keys.ts tests/src/platform/redis/keys.test.ts
 git commit -m "feat(p1a): redis key namespace helpers"
 ```
 
@@ -353,20 +353,20 @@ git commit -m "feat(p1a): redis key namespace helpers"
 ## Task 4: Drizzle SQLite schema 扩张到 9 张表
 
 **Files:**
-- Modify: `lib/db/schema.sqlite.ts`（大幅扩张）
-- Create: `tests/lib/db/schema.test.ts`
+- Modify: `src/platform/db/schema.sqlite.ts`（大幅扩张）
+- Create: `tests/src/platform/db/schema.test.ts`
 
 **Context:** 把 P0 只有 `api_profiles` 的 schema 扩到 spec 第 8.1 节定义的 9 张表。SQLite 差异：`jsonb → text({mode: 'json'})`，`timestamp → integer({mode: 'timestamp'})`，`uuid → text`。
 
 - [x] **Step 1: 写失败的测试（验证每张表可被 import）**
 
-Create `tests/lib/db/schema.test.ts`:
+Create `tests/src/platform/db/schema.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
-import * as schema from '@/lib/db/schema.sqlite'
+import * as schema from '@/platform/db/schema.sqlite'
 
-describe('lib/db/schema.sqlite', () => {
+describe('src/platform/db/schema.sqlite', () => {
   it('exports all 9 tables', () => {
     const expected = [
       'apiProfiles',
@@ -389,12 +389,12 @@ describe('lib/db/schema.sqlite', () => {
 
 - [x] **Step 2: 运行确认失败**
 
-Run: `npm test tests/lib/db/schema.test.ts`
+Run: `npm test tests/src/platform/db/schema.test.ts`
 Expected: 失败（仅 apiProfiles 存在）。
 
 - [x] **Step 3: 写完整 schema**
 
-覆盖 `lib/db/schema.sqlite.ts` 为以下内容：
+覆盖 `src/platform/db/schema.sqlite.ts` 为以下内容：
 
 ```typescript
 /**
@@ -587,11 +587,11 @@ npm run db:generate
 npm run db:migrate
 ```
 
-Expected: 生成 `lib/db/migrations/0001_*.sql`（P0 的 0000 还在），应用成功。
+Expected: 生成 `src/platform/db/migrations/0001_*.sql`（P0 的 0000 还在），应用成功。
 
 - [x] **Step 5: 跑测试**
 
-Run: `npm test tests/lib/db/schema.test.ts`
+Run: `npm test tests/src/platform/db/schema.test.ts`
 Expected: 1 passed。
 
 - [x] **Step 6: 全量测试回归**
@@ -602,7 +602,7 @@ Expected: 之前所有测试仍通过（包括 P0 的 client.test.ts）。
 - [x] **Step 7: Commit**
 
 ```bash
-git add lib/db/schema.sqlite.ts lib/db/migrations/ tests/lib/db/schema.test.ts
+git add src/platform/db/schema.sqlite.ts src/platform/db/migrations/ tests/src/platform/db/schema.test.ts
 git commit -m "feat(p1a): expand sqlite schema to 9 tables per spec §8.1"
 ```
 

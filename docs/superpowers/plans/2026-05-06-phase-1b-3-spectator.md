@@ -26,11 +26,11 @@
 
 ```
 Colosseum/
-├── app/
+├── src/app/
 │   └── matches/[matchId]/
 │       ├── page.tsx                           # 观战页 Server 外壳（读 match 初始数据）
 │       └── SpectatorView.tsx                  # 'use client' 主体
-├── games/poker/ui/
+├── src/games/poker/ui/
 │   ├── PokerBoard.tsx                         # 牌桌主容器
 │   ├── PlayerSeat.tsx                         # 座位
 │   ├── PlayingCard.tsx                        # 扑克牌
@@ -39,7 +39,7 @@ Colosseum/
 │   ├── BetChip.tsx                            # 下注筹码
 │   ├── ThinkingBubble.tsx                     # 思考气泡（Floating UI）
 │   └── types.ts                               # UI 专用类型
-├── store/
+├── src/frontend/store/
 │   └── match-view-store.ts                    # 观战态 Zustand
 ├── lib/client/
 │   └── sse.ts                                 # SSE 订阅 hook
@@ -71,8 +71,8 @@ git commit -m "chore(p1b): install @floating-ui/react + framer-motion"
 ## Task 2: 观战 store（match-view-store）
 
 **Files:**
-- Create: `store/match-view-store.ts`
-- Create: `tests/store/match-view-store.test.ts`
+- Create: `src/frontend/store/match-view-store.ts`
+- Create: `tests/src/frontend/store/match-view-store.test.ts`
 
 **Context:** SSE 事件流进来后存储到 store，并计算派生态（currentPhase/currentActor/players/pot/communityCards）。**派生态的计算方式：用事件 reducer 从初始 state 推导当前 state。** 这样是事件源（event-sourcing）风格，回放/快进都能共用。
 
@@ -80,11 +80,11 @@ git commit -m "chore(p1b): install @floating-ui/react + framer-motion"
 
 - [x] **Step 1: 写测试**
 
-Create `tests/store/match-view-store.test.ts`:
+Create `tests/src/frontend/store/match-view-store.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useMatchViewStore } from '@/store/match-view-store'
+import { useMatchViewStore } from '@/frontend/store/match-view-store'
 
 describe('match-view-store', () => {
   beforeEach(() => {
@@ -129,13 +129,13 @@ describe('match-view-store', () => {
 
 - [x] **Step 2: 写 store**
 
-Create `store/match-view-store.ts`:
+Create `src/frontend/store/match-view-store.ts`:
 
 ```typescript
 'use client'
 
 import { create } from 'zustand'
-import type { GameEvent } from '@/lib/core/types'
+import type { GameEvent } from '@/platform/core/types'
 
 export type PokerUiPlayer = {
   agentId: string
@@ -321,11 +321,11 @@ export const useMatchViewStore = create<MatchViewState>((set, get) => ({
 
 - [x] **Step 3: 跑测试 + commit**
 
-Run: `npm test tests/store/match-view-store.test.ts`
+Run: `npm test tests/src/frontend/store/match-view-store.test.ts`
 Expected: 3 passed。
 
 ```bash
-git add store/match-view-store.ts tests/store/match-view-store.test.ts
+git add src/frontend/store/match-view-store.ts tests/src/frontend/store/match-view-store.test.ts
 git commit -m "feat(p1b): match view store with event reducer"
 ```
 
@@ -347,7 +347,7 @@ import { useEffect } from 'react'
 
 /**
  * SSE 订阅 hook。
- * 服务端广播的 payload 结构见 lib/orchestrator/sse-broadcast.ts：
+ * 服务端广播的 payload 结构见 src/backend/orchestrator/sse-broadcast.ts：
  *  - { kind: 'event', event: GameEvent }
  *  - { kind: 'thinking-delta', agentId, delta }
  *  - { kind: 'match-end', winnerAgentId }
@@ -388,11 +388,11 @@ git commit -m "feat(p1b): SSE subscription hook"
 ## Task 4: 扑克牌组件 PlayingCard
 
 **Files:**
-- Create: `games/poker/ui/PlayingCard.tsx`
+- Create: `src/games/poker/ui/PlayingCard.tsx`
 
 - [x] **Step 1: 写实现**
 
-Create `games/poker/ui/PlayingCard.tsx`:
+Create `src/games/poker/ui/PlayingCard.tsx`:
 
 ```typescript
 'use client'
@@ -453,7 +453,7 @@ export function PlayingCard({
 - [x] **Step 2: Commit**
 
 ```bash
-git add games/poker/ui/PlayingCard.tsx
+git add src/games/poker/ui/PlayingCard.tsx
 git commit -m "feat(p1b): PlayingCard component with flip animation"
 ```
 
@@ -462,11 +462,11 @@ git commit -m "feat(p1b): PlayingCard component with flip animation"
 ## Task 5: ThinkingBubble（Floating UI 智能定位）
 
 **Files:**
-- Create: `games/poker/ui/ThinkingBubble.tsx`
+- Create: `src/games/poker/ui/ThinkingBubble.tsx`
 
 - [x] **Step 1: 写实现**
 
-Create `games/poker/ui/ThinkingBubble.tsx`:
+Create `src/games/poker/ui/ThinkingBubble.tsx`:
 
 ```typescript
 'use client'
@@ -513,7 +513,7 @@ export function ThinkingBubble({
 - [x] **Step 2: Commit**
 
 ```bash
-git add games/poker/ui/ThinkingBubble.tsx
+git add src/games/poker/ui/ThinkingBubble.tsx
 git commit -m "feat(p1b): ThinkingBubble with floating-ui smart positioning"
 ```
 
@@ -522,11 +522,11 @@ git commit -m "feat(p1b): ThinkingBubble with floating-ui smart positioning"
 ## Task 6: PlayerSeat
 
 **Files:**
-- Create: `games/poker/ui/PlayerSeat.tsx`
+- Create: `src/games/poker/ui/PlayerSeat.tsx`
 
 - [x] **Step 1: 写实现**
 
-Create `games/poker/ui/PlayerSeat.tsx`:
+Create `src/games/poker/ui/PlayerSeat.tsx`:
 
 ```typescript
 'use client'
@@ -535,7 +535,7 @@ import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import { PlayingCard } from './PlayingCard'
 import { ThinkingBubble } from './ThinkingBubble'
-import type { PokerUiPlayer } from '@/store/match-view-store'
+import type { PokerUiPlayer } from '@/frontend/store/match-view-store'
 
 export function PlayerSeat({
   player, isCurrentActor, isDealer, thinking,
@@ -595,7 +595,7 @@ export function PlayerSeat({
 - [x] **Step 2: Commit**
 
 ```bash
-git add games/poker/ui/PlayerSeat.tsx
+git add src/games/poker/ui/PlayerSeat.tsx
 git commit -m "feat(p1b): PlayerSeat with current-actor highlight + thinking bubble"
 ```
 
@@ -604,12 +604,12 @@ git commit -m "feat(p1b): PlayerSeat with current-actor highlight + thinking bub
 ## Task 7: CommunityCards + Pot + BetChip
 
 **Files:**
-- Create: `games/poker/ui/CommunityCards.tsx`
-- Create: `games/poker/ui/Pot.tsx`
+- Create: `src/games/poker/ui/CommunityCards.tsx`
+- Create: `src/games/poker/ui/Pot.tsx`
 
 - [x] **Step 1: 写 CommunityCards**
 
-Create `games/poker/ui/CommunityCards.tsx`:
+Create `src/games/poker/ui/CommunityCards.tsx`:
 
 ```typescript
 'use client'
@@ -639,7 +639,7 @@ export function CommunityCards({ cards }: { cards: CardVisual[] }) {
 
 - [x] **Step 2: 写 Pot**
 
-Create `games/poker/ui/Pot.tsx`:
+Create `src/games/poker/ui/Pot.tsx`:
 
 ```typescript
 'use client'
@@ -667,7 +667,7 @@ export function Pot({ amount, phase }: { amount: number; phase: string }) {
 - [x] **Step 3: Commit**
 
 ```bash
-git add games/poker/ui/CommunityCards.tsx games/poker/ui/Pot.tsx
+git add src/games/poker/ui/CommunityCards.tsx src/games/poker/ui/Pot.tsx
 git commit -m "feat(p1b): CommunityCards + Pot with animations"
 ```
 
@@ -676,13 +676,13 @@ git commit -m "feat(p1b): CommunityCards + Pot with animations"
 ## Task 8: PokerBoard 主容器
 
 **Files:**
-- Create: `games/poker/ui/PokerBoard.tsx`
+- Create: `src/games/poker/ui/PokerBoard.tsx`
 
 **Context:** 椭圆牌桌，6 座位环绕。用绝对定位 + 百分比放置座位。
 
 - [x] **Step 1: 写实现**
 
-Create `games/poker/ui/PokerBoard.tsx`:
+Create `src/games/poker/ui/PokerBoard.tsx`:
 
 ```typescript
 'use client'
@@ -690,7 +690,7 @@ Create `games/poker/ui/PokerBoard.tsx`:
 import { CommunityCards } from './CommunityCards'
 import { Pot } from './Pot'
 import { PlayerSeat } from './PlayerSeat'
-import type { PokerUiPlayer } from '@/store/match-view-store'
+import type { PokerUiPlayer } from '@/frontend/store/match-view-store'
 
 /**
  * 6-max 座位绝对定位百分比。顺序：底部中间 = seat 0，逆时针。
@@ -749,7 +749,7 @@ export function PokerBoard({
 - [x] **Step 2: Commit**
 
 ```bash
-git add games/poker/ui/PokerBoard.tsx
+git add src/games/poker/ui/PokerBoard.tsx
 git commit -m "feat(p1b): PokerBoard with 6-seat oval layout"
 ```
 
@@ -758,22 +758,22 @@ git commit -m "feat(p1b): PokerBoard with 6-seat oval layout"
 ## Task 9: SpectatorView 主组件（整合）
 
 **Files:**
-- Create: `app/matches/[matchId]/SpectatorView.tsx`
-- Create: `app/matches/[matchId]/page.tsx`
+- Create: `src/app/matches/[matchId]/SpectatorView.tsx`
+- Create: `src/app/matches/[matchId]/page.tsx`
 
 **Context:** Server 外壳 `page.tsx` 读 match/participants/agents 初始数据；Client `SpectatorView` 接管 SSE + 渲染。
 
 - [x] **Step 1: 写 Server page**
 
-Create `app/matches/[matchId]/page.tsx`:
+Create `src/app/matches/[matchId]/page.tsx`:
 
 ```typescript
 import { notFound } from 'next/navigation'
-import { db } from '@/lib/db/client'
-import { matches, matchParticipants, agents } from '@/lib/db/schema.sqlite'
+import { db } from '@/platform/db/client'
+import { matches, matchParticipants, agents } from '@/platform/db/schema.sqlite'
 import { eq } from 'drizzle-orm'
 import { SpectatorView } from './SpectatorView'
-import type { PokerUiPlayer } from '@/store/match-view-store'
+import type { PokerUiPlayer } from '@/frontend/store/match-view-store'
 
 export const dynamic = 'force-dynamic'
 
@@ -823,19 +823,19 @@ export default async function MatchPage({
 
 - [x] **Step 2: 写 Client SpectatorView**
 
-Create `app/matches/[matchId]/SpectatorView.tsx`:
+Create `src/app/matches/[matchId]/SpectatorView.tsx`:
 
 ```typescript
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import { useMatchViewStore, type PokerUiPlayer } from '@/store/match-view-store'
-import { useMatchStream } from '@/lib/client/sse'
+import { useMatchViewStore, type PokerUiPlayer } from '@/frontend/store/match-view-store'
+import { useMatchStream } from '@/frontend/lib/client/sse'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/frontend/src/frontend/components/ui/badge'
 
 type SseMessage =
-  | { kind: 'event'; event: import('@/lib/core/types').GameEvent }
+  | { kind: 'event'; event: import('@/platform/core/types').GameEvent }
   | { kind: 'thinking-delta'; agentId: string; delta: string }
   | { kind: 'agent-action-ready'; agentId: string; actionType: string }
   | { kind: 'match-end'; winnerAgentId: string | null }
@@ -941,7 +941,7 @@ Run: `npm run infra:up && npm run dev`（新开终端跑 dev）：
 - [x] **Step 4: Commit + tag**
 
 ```bash
-git add app/matches/\[matchId\]/ games/poker/ui/
+git add src/app/matches/\[matchId\]/ src/games/poker/ui/
 git commit -m "feat(p1b): spectator view with SSE + event reducer + animated board"
 git tag -a phase-1b-3 -m "Phase 1b-3: spectator page + poker table renderer"
 ```

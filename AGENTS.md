@@ -16,13 +16,36 @@ Colosseum 是一个纯 AI 博弈竞技平台：用户在浏览器里配置多个
 4. `docs/superpowers/plans/`：按 Phase 拆分的实施计划。执行代码任务时以当前 plan 的 checkbox 为进度来源。
 5. `docs/ai/session-state.md`：长任务状态记录。上下文压缩或换 Agent 后先读这里。
 
+## 项目结构
+
+仓库按职责分为 7 大类：
+
+```
+.
+├── src/
+│   ├── app/              # Next.js App Router（frontend 页面 + backend API routes）
+│   ├── frontend/         # 页面组件、store、前端工具
+│   ├── backend/          # API 业务层：orchestrator、agent、a2a-core、auth、match
+│   ├── platform/         # 共享基础设施：core、db、redis、llm、telemetry、memory、engine
+│   └── games/            # 游戏自治包：poker / werewolf
+├── ops/                  # 部署流水线 + 本地开发环境
+├── docs/                 # AI 规则、spec、plan、部署/开发文档
+├── archive/              # 旧项目与过时文档
+└── project files         # package.json、tsconfig、next.config、eslint 等
+```
+
+- `app/` 是 Next.js 强制的 HTTP 边界：页面在 `src/app/(page)`，A2A 与 GM 端点在 `src/app/api/`。
+- `frontend/` 只 import `@/frontend/*` 和 `@/platform/*` 的纯类型/工具；禁止直接 import `@/backend/*` 或 `@/platform/db`。
+- `backend/` 和 `platform/` 可被 API routes 与游戏包 import。
+- `games/` 保持自治：每个游戏拥有自己的 engine、agent、memory、ui 子目录。
+
 ## 部署与运维
 
 - 部署 Skill（推荐入口）：`.kimi-code/skills/deployment/SKILL.md`
 - 生产部署手册：`ops/deploy/README.md`
 - Vercel fallback：`docs/deploy/vercel.md`
 - 本地开发环境：`ops/dev/README.md`
-- 过时文档归档：`old/docs-archive/`
+- 过时文档归档：`archive/old/docs-archive/`
 
 ## 规则加载策略
 
