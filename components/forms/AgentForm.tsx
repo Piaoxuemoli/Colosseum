@@ -11,9 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { api } from '@/lib/client/api'
 import { presetsFor } from '@/lib/agent/prompt-presets'
 
-type Profile = { id: string; displayName: string; providerId: string; model: string }
-
-const AVATARS = ['🎭', '🎲', '🃏', '♠️', '♥️', '♦️', '♣️', '🤖', '🐺', '🦊']
+type Profile = { id: string; displayName: string; model: string }
 
 export function AgentForm({
   gameType = 'poker',
@@ -29,7 +27,6 @@ export function AgentForm({
   const [profileId, setProfileId] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
   const [presetId, setPresetId] = useState<string>('')
-  const [avatarEmoji, setAvatarEmoji] = useState(AVATARS[2])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -56,7 +53,7 @@ export function AgentForm({
     setSubmitting(true)
     setError(null)
     try {
-      await api.post('/api/agents', { displayName, gameType, kind, profileId, systemPrompt, avatarEmoji })
+      await api.post('/api/agents', { displayName, gameType, kind, profileId, systemPrompt })
       setOpen(false)
       setDisplayName('')
       setProfileId('')
@@ -88,23 +85,6 @@ export function AgentForm({
             <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="BluffMaster" />
           </div>
           <div>
-            <Label>头像</Label>
-            <div className="flex flex-wrap gap-2">
-              {AVATARS.map((avatar) => (
-                <button
-                  key={avatar}
-                  type="button"
-                  className={`rounded-xl border px-3 py-2 text-2xl transition ${
-                    avatarEmoji === avatar ? 'border-primary bg-cyan-300/15' : 'border-transparent hover:border-border'
-                  }`}
-                  onClick={() => setAvatarEmoji(avatar)}
-                >
-                  {avatar}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
             <Label>API Profile</Label>
             <Select value={profileId} onValueChange={setProfileId}>
               <SelectTrigger>
@@ -113,7 +93,7 @@ export function AgentForm({
               <SelectContent>
                 {profiles.map((profile) => (
                   <SelectItem key={profile.id} value={profile.id}>
-                    {profile.displayName} ({profile.model})
+                    {profile.displayName}
                   </SelectItem>
                 ))}
               </SelectContent>

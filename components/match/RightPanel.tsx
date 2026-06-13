@@ -27,7 +27,7 @@ function RightPanelBody({ matchId, gameType }: { matchId: string; gameType?: 'po
       <LiveScoreboard />
       {gameType === 'poker' ? <PokerStatusPanel /> : null}
 
-      <Tabs defaultValue="actions" className="w-full">
+      <Tabs defaultValue="thinking" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="actions">行动</TabsTrigger>
           <TabsTrigger value="thinking">思考</TabsTrigger>

@@ -13,7 +13,6 @@ import { keyring } from '@/lib/client/keyring'
 type Agent = {
   id: string
   displayName: string
-  avatarEmoji: string | null
   gameType: 'poker' | 'werewolf'
   profileId: string
 }
@@ -124,7 +123,6 @@ export function MatchSetupForm() {
                 onClick={() => toggleSelect(agent.id)}
               >
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className="text-3xl">{agent.avatarEmoji ?? '🃏'}</div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold text-white">{agent.displayName}</div>
                     <div className="font-mono text-xs text-muted-foreground">{agent.id.slice(0, 18)}...</div>
@@ -180,7 +178,6 @@ export function MatchSetupForm() {
                 <div key={profileId} className="flex items-center gap-2 text-sm">
                   <Badge variant={hasKey ? 'default' : 'destructive'}>{hasKey ? 'OK' : '缺 key'}</Badge>
                   <span>{profile?.displayName ?? profileId}</span>
-                  <span className="text-muted-foreground">{profile?.model}</span>
                 </div>
               )
             })}

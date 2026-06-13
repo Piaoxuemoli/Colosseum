@@ -52,9 +52,6 @@ export const PlayerCard = memo(function PlayerCard(props: PlayerCardProps) {
       data-testid="werewolf-player-card"
     >
       <div className="flex items-center gap-2">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white">
-          {name.slice(0, 1).toUpperCase()}
-        </div>
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold text-neutral-100">{name}</div>
           {claimedRole && !revealedRole ? (
