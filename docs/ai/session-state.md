@@ -180,6 +180,7 @@
 - 2026-06-13 ops follow-up: `/opt/colosseum/scripts/backup.sh` on production returned `Permission denied` when invoked as part of deployment. Check executable bit / mount permissions before the next release.
 - 2026-06-13 项目结构重组完成：源码迁入 `src/{app,frontend,backend,platform,games}`，归档整合到 `archive/old/`，`tsconfig.json` paths 改为 `@/*` → `./src/*`，`ops/deploy/Dockerfile` 同步复制 `src/platform/db/` 与 `src/platform/env.ts`；纲领文档 `AGENTS.md`、`docs/ai/rules/project-context.md`、`docs/ai/rules/frontend-backend.md`、`.kimi-code/skills/deployment/SKILL.md`、`README.md`、`.cursor/.claude rules` 已更新。
 - 2026-06-13 对局 UI 优化完成：`/matches/*` 内左侧 Sidebar 收起为图标栏，底部文案改为用户视角平台介绍；思考气泡 4.5s 自动消失；右侧“思考”Tab 按手牌历史记录并结构化展示；“行动”Tab 按手牌分组并用中文描述决策；牌桌 `max-width` 扩至 `max-w-7xl`。
+- 2026-06-13 对局 UI 第二轮打磨完成：思考气泡改用 `FloatingPortal` + fixed 定位避免撑出滚动条；行动/思考 Tab 改为升序排列并美化滚动条与 sticky header；结算弹窗 delta 从 `poker/state` 读取实际 `startingChips`；`chipHistory` 每手去重并兜底记录；筹码走势改用 Area+Line、带起始筹码参考线、点击放大 Dialog。
 
 ## SDK / Plan Drift Notes
 
