@@ -38,6 +38,7 @@
 - 2026-06-14 修复 LLM 输出解析失败：`LlmStreamParser` 支持嵌套 `action` 字段与 markdown 代码块救援；Agent endpoint 在游戏 parser fallback 时复用 `runDecision` 已解析动作；`action-validator` 增加 `raise→call`、`call→check` 降级与金额 clamp；GM Agent endpoint 调用加一次 500ms 退避重试。本地临时脚本验证通过，lint/typecheck/build 通过，已部署到 `43.156.230.108`。
 - 2026-06-14 修复 `/api/matches/[matchId]/end` 请求失败：路由缺少 `ensureGamesRegistered()` 导致 `getGame('poker')` 抛 `gameType not registered: poker`，已补上调用来注册游戏插件并重新部署。
 - 2026-06-14 印象系统增加长文本描述：每手结束后 `persistHandImpressions` 自动基于观察者视角、semantic profile 分数和最近 5 条 episodic 记录生成一段中文印象段落，写入 `semantic_memory.profileJson.note`；`ImpressionsPanel` 已展示该字段。实现为本地规则化 summary 工具，无需额外 LLM 调用。已 lint/typecheck/build 通过并部署。
+- 2026-06-14 增加对局管理功能：`POST /api/matches/[matchId]/force-end` 立即强制结束运行中对局（上锁 + 设置 matchComplete + finalize + 清理 Redis）；`DELETE /api/matches/[matchId]` 删除对局及其事件、错误、working/episodic memory（semantic memory 长期印象保留）；大厅最近对局卡片增加「强制结束」「删除」按钮。已 lint/typecheck/build 通过并部署到 `43.156.230.108`。
 
 ## Validation Log
 
