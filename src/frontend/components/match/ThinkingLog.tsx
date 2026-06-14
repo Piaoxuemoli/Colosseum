@@ -8,6 +8,7 @@ import { Badge } from '@/frontend/components/ui/badge'
 import { Button } from '@/frontend/components/ui/button'
 
 const MAX_THINKING_LENGTH = 4000
+const SCROLL_THRESHOLD_PX = 48
 const SECTION_HEADERS = /^(观察|分析|计划|决策|总结|推理|Observation|Analysis|Plan|Decision|Summary|Reasoning|Thoughts)[：:]?$/gim
 
 export type ThinkingSection = {
@@ -21,7 +22,6 @@ function parseThinking(text: string): ThinkingSection[] {
 
   const matches = Array.from(trimmed.matchAll(SECTION_HEADERS))
   if (matches.length === 0) {
-    // No explicit sections: split by blank lines.
     const parts = trimmed.split(/\n\s*\n/).filter((p) => p.trim().length > 0)
     return parts.map((body, index) => ({
       title: index === 0 ? '思考' : `段落 ${index + 1}`,
@@ -79,11 +79,13 @@ function formatActionType(type: string | null): string {
 function ThinkingEntryCard({
   entry,
   phase,
+  defaultExpanded = true,
 }: {
   entry: { agentId: string; displayName: string; handNumber: number; text: string; at: number }
   phase?: string
+  defaultExpanded?: boolean
 }) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const sections = useMemo(() => parseThinking(entry.text), [entry.text])
   const actionTag = useMemo(() => extractActionTag(entry.text), [entry.text])
   const displayText = entry.text.length > MAX_THINKING_LENGTH ? `${entry.text.slice(0, MAX_THINKING_LENGTH)}…` : entry.text
@@ -143,7 +145,16 @@ export function ThinkingLog() {
   const current = useThinkingStore((s) => s.current)
   const history = useThinkingStore((s) => s.history)
   const phase = useMatchViewStore((state) => state.phase)
-  const ref = useRef<HTMLDivElement>(null)
+  const historyRef = useRef<HTMLDivElement>(null)
+  const [expandedHands, setExpandedHands] = useState<Set<number>>(new Set())
+
+  const currentEntries = useMemo(
+    () =>
+      Object.entries(current)
+        .filter(([, item]) => item.text.trim().length > 0)
+        .map(([agentId, item]) => ({ agentId, ...item, at: Date.now() })),
+    [current],
+  )
 
   const grouped = useMemo(() => {
     const map = new Map<number, Array<{ agentId: string; displayName: string; handNumber: number; text: string; at: number }>>()
@@ -155,57 +166,87 @@ export function ThinkingLog() {
     return Array.from(map.entries()).sort((a, b) => a[0] - b[0])
   }, [history])
 
-  const currentEntries = useMemo(
-    () =>
-      Object.entries(current)
-        .filter(([, item]) => item.text.trim().length > 0)
-        .map(([agentId, item]) => ({ agentId, ...item })),
-    [current],
-  )
+  const latestHand = grouped.length > 0 ? grouped[grouped.length - 1][0] : null
 
   useEffect(() => {
-    ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' })
+    if (latestHand === null) return
+    setExpandedHands((prev) => {
+      if (prev.has(latestHand)) return prev
+      const next = new Set(prev)
+      next.add(latestHand)
+      return next
+    })
+  }, [latestHand])
+
+  useEffect(() => {
+    const el = historyRef.current
+    if (!el) return
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - SCROLL_THRESHOLD_PX
+    if (nearBottom) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    }
   }, [grouped.length, currentEntries.length])
 
-  return (
-    <div ref={ref} className="thin-scrollbar h-full min-h-0 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 pr-2 text-xs">
-      {history.length === 0 && currentEntries.length === 0 ? (
-        <div className="text-muted-foreground">等待思考流...</div>
-      ) : (
-        <ul className="space-y-4">
-          {currentEntries.length > 0 && (
-            <li>
-              <div className="sticky top-0 z-10 mb-2 rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
-                当前思考
-              </div>
-              <ul className="space-y-2">
-                {currentEntries.map((entry) => (
-                  <li
-                    key={entry.agentId}
-                    className="rounded-xl border border-cyan-300/20 bg-cyan-300/[0.06] p-3"
-                  >
-                    <div className="mb-1 text-sm font-medium text-slate-100">{entry.displayName}</div>
-                    <div className="whitespace-pre-wrap text-xs leading-5 text-slate-300">{entry.text}</div>
-                  </li>
-                ))}
-              </ul>
-            </li>
-          )}
+  const toggleHand = (hand: number) => {
+    setExpandedHands((prev) => {
+      const next = new Set(prev)
+      if (next.has(hand)) next.delete(hand)
+      else next.add(hand)
+      return next
+    })
+  }
 
-          {grouped.map(([handNumber, entries]) => (
-            <li key={handNumber}>
-              <div className="sticky top-0 z-10 mb-2 rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
-                第 {handNumber} 手
-              </div>
-              <ul className="space-y-2">
-                {entries.map((entry, idx) => (
-                  <ThinkingEntryCard key={`${entry.agentId}-${entry.at}-${idx}`} entry={entry} phase={phase} />
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      {currentEntries.length > 0 && (
+        <div className="shrink-0 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.06] p-3">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">当前思考</div>
+          <ul className="space-y-2">
+            {currentEntries.map((entry) => (
+              <ThinkingEntryCard key={entry.agentId} entry={entry} phase={phase} defaultExpanded />
+            ))}
+          </ul>
+        </div>
       )}
+
+      <div
+        ref={historyRef}
+        className="thin-scrollbar min-h-0 flex-1 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 pr-2 text-xs"
+      >
+        {history.length === 0 && currentEntries.length === 0 ? (
+          <div className="text-muted-foreground">等待思考流...</div>
+        ) : (
+          <ul className="space-y-4">
+            {grouped.map(([handNumber, entries]) => {
+              const expanded = expandedHands.has(handNumber)
+              return (
+                <li key={handNumber}>
+                  <button
+                    onClick={() => toggleHand(handNumber)}
+                    className="sticky top-0 z-10 mb-2 flex w-full items-center justify-between rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-slate-700/95"
+                  >
+                    <span>第 {handNumber} 手</span>
+                    {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </button>
+
+                  {expanded && (
+                    <ul className="space-y-2">
+                      {entries.map((entry, idx) => (
+                        <ThinkingEntryCard
+                          key={`${entry.agentId}-${entry.at}-${idx}`}
+                          entry={entry}
+                          phase={phase}
+                          defaultExpanded={false}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   )
 }

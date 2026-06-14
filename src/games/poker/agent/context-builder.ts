@@ -30,8 +30,10 @@ Output format (STRICT — the parser depends on this):
   </action>
 
 Your final <action> block MUST be a valid JSON object with a string "type"
-field matching one of the legal actions listed below. "amount" is optional
-for fold/check/call and required for bet/raise/allIn.
+field matching one of the legal actions listed below.
+- fold/check/call: "amount" is optional.
+- bet/allIn: "amount" is required.
+- raise: use "toAmount" (the total chips you want to have in front of you after raising), not "amount".
 If "check" is legal, do not fold just because the hand is weak; checking is
 the legal free-pass action.
 
