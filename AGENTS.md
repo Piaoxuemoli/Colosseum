@@ -41,7 +41,8 @@ Colosseum 是一个纯 AI 博弈竞技平台：用户在浏览器里配置多个
 
 ## 部署与运维
 
-- 部署 Skill（推荐入口）：`.kimi-code/skills/deployment/SKILL.md`
+- 部署 Skill（权威入口）：`.kimi-code/skills/deployment/SKILL.md`
+- Cursor / Claude 部署命令：`.cursor/commands/deploy-production.md`、`.claude/commands/deploy-production.md`（只做流程入口，具体步骤回读部署 Skill）
 - 生产部署手册：`ops/deploy/README.md`
 - Vercel fallback：`docs/deploy/vercel.md`
 - 本地开发环境：`ops/dev/README.md`
@@ -58,6 +59,7 @@ Colosseum 是一个纯 AI 博弈竞技平台：用户在浏览器里配置多个
 - 前后端边界：`docs/ai/rules/frontend-backend.md`
 - spec / plan 工作流：`docs/ai/rules/spec-plan-workflow.md`
 - Git 分支、提交、合入：`docs/ai/rules/git-workflow.md`
+- 部署/运维：`.kimi-code/skills/deployment/SKILL.md` + `ops/deploy/README.md`（Cursor/Claude 通过各自 `deployment-router` 路由）
 
 按任务类型读取相关文档，不要默认把所有规则都加载进上下文。
 

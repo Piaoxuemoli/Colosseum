@@ -170,6 +170,8 @@
 | 2026-06-14 | Fixed-height match layout gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. Match and loading pages now use fixed `100dvh` shells with page-level overflow hidden; PokerBoard scales inside remaining height via container query units. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
 | 2026-06-14 | Thinking bubble anchor gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. ThinkingBubble no longer uses FloatingPortal/fixed viewport coordinates; it is locally anchored to PlayerSeat, and current thinkers show a spinner label above the seat. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
 | 2026-06-14 | Agent error debug panel gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. `/api/matches/:id/errors` now includes agentName and recoveryAction; ErrorBadge popover shows Chinese error causes, layer labels, agent name/id, timestamp, recovery action JSON, and raw response snippets. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
+| 2026-06-14 | AI IDE deployment workflow sync gate | Passed | Synced Kimi deployment Skill routing into Cursor/Claude commands and rule routers; updated AGENTS and docs/ai/rules README. Verified Cursor/Claude deploy command bodies match and deployment routes are discoverable with rg; `npm run lint` passed. |
+| 2026-06-14 | Thinking bubble overlap/expiry gate | Passed | Added targeted Vitest coverage for seat-based bubble placement and stale thinking expiry; `npm run typecheck`, `npm run lint`, and `npm run build` passed. Local browser visual smoke could not be completed because background Next dev processes are reclaimed by the desktop sandbox before `127.0.0.1:3000` becomes reachable. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
 
 ## Open Questions / Blockers
 
@@ -192,6 +194,8 @@
 - 2026-06-14 对局固定视口布局修复完成：`SpectatorView` poker/werewolf 分支和 match loading skeleton 改为 `100dvh` 固定高度、页面级 `overflow-hidden`；主赛场使用 flex 剩余高度，PokerBoard 桌面端用容器查询单位 `100cqw/100cqh` 等比缩放，避免顶部/底部座位被标题或视口遮盖；移动/平板牌桌改成紧凑公共牌、底池和 2 列座位网格；RightPanel 改为跟随父容器 `h-full`。
 - 2026-06-14 思考气泡锚点修复完成：移除 `ThinkingBubble` 的 `FloatingPortal/useFloating/fixed` 定位，改为 `PlayerSeat` 内局部 absolute 定位，避免在缩放牌桌/动画座位下 reference 丢失后跑到视口左上角；当前正在思考的选手座位上方新增 `LoaderCircle` 旋转“思考中”状态，气泡继续展示最近思考文本。
 - 2026-06-14 Agent 错误展示优化完成：`/api/matches/:id/errors` 返回 `agentName` 和 `recoveryAction`；`ErrorBadge` 从“errorCode × count + agentId”改成调试面板，显示中文错误原因/排查提示、错误层级、Agent 名称与 id、发生时间、兜底恢复动作 JSON、原始响应片段，方便定位 `llm-parse_fail` 等问题。
+- 2026-06-14 AI IDE 部署流程同步完成：新增 `.cursor/.claude` 的 `deploy-production` 命令与 `deployment-router`，均回读 `.kimi-code/skills/deployment/SKILL.md` 作为权威部署流程；`AGENTS.md` 与 `docs/ai/rules/README.md` 已补充部署/运维路由信息。
+- 2026-06-14 思考气泡重叠/过期修复完成：新增 `thinking-bubble-layout` 统一座位方位，底部左右座位气泡改为贴座位上方 start/end 对齐，移动端气泡宽度收窄；`PlayerSeat` 在 thinking 清空时立刻收起旧气泡，`thinking-store` 新增 `expireStaleThinking` 兜底把超时 current 归档到 history，`SpectatorView` 每秒清理超过 7s 的 stale thinking 并处理 `agent-action-ready`。
 
 ## SDK / Plan Drift Notes
 

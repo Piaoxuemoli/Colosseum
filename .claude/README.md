@@ -4,5 +4,6 @@
 
 - `.claude/rules/`：只放轻量路由，详细规则在 `docs/ai/rules/`
 - `.claude/commands/execute-plan.md`：与 `.cursor/commands/execute-plan.md` 对齐的 plan 执行流程
+- `.claude/commands/deploy-production.md`：与 `.cursor/commands/deploy-production.md` 对齐的部署/运维流程，权威步骤来自 `.kimi-code/skills/deployment/SKILL.md`
 
 进入仓库后先读 `AGENTS.md`，再按任务类型读取 `docs/ai/rules/` 中的相关文档。

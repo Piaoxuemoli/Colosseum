@@ -15,5 +15,6 @@ Keep this rule thin. Do not duplicate detailed project conventions here; route t
 - Frontend / backend / API / data / security: `docs/ai/rules/frontend-backend.md`
 - Specs / plans / session state: `docs/ai/rules/spec-plan-workflow.md`
 - Git branches / commits / merges: `docs/ai/rules/git-workflow.md`
+- Deployment / production operations: `.kimi-code/skills/deployment/SKILL.md` + `ops/deploy/README.md`
 
 If a task touches multiple areas, read only the relevant docs before editing.
