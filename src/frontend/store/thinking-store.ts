@@ -14,6 +14,7 @@ type CurrentThinking = {
   text: string
   displayName: string
   handNumber: number
+  updatedAt: number
 }
 
 export type ThinkingState = {
@@ -22,6 +23,7 @@ export type ThinkingState = {
   appendThinking(agentId: string, displayName: string, handNumber: number, delta: string): void
   finalizeThinking(agentId: string): void
   finalizeAllThinking(): void
+  expireStaleThinking(maxAgeMs: number, now?: number): void
   reset(): void
 }
 
@@ -37,6 +39,7 @@ export const useThinkingStore = create<ThinkingState>((set) => ({
           text: (state.current[agentId]?.text ?? '') + delta,
           displayName,
           handNumber,
+          updatedAt: Date.now(),
         },
       },
     }))
@@ -79,6 +82,33 @@ export const useThinkingStore = create<ThinkingState>((set) => ({
       })
       if (entries.length === 0 && Object.keys(state.current).length === 0) return state
       return { current: {}, history: [...state.history, ...entries] }
+    })
+  },
+
+  expireStaleThinking(maxAgeMs, now = Date.now()) {
+    set((state) => {
+      const nextCurrent = { ...state.current }
+      const entries: ThinkingEntry[] = []
+      let changed = false
+
+      for (const [agentId, item] of Object.entries(state.current)) {
+        if (now - item.updatedAt < maxAgeMs) continue
+
+        changed = true
+        delete nextCurrent[agentId]
+        if (item.text.trim().length > 0) {
+          entries.push({
+            agentId,
+            displayName: item.displayName,
+            handNumber: item.handNumber,
+            text: item.text,
+            at: now,
+          })
+        }
+      }
+
+      if (!changed) return state
+      return { current: nextCurrent, history: entries.length > 0 ? [...state.history, ...entries] : state.history }
     })
   },
 

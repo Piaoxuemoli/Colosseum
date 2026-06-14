@@ -8,8 +8,11 @@ import { Badge } from '@/frontend/components/ui/badge'
 import type { PokerUiPlayer } from '@/frontend/store/match-view-store'
 import { PlayingCard } from './PlayingCard'
 import { ThinkingBubble } from './ThinkingBubble'
-
-const BUBBLE_DURATION_MS = 4500
+import {
+  bubblePlacementForSeat,
+  shouldKeepBubbleOpen,
+  THINKING_BUBBLE_VISIBLE_MS,
+} from './thinking-bubble-layout'
 
 export const PlayerSeat = memo(function PlayerSeat({
   player,
@@ -28,8 +31,7 @@ export const PlayerSeat = memo(function PlayerSeat({
 }) {
   const folded = player.status === 'folded'
   const eliminated = player.status === 'eliminated'
-  const bubblePlacement: Placement =
-    player.seatIndex === 0 ? 'top' : player.seatIndex === 3 ? 'bottom' : player.seatIndex < 3 ? 'right' : 'left'
+  const bubblePlacement: Placement = bubblePlacementForSeat(player.seatIndex, compact)
   const isThinking = !eliminated && typeof thinking === 'string' && thinking.trim().length > 0
 
   const [bubbleText, setBubbleText] = useState('')
@@ -37,14 +39,31 @@ export const PlayerSeat = memo(function PlayerSeat({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (!thinking || thinking.trim().length === 0) return
-    setBubbleText(thinking)
-    setBubbleVisible(true)
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => {
-      setBubbleVisible(false)
+    const text = thinking?.trim() ?? ''
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
       timerRef.current = null
-    }, BUBBLE_DURATION_MS)
+    }
+    if (!text) {
+      setBubbleVisible(false)
+      setBubbleText('')
+      return
+    }
+
+    const updatedAt = Date.now()
+    setBubbleText(text)
+    setBubbleVisible(true)
+    timerRef.current = setTimeout(() => {
+      setBubbleVisible((visible) =>
+        shouldKeepBubbleOpen({
+          text,
+          visible,
+          lastUpdatedAt: updatedAt,
+          now: Date.now(),
+        }),
+      )
+      timerRef.current = null
+    }, THINKING_BUBBLE_VISIBLE_MS)
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
@@ -100,7 +119,7 @@ export const PlayerSeat = memo(function PlayerSeat({
         </div>
       </motion.div>
       {!eliminated && (
-        <ThinkingBubble text={bubbleText} visible={bubbleVisible} placement={bubblePlacement} />
+        <ThinkingBubble text={bubbleText} visible={bubbleVisible} placement={bubblePlacement} compact={compact} />
       )}
     </div>
   )

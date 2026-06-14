@@ -15,6 +15,7 @@ import { useMatchViewStore, type PokerUiPlayer } from '@/frontend/store/match-vi
 import { useThinkingStore } from '@/frontend/store/thinking-store'
 
 const THINKING_BATCH_MS = 80
+const THINKING_CURRENT_STALE_MS = 7000
 
 type SseMessage =
   | { kind: 'event'; event: GameEvent }
@@ -43,6 +44,7 @@ export function SpectatorView({
   const appendThinking = useThinkingStore((state) => state.appendThinking)
   const finalizeThinking = useThinkingStore((state) => state.finalizeThinking)
   const finalizeAllThinking = useThinkingStore((state) => state.finalizeAllThinking)
+  const expireStaleThinking = useThinkingStore((state) => state.expireStaleThinking)
   const resetThinking = useThinkingStore((state) => state.reset)
 
   const handNumber = useMatchViewStore((state) => state.handNumber)
@@ -88,6 +90,13 @@ export function SpectatorView({
   }, [flushThinking])
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      expireStaleThinking(THINKING_CURRENT_STALE_MS)
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [expireStaleThinking])
+
+  useEffect(() => {
     resetThinking()
     init({ matchId, players: initialPlayers })
     for (const event of initialEvents) ingestEvent(event)
@@ -122,6 +131,11 @@ export function SpectatorView({
               flushThinking()
             }, THINKING_BATCH_MS)
           }
+          break
+        }
+        case 'agent-action-ready': {
+          flushThinking()
+          finalizeThinking(message.agentId)
           break
         }
         case 'match-end':
