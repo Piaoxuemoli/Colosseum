@@ -282,12 +282,16 @@ export async function POST(
             emit.artifactUpdate({ parts: [{ kind: 'text', text: delta }], delta: true })
           },
         })
-        const validated = coerceToValidAction(result.action, validActions, state, game.botStrategy, {
+
+        // Use the game-specific parser for normalization (bet↔raise, synonyms, etc.).
+        const parsed = game.responseParser.parse(result.rawResponse, validActions)
+        const validated = coerceToValidAction(parsed.action, validActions, state, game.botStrategy, {
           matchId: tokenContext.matchId,
           agentId,
           layerIfPassed: 'parse',
         })
-        if (validated.layer === 'fallback') {
+        const isFallback = parsed.fallbackUsed || validated.layer === 'fallback'
+        if (isFallback) {
           await recordFallbackError({
             matchId: tokenContext.matchId,
             agentId,
@@ -303,8 +307,8 @@ export async function POST(
               data: {
                 action: validated.action,
                 thinking: result.thinkingText,
-                fallback: validated.layer === 'fallback',
-                ...(validated.layer === 'fallback' ? { errorKind: 'llm-invalid-action' } : {}),
+                fallback: isFallback,
+                ...(isFallback ? { errorKind: 'llm-invalid-action' } : {}),
               },
             },
           ],

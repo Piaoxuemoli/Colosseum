@@ -1,7 +1,7 @@
 import { redis } from '@/platform/redis/client'
 import { keys } from '@/platform/redis/keys'
 
-const MATCH_KEY_TTL_SECONDS = 2 * 60 * 60
+const MATCH_KEY_TTL_SECONDS = 24 * 60 * 60
 
 export async function putApiKey(matchId: string, profileId: string, apiKey: string): Promise<void> {
   await redis.hset(keys.matchKeyring(matchId), { [profileId]: apiKey })

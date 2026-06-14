@@ -21,6 +21,9 @@ export function coerceToValidAction<TAction>(
   const freeFoldCoercion = coerceFreeFoldToCheck(actionType, validActions)
   if (freeFoldCoercion) return { action: freeFoldCoercion, layer: meta.layerIfPassed }
 
+  const synonymCoercion = coerceActionSynonyms(actionType, candidate, validActions)
+  if (synonymCoercion) return { action: synonymCoercion, layer: meta.layerIfPassed }
+
   log.warn('action-validator: invalid action, falling back to BotStrategy', {
     matchId: meta.matchId,
     agentId: meta.agentId,
@@ -46,6 +49,52 @@ function coerceFreeFoldToCheck<TAction>(
   if (actionType !== 'fold') return null
   const check = validActions.find((action) => action.type === 'check')
   return check ? ({ type: 'check' } as TAction) : null
+}
+
+function coerceActionSynonyms<TAction>(
+  actionType: string | null,
+  candidate: TAction,
+  validActions: ActionSpec<TAction>[],
+): TAction | null {
+  if (!actionType) return null
+  const candidateRecord = candidate as unknown as Record<string, unknown>
+
+  const synonyms: Record<string, string[]> = {
+    bet: ['raise'],
+    raise: ['bet'],
+    check: ['call'],
+    call: ['check'],
+    allin: ['allIn'],
+    'all-in': ['allIn'],
+    all_in: ['allIn'],
+  }
+
+  for (const alias of [actionType, ...(synonyms[actionType] ?? [])]) {
+    const spec = validActions.find((action) => action.type === alias)
+    if (!spec) continue
+
+    if (spec.minAmount === undefined) return { type: alias } as TAction
+
+    if (alias === 'raise') {
+      const toAmount =
+        typeof candidateRecord.toAmount === 'number'
+          ? candidateRecord.toAmount
+          : typeof candidateRecord.amount === 'number'
+            ? candidateRecord.amount
+            : spec.minAmount
+      return { type: 'raise', toAmount } as TAction
+    }
+
+    const amount =
+      typeof candidateRecord.amount === 'number'
+        ? candidateRecord.amount
+        : typeof candidateRecord.toAmount === 'number'
+          ? candidateRecord.toAmount
+          : spec.minAmount
+    return { type: alias, amount } as TAction
+  }
+
+  return null
 }
 
 function normalizeMatchedAction<TAction>(candidate: TAction, matched: ActionSpec<TAction>): TAction {

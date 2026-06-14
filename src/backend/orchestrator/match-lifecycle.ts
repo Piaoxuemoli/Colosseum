@@ -65,7 +65,7 @@ export async function createAndStartMatch(input: CreateMatchInput): Promise<{ ma
   await redis.set(keys.matchToken(matchId), token, 'EX', 24 * 60 * 60)
   if (input.keyring && Object.keys(input.keyring).length > 0) {
     await redis.hset(keys.matchKeyring(matchId), input.keyring)
-    await redis.expire(keys.matchKeyring(matchId), 2 * 60 * 60)
+    await redis.expire(keys.matchKeyring(matchId), 24 * 60 * 60)
   }
 
   let seq = await nextSeq(matchId)
