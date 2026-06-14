@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, sql } from 'drizzle-orm'
 import { newId } from '@/platform/core/ids'
 import { db } from '@/platform/db/client'
 import { agentErrors } from '@/platform/db/schema.sqlite'
@@ -32,4 +32,12 @@ export async function listErrorsByMatch(matchId: string, limit = 20): Promise<(t
     .where(eq(agentErrors.matchId, matchId))
     .orderBy(desc(agentErrors.occurredAt))
     .limit(limit)
+}
+
+export async function countErrorsByMatch(matchId: string): Promise<number> {
+  const rows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(agentErrors)
+    .where(eq(agentErrors.matchId, matchId))
+  return Number(rows[0]?.count ?? 0)
 }

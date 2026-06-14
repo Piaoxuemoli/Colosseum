@@ -87,9 +87,7 @@ export type MatchViewState = {
   status: 'waiting' | 'live' | 'settled'
   matchComplete: boolean
   winnerAgentId: string | null
-  fallbackCount: number
   chipHistory: ChipSnapshot[]
-  errorCount: number
   werewolf: WerewolfDerived
   rightPanelTab: RightPanelTab
   expandedActionHands: number[]
@@ -99,14 +97,26 @@ export type MatchViewState = {
   ingestEvent(event: GameEvent): void
   setMatchEnd(winnerAgentId: string | null): void
   recordHandSnapshot(handNumber: number, chips: Record<string, number>): void
-  incrementError(): void
-  setErrorCount(count: number): void
   setRightPanelTab(tab: RightPanelTab): void
   toggleActionHand(handNumber: number): void
   toggleThinkingHand(handNumber: number): void
   ensureActionHandExpanded(handNumber: number): void
   ensureThinkingHandExpanded(handNumber: number): void
 }
+
+export type MatchViewProjection = Omit<
+  MatchViewState,
+  | 'reset'
+  | 'init'
+  | 'ingestEvent'
+  | 'setMatchEnd'
+  | 'recordHandSnapshot'
+  | 'setRightPanelTab'
+  | 'toggleActionHand'
+  | 'toggleThinkingHand'
+  | 'ensureActionHandExpanded'
+  | 'ensureThinkingHandExpanded'
+>
 
 const initialWerewolf: WerewolfDerived = {
   day: 0,
@@ -137,13 +147,24 @@ const initialState = {
   status: 'waiting' as const,
   matchComplete: false,
   winnerAgentId: null as string | null,
-  fallbackCount: 0,
   chipHistory: [] as ChipSnapshot[],
-  errorCount: 0,
   werewolf: initialWerewolf,
   rightPanelTab: 'status' as RightPanelTab,
   expandedActionHands: [] as number[],
   expandedThinkingHands: [] as number[],
+}
+
+function createInitialProjection(input?: { matchId: string; players: PokerUiPlayer[] }): MatchViewProjection {
+  return {
+    ...initialState,
+    matchId: input?.matchId ?? initialState.matchId,
+    initialized: input ? true : initialState.initialized,
+    players: input?.players ?? initialState.players,
+    phase: input ? 'preflop' : initialState.phase,
+    handNumber: input ? 1 : initialState.handNumber,
+    status: input ? 'live' : initialState.status,
+    events: [] as RichGameEvent[],
+  }
 }
 
 function toggleNumber(list: number[], value: number): number[] {
@@ -308,6 +329,213 @@ function updatePlayersOnAction(
   return { nextPlayers: players, potDelta: 0 }
 }
 
+export function reduceMatchViewEvent(state: MatchViewProjection, event: GameEvent): MatchViewProjection {
+  let phase = state.phase
+  let handNumber = state.handNumber
+  let currentActor = state.currentActor
+  let communityCards = state.communityCards
+  let pot = state.pot
+  let streetPots = state.streetPots
+  let sidePots = state.sidePots
+  let dealerIndex = state.dealerIndex
+  let smallBlindIndex = state.smallBlindIndex
+  let bigBlindIndex = state.bigBlindIndex
+  let stopRequested = state.stopRequested
+  let matchComplete = state.matchComplete
+  let winnerAgentId = state.winnerAgentId
+  let status = state.status
+  let chipHistory = state.chipHistory
+  let werewolf = state.werewolf
+  let players = state.players
+
+  switch (event.kind) {
+    case 'poker/match-start':
+      handNumber = Math.max(handNumber, 1)
+      phase = 'preflop'
+      status = 'live'
+      break
+    case 'poker/hand-start':
+      handNumber = numberOr(event.payload.handNumber, handNumber)
+      phase = 'preflop'
+      status = 'live'
+      break
+    case 'poker/state': {
+      const prevHandNumber = handNumber
+      phase = typeof event.payload.phase === 'string' ? event.payload.phase : phase
+      handNumber = numberOr(event.payload.handNumber, handNumber)
+      currentActor = stringOrNull(event.payload.currentActor)
+      dealerIndex = numberOr(event.payload.dealerIndex, dealerIndex)
+      smallBlindIndex = numberOr(event.payload.smallBlindIndex, smallBlindIndex)
+      bigBlindIndex = numberOr(event.payload.bigBlindIndex, bigBlindIndex)
+      communityCards = parseCards(event.payload.communityCards)
+      pot = numberOr(event.payload.pot, pot)
+      streetPots = parseStreetPots(event.payload.streetPots, streetPots)
+      sidePots = parseSidePots(event.payload.sidePots)
+      stopRequested = Boolean(event.payload.stopRequested)
+      matchComplete = Boolean(event.payload.matchComplete)
+      if (matchComplete) status = 'settled'
+      players = playersFromPublicState(event.payload, players)
+      if (handNumber > prevHandNumber && prevHandNumber > 0) {
+        const last = chipHistory[chipHistory.length - 1]
+        if (!last || last.handNumber !== prevHandNumber) {
+          chipHistory = [
+            ...chipHistory,
+            {
+              handNumber: prevHandNumber,
+              at: Date.now(),
+              chips: Object.fromEntries(players.map((player) => [player.agentId, player.chips])),
+            },
+          ]
+        }
+      }
+      break
+    }
+    case 'poker/deal-flop':
+      phase = 'flop'
+      communityCards = [...communityCards, ...cardsFromPayload(event.payload)]
+      break
+    case 'poker/deal-turn':
+      phase = 'turn'
+      communityCards = [...communityCards, ...cardsFromPayload(event.payload)]
+      break
+    case 'poker/deal-river':
+      phase = 'river'
+      communityCards = [...communityCards, ...cardsFromPayload(event.payload)]
+      break
+    case 'poker/action': {
+      const result = updatePlayersOnAction(players, event.actorAgentId ?? '', event.payload)
+      players = result.nextPlayers
+      pot += result.potDelta
+      break
+    }
+    case 'poker/showdown':
+      phase = 'showdown'
+      currentActor = null
+      break
+    case 'poker/pot-award': {
+      const winnerIds = Array.isArray(event.payload.winnerIds) ? (event.payload.winnerIds as string[]) : []
+      const amount = typeof event.payload.potAmount === 'number' ? event.payload.potAmount : pot
+      const share = winnerIds.length > 0 ? Math.floor(amount / winnerIds.length) : 0
+
+      let playersChanged = false
+      const awarded = players.map((player) => {
+        if (winnerIds.includes(player.agentId)) {
+          if (share !== 0) {
+            playersChanged = true
+            return { ...player, chips: player.chips + share }
+          }
+        }
+        if (player.currentBet !== 0) {
+          playersChanged = true
+          return { ...player, currentBet: 0 }
+        }
+        return player
+      })
+      if (playersChanged) players = awarded
+
+      pot = 0
+      const existingIndex = chipHistory.findIndex((snapshot) => snapshot.handNumber === handNumber)
+      const snapshot = {
+        handNumber,
+        at: Date.now(),
+        chips: Object.fromEntries(players.map((player) => [player.agentId, player.chips])),
+      }
+      if (existingIndex >= 0) {
+        chipHistory = [...chipHistory.slice(0, existingIndex), snapshot, ...chipHistory.slice(existingIndex + 1)]
+      } else {
+        chipHistory = [...chipHistory, snapshot]
+      }
+      break
+    }
+    case 'poker/match-end':
+    case 'match_end':
+    case 'settlement':
+      matchComplete = true
+      status = 'settled'
+      winnerAgentId = typeof event.payload.winnerId === 'string' ? event.payload.winnerId : null
+      currentActor = null
+      break
+    case 'werewolf/moderator-narrate': {
+      const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
+      const upcomingPhase = typeof event.payload.upcomingPhase === 'string' ? event.payload.upcomingPhase : werewolf.phase
+      const narration = typeof event.payload.narration === 'string' ? event.payload.narration : ''
+      werewolf = {
+        ...werewolf,
+        day,
+        phase: upcomingPhase,
+        moderatorNarration: [...werewolf.moderatorNarration, { day, phase: upcomingPhase ?? '', narration }],
+      }
+      break
+    }
+    case 'werewolf/speak': {
+      const actorId = event.actorAgentId
+      if (!actorId) break
+      const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
+      const content = typeof event.payload.content === 'string' ? event.payload.content : ''
+      const claimedRole = typeof event.payload.claimedRole === 'string' ? event.payload.claimedRole : undefined
+      werewolf = {
+        ...werewolf,
+        speechLog: [...werewolf.speechLog, { day, agentId: actorId, content, claimedRole }],
+      }
+      break
+    }
+    case 'werewolf/vote': {
+      const actorId = event.actorAgentId
+      if (!actorId) break
+      const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
+      const target = typeof event.payload.target === 'string' ? event.payload.target : null
+      const reason = typeof event.payload.reason === 'string' ? event.payload.reason : undefined
+      werewolf = {
+        ...werewolf,
+        voteLog: [...werewolf.voteLog, { day, voter: actorId, target, reason }],
+      }
+      break
+    }
+    case 'werewolf/game-end': {
+      const winnerRaw = event.payload.winner
+      const winner = winnerRaw === 'werewolves' || winnerRaw === 'villagers' || winnerRaw === 'tie' ? winnerRaw : null
+      const actualRoles =
+        event.payload.actualRoles && typeof event.payload.actualRoles === 'object'
+          ? (event.payload.actualRoles as Record<string, string>)
+          : null
+      werewolf = { ...werewolf, winner, roleAssignments: actualRoles }
+      matchComplete = true
+      status = 'settled'
+      currentActor = null
+      break
+    }
+  }
+
+  return {
+    ...state,
+    events: [...state.events, { ...event, handNumberAt: handNumber }],
+    phase,
+    handNumber,
+    currentActor,
+    players,
+    communityCards,
+    pot,
+    streetPots,
+    sidePots,
+    dealerIndex,
+    smallBlindIndex,
+    bigBlindIndex,
+    stopRequested,
+    status,
+    matchComplete,
+    winnerAgentId,
+    chipHistory,
+    werewolf,
+  }
+}
+
+export function deriveMatchView(events: GameEvent[], input: { matchId: string; players: PokerUiPlayer[] }): MatchViewProjection {
+  return events.reduce(
+    (state, event) => reduceMatchViewEvent(state, event),
+    createInitialProjection(input),
+  )
+}
+
 export const useMatchViewStore = create<MatchViewState>((set) => ({
   ...initialState,
 
@@ -316,232 +544,11 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
   },
 
   init(input) {
-    set({
-      ...initialState,
-      matchId: input.matchId,
-      initialized: true,
-      players: input.players,
-      phase: 'preflop',
-      handNumber: 1,
-      status: 'live',
-      events: [] as RichGameEvent[],
-    })
+    set(createInitialProjection(input))
   },
 
   ingestEvent(event) {
-    set((state) => {
-      let phase = state.phase
-      let handNumber = state.handNumber
-      let currentActor = state.currentActor
-      let communityCards = state.communityCards
-      let pot = state.pot
-      let streetPots = state.streetPots
-      let sidePots = state.sidePots
-      let dealerIndex = state.dealerIndex
-      let smallBlindIndex = state.smallBlindIndex
-      let bigBlindIndex = state.bigBlindIndex
-      let stopRequested = state.stopRequested
-      let matchComplete = state.matchComplete
-      let winnerAgentId = state.winnerAgentId
-      let status = state.status
-      let chipHistory = state.chipHistory
-      let errorCount = state.errorCount
-      let werewolf = state.werewolf
-      let players = state.players
-
-      switch (event.kind) {
-        case 'agent_error':
-          errorCount += 1
-          break
-        case 'poker/match-start':
-          handNumber = Math.max(handNumber, 1)
-          phase = 'preflop'
-          status = 'live'
-          break
-        case 'poker/state': {
-          const prevHandNumber = handNumber
-          phase = typeof event.payload.phase === 'string' ? event.payload.phase : phase
-          handNumber = numberOr(event.payload.handNumber, handNumber)
-          currentActor = stringOrNull(event.payload.currentActor)
-          dealerIndex = numberOr(event.payload.dealerIndex, dealerIndex)
-          smallBlindIndex = numberOr(event.payload.smallBlindIndex, smallBlindIndex)
-          bigBlindIndex = numberOr(event.payload.bigBlindIndex, bigBlindIndex)
-          communityCards = parseCards(event.payload.communityCards)
-          pot = numberOr(event.payload.pot, pot)
-          streetPots = parseStreetPots(event.payload.streetPots, streetPots)
-          sidePots = parseSidePots(event.payload.sidePots)
-          stopRequested = Boolean(event.payload.stopRequested)
-          matchComplete = Boolean(event.payload.matchComplete)
-          if (matchComplete) status = 'settled'
-          players = playersFromPublicState(event.payload, players)
-          // Fallback: if the hand number advanced without a pot-award record, snapshot now.
-          if (handNumber > prevHandNumber && prevHandNumber > 0) {
-            const last = chipHistory[chipHistory.length - 1]
-            if (!last || last.handNumber !== prevHandNumber) {
-              chipHistory = [
-                ...chipHistory,
-                {
-                  handNumber: prevHandNumber,
-                  at: Date.now(),
-                  chips: Object.fromEntries(players.map((player) => [player.agentId, player.chips])),
-                },
-              ]
-            }
-          }
-          break
-        }
-        case 'poker/deal-flop':
-          phase = 'flop'
-          communityCards = [...communityCards, ...cardsFromPayload(event.payload)]
-          break
-        case 'poker/deal-turn':
-          phase = 'turn'
-          communityCards = [...communityCards, ...cardsFromPayload(event.payload)]
-          break
-        case 'poker/deal-river':
-          phase = 'river'
-          communityCards = [...communityCards, ...cardsFromPayload(event.payload)]
-          break
-        case 'poker/action': {
-          const result = updatePlayersOnAction(players, event.actorAgentId ?? '', event.payload)
-          players = result.nextPlayers
-          pot += result.potDelta
-          break
-        }
-        case 'poker/showdown':
-          phase = 'showdown'
-          currentActor = null
-          break
-        case 'poker/pot-award': {
-          const winnerIds = Array.isArray(event.payload.winnerIds) ? (event.payload.winnerIds as string[]) : []
-          const amount = typeof event.payload.potAmount === 'number' ? event.payload.potAmount : pot
-          const share = winnerIds.length > 0 ? Math.floor(amount / winnerIds.length) : 0
-
-          let playersChanged = false
-          const awarded = players.map((player) => {
-            if (winnerIds.includes(player.agentId)) {
-              if (share !== 0) {
-                playersChanged = true
-                return { ...player, chips: player.chips + share }
-              }
-            }
-            if (player.currentBet !== 0) {
-              playersChanged = true
-              return { ...player, currentBet: 0 }
-            }
-            return player
-          })
-          if (playersChanged) players = awarded
-
-          pot = 0
-          // Deduplicate: a single hand can emit multiple pot-award events (main pot + side pots).
-          // Keep only the final chip snapshot for the hand.
-          const existingIndex = chipHistory.findIndex((snapshot) => snapshot.handNumber === handNumber)
-          const snapshot = {
-            handNumber,
-            at: Date.now(),
-            chips: Object.fromEntries(players.map((player) => [player.agentId, player.chips])),
-          }
-          if (existingIndex >= 0) {
-            chipHistory = [...chipHistory.slice(0, existingIndex), snapshot, ...chipHistory.slice(existingIndex + 1)]
-          } else {
-            chipHistory = [...chipHistory, snapshot]
-          }
-          break
-        }
-        case 'poker/match-end':
-        case 'match_end':
-        case 'settlement':
-          matchComplete = true
-          status = 'settled'
-          winnerAgentId = typeof event.payload.winnerId === 'string' ? event.payload.winnerId : null
-          currentActor = null
-          break
-        case 'werewolf/moderator-narrate': {
-          const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
-          const upcomingPhase =
-            typeof event.payload.upcomingPhase === 'string' ? event.payload.upcomingPhase : werewolf.phase
-          const narration =
-            typeof event.payload.narration === 'string' ? event.payload.narration : ''
-          werewolf = {
-            ...werewolf,
-            day,
-            phase: upcomingPhase,
-            moderatorNarration: [
-              ...werewolf.moderatorNarration,
-              { day, phase: upcomingPhase ?? '', narration },
-            ],
-          }
-          break
-        }
-        case 'werewolf/speak': {
-          const actorId = event.actorAgentId
-          if (!actorId) break
-          const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
-          const content =
-            typeof event.payload.content === 'string' ? event.payload.content : ''
-          const claimedRole =
-            typeof event.payload.claimedRole === 'string' ? event.payload.claimedRole : undefined
-          werewolf = {
-            ...werewolf,
-            speechLog: [...werewolf.speechLog, { day, agentId: actorId, content, claimedRole }],
-          }
-          break
-        }
-        case 'werewolf/vote': {
-          const actorId = event.actorAgentId
-          if (!actorId) break
-          const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
-          const target =
-            typeof event.payload.target === 'string' ? event.payload.target : null
-          const reason =
-            typeof event.payload.reason === 'string' ? event.payload.reason : undefined
-          werewolf = {
-            ...werewolf,
-            voteLog: [...werewolf.voteLog, { day, voter: actorId, target, reason }],
-          }
-          break
-        }
-        case 'werewolf/game-end': {
-          const winnerRaw = event.payload.winner
-          const winner =
-            winnerRaw === 'werewolves' || winnerRaw === 'villagers' || winnerRaw === 'tie'
-              ? winnerRaw
-              : null
-          const actualRoles =
-            event.payload.actualRoles && typeof event.payload.actualRoles === 'object'
-              ? (event.payload.actualRoles as Record<string, string>)
-              : null
-          werewolf = { ...werewolf, winner, roleAssignments: actualRoles }
-          matchComplete = true
-          status = 'settled'
-          currentActor = null
-          break
-        }
-      }
-
-      return {
-        events: [...state.events, { ...event, handNumberAt: handNumber }],
-        phase,
-        handNumber,
-        currentActor,
-        players,
-        communityCards,
-        pot,
-        streetPots,
-        sidePots,
-        dealerIndex,
-        smallBlindIndex,
-        bigBlindIndex,
-        stopRequested,
-        status,
-        matchComplete,
-        winnerAgentId,
-        chipHistory,
-        errorCount,
-        werewolf,
-      }
-    })
+    set((state) => reduceMatchViewEvent(state, event))
   },
 
   setMatchEnd(winnerAgentId) {
@@ -552,14 +559,6 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
     set((state) => ({
       chipHistory: [...state.chipHistory, { handNumber, at: Date.now(), chips: { ...chips } }],
     }))
-  },
-
-  incrementError() {
-    set((state) => ({ errorCount: state.errorCount + 1 }))
-  },
-
-  setErrorCount(count) {
-    set({ errorCount: count })
   },
 
   setRightPanelTab(tab) {

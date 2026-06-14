@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/frontend/components/ui/badge'
 import { api } from '@/frontend/lib/client/api'
+import { observedCountLabel } from './impression-format'
 
 type ImpressionRow = {
   observerAgentId: string
@@ -162,7 +163,7 @@ export function ImpressionsPanel({
                   <li key={`${row.observerAgentId}-${row.targetAgentId}`} className="rounded-lg bg-black/20 p-2">
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-medium text-slate-100">{row.targetName}</span>
-                      <Badge variant="secondary">{row.gamesObserved} 局</Badge>
+                      <Badge variant="secondary">{observedCountLabel(resolvedGameType, row.profile, row.gamesObserved)}</Badge>
                     </div>
                     {resolvedGameType === 'werewolf' ? (
                       <WerewolfProfile profile={row.profile} />

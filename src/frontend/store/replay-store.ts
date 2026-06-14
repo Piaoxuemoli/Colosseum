@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import type { GameEvent } from '@/platform/core/types'
-import { useMatchViewStore, type PokerUiPlayer } from './match-view-store'
+import { deriveMatchView, useMatchViewStore, type PokerUiPlayer } from './match-view-store'
 
 /**
  * Replay player state for an already-settled match. Events are fed into the
@@ -56,12 +56,11 @@ function replayTo(
   target: number,
   seatSetup: ReplaySeatSetup | null,
 ): void {
-  const view = useMatchViewStore.getState()
-  view.reset()
-  if (seatSetup) view.init(seatSetup)
-  for (let i = 0; i < target; i++) {
-    useMatchViewStore.getState().ingestEvent(events[i])
+  if (!seatSetup) {
+    useMatchViewStore.getState().reset()
+    return
   }
+  useMatchViewStore.setState(deriveMatchView(events.slice(0, target), seatSetup))
 }
 
 export const useReplayStore = create<ReplayState>((set, get) => ({

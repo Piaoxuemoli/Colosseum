@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Bot, Clock, RotateCcw } from 'lucide-react'
 import { Badge } from '@/frontend/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/frontend/components/ui/popover'
-import { useMatchViewStore } from '@/frontend/store/match-view-store'
 
 type ErrorItem = {
   id: string
@@ -83,8 +82,7 @@ function formatJson(value: unknown): string {
 }
 
 export function ErrorBadge({ matchId }: { matchId: string }) {
-  const errorCount = useMatchViewStore((state) => state.errorCount)
-  const setErrorCount = useMatchViewStore((state) => state.setErrorCount)
+  const [errorCount, setErrorCount] = useState(0)
   const [items, setItems] = useState<ErrorItem[]>([])
 
   useEffect(() => {
@@ -105,7 +103,7 @@ export function ErrorBadge({ matchId }: { matchId: string }) {
       cancelled = true
       clearInterval(timer)
     }
-  }, [matchId, setErrorCount])
+  }, [matchId])
 
   const groups = useMemo(() => {
     const out = new Map<string, ErrorItem[]>()

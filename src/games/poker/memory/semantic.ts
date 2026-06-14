@@ -3,6 +3,8 @@ import type { PokerEpisodicEntry } from './episodic'
 
 export type PokerSemanticProfile = StructuredImpression & {
   lastUpdatedHandId: string | null
+  lastUpdatedMatchId: string | null
+  sourceEpisodeIds: string[]
 }
 
 export function initSemantic(): PokerSemanticProfile {
@@ -14,6 +16,8 @@ export function initSemantic(): PokerSemanticProfile {
     note: '',
     handCount: 0,
     lastUpdatedHandId: null,
+    lastUpdatedMatchId: null,
+    sourceEpisodeIds: [],
   }
 }
 
@@ -21,7 +25,11 @@ export function updateSemantic(
   current: PokerSemanticProfile | null,
   episodic: PokerEpisodicEntry | null,
 ): PokerSemanticProfile {
-  const base = current ?? initSemantic()
+  const base = {
+    ...initSemantic(),
+    ...(current ?? {}),
+    sourceEpisodeIds: Array.isArray(current?.sourceEpisodeIds) ? current.sourceEpisodeIds : [],
+  }
   if (!episodic) return { ...base, handCount: base.handCount + 1 }
   if (base.lastUpdatedHandId === episodic.handId) return base
 
@@ -33,7 +41,15 @@ export function updateSemantic(
     note: episodic.summary,
   }
   const next = applyEMA(base, raw)
-  return { ...next, lastUpdatedHandId: episodic.handId }
+  const sourceEpisodeIds = base.sourceEpisodeIds.includes(episodic.handId)
+    ? base.sourceEpisodeIds
+    : [...base.sourceEpisodeIds, episodic.handId]
+  return {
+    ...next,
+    lastUpdatedHandId: episodic.handId,
+    lastUpdatedMatchId: episodic.matchId,
+    sourceEpisodeIds,
+  }
 }
 
 export function formatSemanticSection(profiles: Map<string, PokerSemanticProfile>): string {

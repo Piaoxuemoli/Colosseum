@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useMatchViewStore } from '@/frontend/store/match-view-store'
 import type { GameEvent } from '@/platform/core/types'
 
-const RECENT_EVENT_LIMIT = 400
 const SCROLL_THRESHOLD_PX = 48
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -149,8 +148,7 @@ export function ActionLog() {
   const historyRef = useRef<HTMLDivElement>(null)
 
   const actions = useMemo(() => {
-    const recent = events.slice(-RECENT_EVENT_LIMIT)
-    return recent.filter((event) =>
+    return events.filter((event) =>
       [
         'poker/action',
         'poker/rejection',

@@ -23,6 +23,25 @@ type SseMessage =
   | { kind: 'agent-action-ready'; agentId: string; actionType: string }
   | { kind: 'match-end'; winnerAgentId: string | null }
 
+function thinkingEventEntry(
+  event: GameEvent,
+  displayName: string,
+): { sourceId: string; agentId: string; displayName: string; handNumber: number; text: string; at: number } | null {
+  if (event.kind !== 'agent/thinking' || !event.actorAgentId) return null
+  const text = typeof event.payload.text === 'string' ? event.payload.text : ''
+  const handNumber = typeof event.payload.handNumber === 'number' ? event.payload.handNumber : 0
+  if (text.trim().length === 0 || handNumber <= 0) return null
+  const at = Date.parse(event.occurredAt)
+  return {
+    sourceId: event.id,
+    agentId: event.actorAgentId,
+    displayName,
+    handNumber,
+    text,
+    at: Number.isFinite(at) ? at : Date.now(),
+  }
+}
+
 export function SpectatorView({
   matchId,
   gameType,
@@ -42,6 +61,7 @@ export function SpectatorView({
   const ingestEvent = useMatchViewStore((state) => state.ingestEvent)
   const setMatchEnd = useMatchViewStore((state) => state.setMatchEnd)
   const appendThinking = useThinkingStore((state) => state.appendThinking)
+  const recordThinking = useThinkingStore((state) => state.recordThinking)
   const finalizeThinking = useThinkingStore((state) => state.finalizeThinking)
   const finalizeAllThinking = useThinkingStore((state) => state.finalizeAllThinking)
   const expireStaleThinking = useThinkingStore((state) => state.expireStaleThinking)
@@ -50,10 +70,10 @@ export function SpectatorView({
   const handNumber = useMatchViewStore((state) => state.handNumber)
   const players = useMatchViewStore((state) => state.players)
 
-  const nameOf = useCallback(
-    (agentId: string) => players.find((p) => p.agentId === agentId)?.displayName ?? agentId,
-    [players],
-  )
+  const nameOf = useCallback((agentId: string) => {
+    const currentPlayers = useMatchViewStore.getState().players
+    return currentPlayers.find((p) => p.agentId === agentId)?.displayName ?? agentId
+  }, [])
   const communityCards = useMatchViewStore((state) => state.communityCards)
   const pot = useMatchViewStore((state) => state.pot)
   const streetPots = useMatchViewStore((state) => state.streetPots)
@@ -83,6 +103,15 @@ export function SpectatorView({
     }
   }, [appendThinking, handNumber, nameOf])
 
+  const ingestViewEvent = useCallback(
+    (event: GameEvent) => {
+      ingestEvent(event)
+      const entry = thinkingEventEntry(event, nameOf(event.actorAgentId ?? ''))
+      if (entry) recordThinking(entry)
+    },
+    [ingestEvent, nameOf, recordThinking],
+  )
+
   useEffect(() => {
     return () => {
       flushThinking()
@@ -99,15 +128,15 @@ export function SpectatorView({
   useEffect(() => {
     resetThinking()
     init({ matchId, players: initialPlayers })
-    for (const event of initialEvents) ingestEvent(event)
-  }, [ingestEvent, init, initialEvents, initialPlayers, matchId, resetThinking])
+    for (const event of initialEvents) ingestViewEvent(event)
+  }, [ingestViewEvent, init, initialEvents, initialPlayers, matchId, resetThinking])
 
   const onMessage = useCallback(
     (raw: unknown) => {
       const message = raw as SseMessage
       switch (message.kind) {
         case 'event': {
-          ingestEvent(message.event)
+          ingestViewEvent(message.event)
           const actorId = message.event.actorAgentId
           if (actorId) {
             if (
@@ -145,7 +174,7 @@ export function SpectatorView({
           break
       }
     },
-    [finalizeAllThinking, finalizeThinking, flushThinking, ingestEvent, setMatchEnd],
+    [finalizeAllThinking, finalizeThinking, flushThinking, ingestViewEvent, setMatchEnd],
   )
 
   useMatchStream(matchId, onMessage)

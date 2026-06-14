@@ -3,6 +3,8 @@ import type { PokerActionRecord, PokerState } from '../engine/poker-types'
 
 export type PokerEpisodicEntry = {
   handId: string
+  matchId: string
+  handNumber: number
   observer: string
   target: string
   observedActions: string[]
@@ -55,6 +57,8 @@ export function synthesizeEpisodic(input: {
 
   return {
     handId: `${input.matchId}:hand:${handNumber}`,
+    matchId: input.matchId,
+    handNumber,
     observer: input.observerAgentId,
     target: input.targetAgentId,
     observedActions: actionLabels,
