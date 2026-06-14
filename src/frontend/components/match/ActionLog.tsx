@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useMatchViewStore } from '@/frontend/store/match-view-store'
 import type { GameEvent } from '@/platform/core/types'
@@ -133,7 +133,7 @@ function CurrentActionPanel({
       </div>
       <div className="text-sm">
         <span className="mr-2 text-cyan-300/70">#{event.seq}</span>
-        <span className={className}>{text}</span>
+        <span className={`${className} break-words`}>{text}</span>
       </div>
     </div>
   )
@@ -143,8 +143,10 @@ export function ActionLog() {
   const events = useMatchViewStore((state) => state.events)
   const players = useMatchViewStore((state) => state.players)
   const phase = useMatchViewStore((state) => state.phase)
+  const expandedActionHands = useMatchViewStore((state) => state.expandedActionHands)
+  const toggleActionHand = useMatchViewStore((state) => state.toggleActionHand)
+  const ensureActionHandExpanded = useMatchViewStore((state) => state.ensureActionHandExpanded)
   const historyRef = useRef<HTMLDivElement>(null)
-  const [expandedHands, setExpandedHands] = useState<Set<number>>(new Set())
 
   const actions = useMemo(() => {
     const recent = events.slice(-RECENT_EVENT_LIMIT)
@@ -174,16 +176,12 @@ export function ActionLog() {
 
   const latestHand = grouped.length > 0 ? grouped[grouped.length - 1][0] : null
   const currentAction = actions.length > 0 ? actions[actions.length - 1] : null
+  const expandedHands = useMemo(() => new Set(expandedActionHands), [expandedActionHands])
 
   useEffect(() => {
     if (latestHand === null) return
-    setExpandedHands((prev) => {
-      if (prev.has(latestHand)) return prev
-      const next = new Set(prev)
-      next.add(latestHand)
-      return next
-    })
-  }, [latestHand])
+    ensureActionHandExpanded(latestHand)
+  }, [ensureActionHandExpanded, latestHand])
 
   useEffect(() => {
     const el = historyRef.current
@@ -193,15 +191,6 @@ export function ActionLog() {
       el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
     }
   }, [actions.length])
-
-  const toggleHand = (hand: number) => {
-    setExpandedHands((prev) => {
-      const next = new Set(prev)
-      if (next.has(hand)) next.delete(hand)
-      else next.add(hand)
-      return next
-    })
-  }
 
   const nameOf = (agentId: string | null) =>
     agentId ? players.find((player) => player.agentId === agentId)?.displayName ?? agentId : 'system'
@@ -223,7 +212,7 @@ export function ActionLog() {
               return (
                 <li key={handNumber}>
                   <button
-                    onClick={() => toggleHand(handNumber)}
+                    onClick={() => toggleActionHand(handNumber)}
                     className="sticky top-0 z-10 mb-2 flex w-full items-center justify-between rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-slate-700/95"
                   >
                     <span>第 {handNumber} 手</span>
@@ -248,7 +237,7 @@ export function ActionLog() {
                             }`}
                           >
                             <span className="mr-2 text-cyan-300/70">#{event.seq}</span>
-                            <span className={className}>{text}</span>
+                            <span className={`${className} break-words`}>{text}</span>
                           </li>
                         )
                       })}

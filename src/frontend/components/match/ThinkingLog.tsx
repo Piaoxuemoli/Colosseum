@@ -127,11 +127,11 @@ function ThinkingEntryCard({
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-200/80">
                   {section.title}
                 </div>
-                <div className="whitespace-pre-wrap text-xs leading-5 text-slate-300">{section.body}</div>
+                <div className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{section.body}</div>
               </div>
             ))
           ) : (
-            <div className="whitespace-pre-wrap text-xs leading-5 text-slate-300">
+            <div className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">
               {needsTruncate ? displayText : entry.text}
             </div>
           )}
@@ -145,8 +145,10 @@ export function ThinkingLog() {
   const current = useThinkingStore((s) => s.current)
   const history = useThinkingStore((s) => s.history)
   const phase = useMatchViewStore((state) => state.phase)
+  const expandedThinkingHands = useMatchViewStore((state) => state.expandedThinkingHands)
+  const toggleThinkingHand = useMatchViewStore((state) => state.toggleThinkingHand)
+  const ensureThinkingHandExpanded = useMatchViewStore((state) => state.ensureThinkingHandExpanded)
   const historyRef = useRef<HTMLDivElement>(null)
-  const [expandedHands, setExpandedHands] = useState<Set<number>>(new Set())
 
   const currentEntries = useMemo(
     () =>
@@ -167,16 +169,12 @@ export function ThinkingLog() {
   }, [history])
 
   const latestHand = grouped.length > 0 ? grouped[grouped.length - 1][0] : null
+  const expandedHands = useMemo(() => new Set(expandedThinkingHands), [expandedThinkingHands])
 
   useEffect(() => {
     if (latestHand === null) return
-    setExpandedHands((prev) => {
-      if (prev.has(latestHand)) return prev
-      const next = new Set(prev)
-      next.add(latestHand)
-      return next
-    })
-  }, [latestHand])
+    ensureThinkingHandExpanded(latestHand)
+  }, [ensureThinkingHandExpanded, latestHand])
 
   useEffect(() => {
     const el = historyRef.current
@@ -187,19 +185,10 @@ export function ThinkingLog() {
     }
   }, [grouped.length, currentEntries.length])
 
-  const toggleHand = (hand: number) => {
-    setExpandedHands((prev) => {
-      const next = new Set(prev)
-      if (next.has(hand)) next.delete(hand)
-      else next.add(hand)
-      return next
-    })
-  }
-
   return (
     <div className="flex h-full min-h-0 flex-col gap-2">
       {currentEntries.length > 0 && (
-        <div className="shrink-0 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.06] p-3">
+        <div className="thin-scrollbar max-h-[38%] shrink-0 overflow-y-auto rounded-xl border border-cyan-300/20 bg-cyan-300/[0.06] p-3">
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">当前思考</div>
           <ul className="space-y-2">
             {currentEntries.map((entry) => (
@@ -222,7 +211,7 @@ export function ThinkingLog() {
               return (
                 <li key={handNumber}>
                   <button
-                    onClick={() => toggleHand(handNumber)}
+                    onClick={() => toggleThinkingHand(handNumber)}
                     className="sticky top-0 z-10 mb-2 flex w-full items-center justify-between rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-slate-700/95"
                   >
                     <span>第 {handNumber} 手</span>

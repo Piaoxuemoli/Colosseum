@@ -1,16 +1,17 @@
 'use client'
 
-import { Activity, BarChart3, Brain, ListChecks, Menu, Trophy } from 'lucide-react'
-import { useState } from 'react'
+import { Activity, BarChart3, Brain, ListChecks, Menu, Sparkles, Trophy } from 'lucide-react'
 import { ActionLog } from './ActionLog'
 import { ChipChart } from './ChipChart'
 import { ErrorBadge } from './ErrorBadge'
+import { ImpressionsPanel } from './ImpressionsPanel'
 import { LiveScoreboard } from './LiveScoreboard'
 import { PokerStatusPanel } from './PokerStatusPanel'
 import { ThinkingLog } from './ThinkingLog'
 import { Button } from '@/frontend/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/frontend/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/components/ui/tabs'
+import { useMatchViewStore, type RightPanelTab } from '@/frontend/store/match-view-store'
 
 function RightPanelBody({
   matchId,
@@ -21,7 +22,8 @@ function RightPanelBody({
   gameType?: 'poker' | 'werewolf'
   startingChips?: number
 }) {
-  const [tab, setTab] = useState('status')
+  const tab = useMatchViewStore((state) => state.rightPanelTab)
+  const setTab = useMatchViewStore((state) => state.setRightPanelTab)
 
   return (
     <>
@@ -35,25 +37,29 @@ function RightPanelBody({
         <ErrorBadge matchId={matchId} />
       </div>
 
-      <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="grid w-full shrink-0 grid-cols-5">
-          <TabsTrigger value="status" title="状态">
+      <Tabs value={tab} onValueChange={(value) => setTab(value as RightPanelTab)} className="flex min-h-0 flex-1 flex-col">
+        <TabsList className="grid h-auto w-full shrink-0 grid-cols-6 gap-1">
+          <TabsTrigger value="status" title="状态" className="px-1.5">
             <Activity size={13} aria-hidden="true" />
             <span>状态</span>
           </TabsTrigger>
-          <TabsTrigger value="rank" title="排名">
+          <TabsTrigger value="rank" title="排名" className="px-1.5">
             <Trophy size={13} aria-hidden="true" />
             <span>排名</span>
           </TabsTrigger>
-          <TabsTrigger value="actions" title="行动">
+          <TabsTrigger value="actions" title="行动" className="px-1.5">
             <ListChecks size={13} aria-hidden="true" />
             <span>行动</span>
           </TabsTrigger>
-          <TabsTrigger value="thinking" title="思考">
+          <TabsTrigger value="thinking" title="思考" className="px-1.5">
             <Brain size={13} aria-hidden="true" />
             <span>思考</span>
           </TabsTrigger>
-          <TabsTrigger value="chart" title="走势">
+          <TabsTrigger value="impressions" title="印象" className="px-1.5">
+            <Sparkles size={13} aria-hidden="true" />
+            <span>印象</span>
+          </TabsTrigger>
+          <TabsTrigger value="chart" title="走势" className="px-1.5">
             <BarChart3 size={13} aria-hidden="true" />
             <span>走势</span>
           </TabsTrigger>
@@ -83,6 +89,10 @@ function RightPanelBody({
           {tab === 'thinking' ? <ThinkingLog /> : null}
         </TabsContent>
 
+        <TabsContent value="impressions" className="mt-2 min-h-0 flex-1 overflow-hidden">
+          {tab === 'impressions' ? <ImpressionsPanel matchId={matchId} gameType={gameType} /> : null}
+        </TabsContent>
+
         <TabsContent value="chart" className="mt-2 min-h-0 flex-1 overflow-hidden">
           {tab === 'chart' ? <ChipChart startingChips={startingChips} /> : null}
         </TabsContent>
@@ -103,7 +113,7 @@ export function RightPanel({
   return (
     <>
       {/* Desktop: fixed-height rail without outer scrollbar. */}
-      <aside className="hidden h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] w-full flex-col gap-3 rounded-lg border border-white/10 bg-slate-950/60 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:flex lg:w-[22rem] lg:min-w-[22rem]">
+      <aside className="hidden h-full max-h-full min-h-0 w-full flex-col gap-3 rounded-lg border border-white/10 bg-slate-950/60 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:flex lg:w-[22rem] lg:min-w-[22rem]">
         <RightPanelBody matchId={matchId} gameType={gameType} startingChips={startingChips} />
       </aside>
 
@@ -119,7 +129,7 @@ export function RightPanel({
             <Menu size={18} />
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="flex w-80 max-w-[90vw] flex-col gap-3 overflow-hidden">
+        <SheetContent side="right" className="flex h-[100dvh] w-80 max-w-[90vw] flex-col gap-3 overflow-hidden">
           <SheetHeader>
             <SheetTitle>对局信息</SheetTitle>
           </SheetHeader>

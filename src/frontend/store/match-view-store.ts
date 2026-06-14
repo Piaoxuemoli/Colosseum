@@ -66,6 +66,8 @@ export type WerewolfDerived = {
 
 export type RichGameEvent = GameEvent & { handNumberAt: number }
 
+export type RightPanelTab = 'status' | 'rank' | 'actions' | 'thinking' | 'impressions' | 'chart'
+
 export type MatchViewState = {
   matchId: string
   initialized: boolean
@@ -89,6 +91,9 @@ export type MatchViewState = {
   chipHistory: ChipSnapshot[]
   errorCount: number
   werewolf: WerewolfDerived
+  rightPanelTab: RightPanelTab
+  expandedActionHands: number[]
+  expandedThinkingHands: number[]
   reset(): void
   init(input: { matchId: string; players: PokerUiPlayer[] }): void
   ingestEvent(event: GameEvent): void
@@ -96,6 +101,11 @@ export type MatchViewState = {
   recordHandSnapshot(handNumber: number, chips: Record<string, number>): void
   incrementError(): void
   setErrorCount(count: number): void
+  setRightPanelTab(tab: RightPanelTab): void
+  toggleActionHand(handNumber: number): void
+  toggleThinkingHand(handNumber: number): void
+  ensureActionHandExpanded(handNumber: number): void
+  ensureThinkingHandExpanded(handNumber: number): void
 }
 
 const initialWerewolf: WerewolfDerived = {
@@ -131,6 +141,17 @@ const initialState = {
   chipHistory: [] as ChipSnapshot[],
   errorCount: 0,
   werewolf: initialWerewolf,
+  rightPanelTab: 'status' as RightPanelTab,
+  expandedActionHands: [] as number[],
+  expandedThinkingHands: [] as number[],
+}
+
+function toggleNumber(list: number[], value: number): number[] {
+  return list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
+}
+
+function appendNumberOnce(list: number[], value: number): number[] {
+  return list.includes(value) ? list : [...list, value]
 }
 
 function cardsFromPayload(payload: Record<string, unknown>): CardVisual[] {
@@ -539,5 +560,25 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
 
   setErrorCount(count) {
     set({ errorCount: count })
+  },
+
+  setRightPanelTab(tab) {
+    set({ rightPanelTab: tab })
+  },
+
+  toggleActionHand(handNumber) {
+    set((state) => ({ expandedActionHands: toggleNumber(state.expandedActionHands, handNumber) }))
+  },
+
+  toggleThinkingHand(handNumber) {
+    set((state) => ({ expandedThinkingHands: toggleNumber(state.expandedThinkingHands, handNumber) }))
+  },
+
+  ensureActionHandExpanded(handNumber) {
+    set((state) => ({ expandedActionHands: appendNumberOnce(state.expandedActionHands, handNumber) }))
+  },
+
+  ensureThinkingHandExpanded(handNumber) {
+    set((state) => ({ expandedThinkingHands: appendNumberOnce(state.expandedThinkingHands, handNumber) }))
   },
 }))

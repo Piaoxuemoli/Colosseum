@@ -165,6 +165,8 @@
 | 2026-06-13 | Production deploy via SSH key + Docker Compose | Passed | `docker compose up -d --build nextjs` succeeded on `43.156.230.108`; `/api/health` returned `{"ok":true,"db":"ok","redis":"ok"}`; `/`, `/agents`, `/matches/new`, `/api/providers`, and `/api/agents?gameType=poker` returned 200. Backup script attempt returned `Permission denied`. |
 | 2026-06-13 | Project structure refactor gate | Passed | `npm run lint` + `npm run typecheck` + `npm run build` passed after moving source into `src/{app,frontend,backend,platform,games}` and archive into `archive/old/`. Local Docker unavailable so `npm run infra:up` / full poker UI smoke skipped; will verify on production after merge. |
 | 2026-06-13 | Match spectator UI polish gate | Passed | `npm run lint` + `npm run typecheck` + `npm run build` passed. Deployed to production; `/api/health` OK; `/`, `/matches/new`, `/api/agents?gameType=poker` 200. Full poker match UI smoke will be verified live. |
+| 2026-06-14 | UI/impressions gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. Build included `/api/matches/[matchId]/impressions`; existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. In-app Browser local visual check was blocked by browser security policy for `127.0.0.1:3000`; command-line local dev server requests also hung, so no browser screenshot was captured. |
+| 2026-06-14 | Fixed-height match layout gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. Match and loading pages now use fixed `100dvh` shells with page-level overflow hidden; PokerBoard scales inside remaining height via container query units. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
 
 ## Open Questions / Blockers
 
@@ -182,6 +184,8 @@
 - 2026-06-13 对局 UI 优化完成：`/matches/*` 内左侧 Sidebar 收起为图标栏，底部文案改为用户视角平台介绍；思考气泡 4.5s 自动消失；右侧“思考”Tab 按手牌历史记录并结构化展示；“行动”Tab 按手牌分组并用中文描述决策；牌桌 `max-width` 扩至 `max-w-7xl`。
 - 2026-06-13 对局 UI 第二轮打磨完成：思考气泡改用 `FloatingPortal` + fixed 定位避免撑出滚动条；行动/思考 Tab 改为升序排列并美化滚动条与 sticky header；结算弹窗 delta 从 `poker/state` 读取实际 `startingChips`；`chipHistory` 每手去重并兜底记录；筹码走势改用 Area+Line、带起始筹码参考线、点击放大 Dialog。
 - 2026-06-13 UI/引擎/错误修复：气泡修复 `flip`+`autoPlacement` 冲突、增加 `whileElementsMounted:autoUpdate`、牌桌加 `overflow-hidden`；`ActionLog`/`ThinkingLog` 拆出固定“当前区”与可折叠历史区；德扑引擎移除破产 reload 改为淘汰制， settlement 后清零 pot/streetPots/sidePots，只剩一名有筹码玩家时自然结束；Agent endpoint 接入 `PokerResponseParser`，prompt 修正 `raise` 用 `toAmount`，`action-validator` 增加 `bet↔raise`/`check↔call` 容错；keyring TTL 从 2h 延长到 24h。`npm run lint` + `npm run typecheck` + `npm run build` 通过，并用临时 `tsx` 脚本验证引擎淘汰逻辑；已合并到 `main` 并部署到 `http://43.156.230.108`，`/api/health` OK。
+- 2026-06-14 对局 UI/印象系统修复完成：德扑座位移入牌桌容器内并用 `clamp` 缩放，ThinkingBubble 以座位卡片为 anchor 并按座位方位选择 placement；右侧栏 tab/行动展开/思考展开状态迁入 match store，切换 tab/移动端 Sheet 不再丢状态；进入新对局会 reset thinking store，match-end 会 finalize 剩余 current thinking；新增 `/api/matches/:id/impressions` 与右侧“印象”Tab；德扑 hand-end 会从 `actionHistory` 生成 episodic 并更新 semantic memory，印象 Tab 可展示 observer→target 的长期画像。
+- 2026-06-14 对局固定视口布局修复完成：`SpectatorView` poker/werewolf 分支和 match loading skeleton 改为 `100dvh` 固定高度、页面级 `overflow-hidden`；主赛场使用 flex 剩余高度，PokerBoard 桌面端用容器查询单位 `100cqw/100cqh` 等比缩放，避免顶部/底部座位被标题或视口遮盖；移动/平板牌桌改成紧凑公共牌、底池和 2 列座位网格；RightPanel 改为跟随父容器 `h-full`。
 
 ## SDK / Plan Drift Notes
 

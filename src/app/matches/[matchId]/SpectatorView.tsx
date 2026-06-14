@@ -42,6 +42,8 @@ export function SpectatorView({
   const setMatchEnd = useMatchViewStore((state) => state.setMatchEnd)
   const appendThinking = useThinkingStore((state) => state.appendThinking)
   const finalizeThinking = useThinkingStore((state) => state.finalizeThinking)
+  const finalizeAllThinking = useThinkingStore((state) => state.finalizeAllThinking)
+  const resetThinking = useThinkingStore((state) => state.reset)
 
   const handNumber = useMatchViewStore((state) => state.handNumber)
   const players = useMatchViewStore((state) => state.players)
@@ -86,9 +88,10 @@ export function SpectatorView({
   }, [flushThinking])
 
   useEffect(() => {
+    resetThinking()
     init({ matchId, players: initialPlayers })
     for (const event of initialEvents) ingestEvent(event)
-  }, [ingestEvent, init, initialEvents, initialPlayers, matchId])
+  }, [ingestEvent, init, initialEvents, initialPlayers, matchId, resetThinking])
 
   const onMessage = useCallback(
     (raw: unknown) => {
@@ -123,11 +126,12 @@ export function SpectatorView({
         }
         case 'match-end':
           flushThinking()
+          finalizeAllThinking()
           setMatchEnd(message.winnerAgentId)
           break
       }
     },
-    [finalizeThinking, flushThinking, ingestEvent, setMatchEnd],
+    [finalizeAllThinking, finalizeThinking, flushThinking, ingestEvent, setMatchEnd],
   )
 
   useMatchStream(matchId, onMessage)
@@ -137,17 +141,17 @@ export function SpectatorView({
     // the store's `players` array is only mutated by poker events.
     const werewolfPlayers = players.length > 0 ? players : initialPlayers
     return (
-      <div className="flex flex-col gap-4 px-4 py-8 md:px-8 lg:flex-row">
-        <main className="min-w-0 flex-1">
-          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col gap-3 overflow-hidden px-3 py-3 md:px-5 lg:flex-row lg:p-6">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="mb-3 flex shrink-0 flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                 Spectator View
               </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white lg:text-3xl">
                 狼人杀 · Day {werewolfDay}
               </h1>
-              <p className="mt-2 font-mono text-xs text-muted-foreground">{matchId}</p>
+              <p className="mt-1 truncate font-mono text-xs text-muted-foreground">{matchId}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{werewolfPhase ?? 'waiting'}</Badge>
@@ -164,7 +168,9 @@ export function SpectatorView({
             </div>
           </div>
 
-          <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />
+          </div>
         </main>
 
         <RightPanel matchId={matchId} gameType={gameType} />
@@ -178,13 +184,13 @@ export function SpectatorView({
     : null
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-8 md:px-8 lg:flex-row">
-      <main className="min-w-0 flex-1">
-        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col gap-3 overflow-hidden px-3 py-3 md:px-5 lg:flex-row lg:p-6">
+      <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="mb-3 flex shrink-0 flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">Spectator View</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">德州扑克 · 第 {handNumber} 手</h1>
-            <p className="mt-2 font-mono text-xs text-muted-foreground">{matchId}</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white lg:text-3xl">德州扑克 · 第 {handNumber} 手</h1>
+            <p className="mt-1 truncate font-mono text-xs text-muted-foreground">{matchId}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{phase}</Badge>
@@ -202,21 +208,23 @@ export function SpectatorView({
           </div>
         </div>
 
-        <PokerBoard
-          players={players}
-          communityCards={communityCards}
-          pot={pot}
-          phase={phase}
-          currentActor={currentActor}
-          dealerIndex={dealerIndex}
-          smallBlindIndex={smallBlindIndex}
-          bigBlindIndex={bigBlindIndex}
-          streetPots={streetPots}
-          sidePots={sidePots}
-        />
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <PokerBoard
+            players={players}
+            communityCards={communityCards}
+            pot={pot}
+            phase={phase}
+            currentActor={currentActor}
+            dealerIndex={dealerIndex}
+            smallBlindIndex={smallBlindIndex}
+            bigBlindIndex={bigBlindIndex}
+            streetPots={streetPots}
+            sidePots={sidePots}
+          />
+        </div>
 
         {matchComplete ? (
-          <div className="mx-auto mt-8 max-w-xl rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-6 text-center shadow-2xl shadow-cyan-950/30">
+          <div className="pointer-events-none absolute left-1/2 top-6 z-30 max-w-xl -translate-x-1/2 rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-6 py-4 text-center shadow-2xl shadow-cyan-950/30 backdrop-blur">
             <div className="text-2xl font-black text-white">对局结束</div>
             {winnerName ? <div className="mt-2 text-sm text-cyan-100/80">获胜者：{winnerName}</div> : null}
           </div>

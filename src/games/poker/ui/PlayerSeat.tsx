@@ -1,6 +1,7 @@
 'use client'
 
 import { memo, useEffect, useRef, useState } from 'react'
+import type { Placement } from '@floating-ui/react'
 import { motion } from 'framer-motion'
 import { Badge } from '@/frontend/components/ui/badge'
 import type { PokerUiPlayer } from '@/frontend/store/match-view-store'
@@ -15,16 +16,20 @@ export const PlayerSeat = memo(function PlayerSeat({
   isDealer,
   blindRole,
   thinking,
+  compact = false,
 }: {
   player: PokerUiPlayer
   isCurrentActor: boolean
   isDealer: boolean
   blindRole?: 'SB' | 'BB'
   thinking?: string
+  compact?: boolean
 }) {
   const anchorRef = useRef<HTMLDivElement>(null)
   const folded = player.status === 'folded'
   const eliminated = player.status === 'eliminated'
+  const bubblePlacement: Placement =
+    player.seatIndex === 0 ? 'top' : player.seatIndex === 3 ? 'bottom' : player.seatIndex < 3 ? 'right' : 'left'
 
   const [bubbleText, setBubbleText] = useState('')
   const [bubbleVisible, setBubbleVisible] = useState(false)
@@ -56,9 +61,12 @@ export const PlayerSeat = memo(function PlayerSeat({
             : null
 
   return (
-    <div ref={anchorRef} className={folded || eliminated ? 'opacity-45' : 'opacity-100'}>
+    <div className={folded || eliminated ? 'opacity-45' : 'opacity-100'}>
       <motion.div
-        className={`flex min-w-64 items-center gap-3 rounded-lg border bg-slate-950/80 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur transition ${
+        ref={anchorRef}
+        className={`flex w-full min-w-0 items-center rounded-lg border bg-slate-950/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur transition lg:w-[clamp(11.5rem,18vw,16rem)] lg:max-w-[16rem] ${
+          compact ? 'gap-2 p-2' : 'gap-3 p-3'
+        } ${
           isCurrentActor && !eliminated
             ? 'border-cyan-200/70 shadow-[0_0_28px_rgba(34,211,238,0.14)]'
             : 'border-white/10'
@@ -68,15 +76,15 @@ export const PlayerSeat = memo(function PlayerSeat({
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <div className="truncate text-sm font-semibold text-white">{player.displayName}</div>
+            <div className={`${compact ? 'text-xs' : 'text-sm'} truncate font-semibold text-white`}>{player.displayName}</div>
             {isDealer ? <Badge variant="secondary">D</Badge> : null}
             {blindRole ? <Badge variant="outline">{blindRole}</Badge> : null}
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">筹码 ${player.chips}</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">筹码 ${player.chips}</div>
           {player.currentBet > 0 ? <div className="text-xs text-primary">下注 ${player.currentBet}</div> : null}
           {statusLabel ? <div className="text-xs text-muted-foreground">{statusLabel}</div> : null}
         </div>
-        <div className="flex gap-1">
+        <div className="flex shrink-0 gap-1">
           {!eliminated && player.holeCards.length > 0
             ? player.holeCards.slice(0, 2).map((card) => <PlayingCard key={`${card.rank}-${card.suit}`} card={card} size="sm" />)
             : null}
@@ -85,7 +93,9 @@ export const PlayerSeat = memo(function PlayerSeat({
             : null}
         </div>
       </motion.div>
-      {!eliminated && <ThinkingBubble anchorRef={anchorRef} text={bubbleText} visible={bubbleVisible} />}
+      {!eliminated && (
+        <ThinkingBubble anchorRef={anchorRef} text={bubbleText} visible={bubbleVisible} placement={bubblePlacement} />
+      )}
     </div>
   )
 })

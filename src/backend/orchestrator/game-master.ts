@@ -2,7 +2,8 @@ import type { GameEvent, GameType } from '@/platform/core/types'
 import { requestAgentDecisionToy } from '@/backend/a2a-core/client'
 import { appendEvents, nextSeq } from '@/platform/db/queries/events'
 import { recordAgentError } from '@/platform/db/queries/errors'
-import { findMatchById } from '@/platform/db/queries/matches'
+import { insertEpisodic, loadSemantic, upsertSemantic } from '@/platform/db/queries/memory'
+import { findMatchById, listParticipants } from '@/platform/db/queries/matches'
 import { getGame } from '@/platform/core/registry'
 import { loadEnv } from '@/platform/env'
 import { redis } from '@/platform/redis/client'
@@ -16,6 +17,7 @@ import { finalizeMatch } from './match-lifecycle'
 import { publishSse } from './sse-broadcast'
 import { moderatorNarrationEvent } from './werewolf-hooks'
 import type { WerewolfState } from '@/games/werewolf/engine/types'
+import type { PokerActionRecord, PokerState } from '@/games/poker/engine/poker-types'
 
 export type TickResult = { done: boolean }
 
@@ -164,6 +166,10 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
       return { done: true }
     }
 
+    if (boundary === 'hand-end') {
+      await persistHandImpressions(matchId, match.gameType as GameType, nextState, game)
+    }
+
     if (boundary === 'hand-end' && game.continueAfterBoundary) {
       const continuation = game.continueAfterBoundary(nextState, 'hand-end')
       if (continuation) {
@@ -201,6 +207,81 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     return { done: false }
   } finally {
     await redis.del(keys.matchLock(matchId))
+  }
+}
+
+async function persistHandImpressions(
+  matchId: string,
+  gameType: GameType,
+  finalState: unknown,
+  game: ReturnType<typeof getGame>,
+): Promise<void> {
+  if (gameType !== 'poker') return
+  const participants = await listParticipants(matchId)
+  const working = buildPokerWorkingMemory(finalState)
+
+  for (const observer of participants) {
+    for (const target of participants) {
+      if (observer.agentId === target.agentId) continue
+      const episodic = game.memory.synthesizeEpisodic({
+        working,
+        finalState,
+        observerAgentId: observer.agentId,
+        targetAgentId: target.agentId,
+        matchId,
+      })
+      if (!episodic || typeof episodic !== 'object') continue
+
+      const episodicJson = game.memory.serialize.episodic(episodic)
+      await insertEpisodic({
+        observerAgentId: observer.agentId,
+        targetAgentId: target.agentId,
+        matchId,
+        gameType,
+        entryJson: episodicJson,
+        tags: Array.isArray(episodicJson.tags) ? episodicJson.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+      })
+
+      const existing = await loadSemantic({
+        observerAgentId: observer.agentId,
+        targetAgentId: target.agentId,
+        gameType,
+      })
+      const current = existing ? game.memory.deserialize.semantic(existing.profileJson) : null
+      const semantic = game.memory.updateSemantic(current, episodic)
+      const profileJson = game.memory.serialize.semantic(semantic)
+      const observed =
+        typeof profileJson.handCount === 'number'
+          ? profileJson.handCount
+          : typeof profileJson.gamesObserved === 'number'
+            ? profileJson.gamesObserved
+            : (existing?.gamesObserved ?? 0) + 1
+
+      await upsertSemantic({
+        observerAgentId: observer.agentId,
+        targetAgentId: target.agentId,
+        gameType,
+        profileJson,
+        gamesObserved: observed,
+      })
+    }
+  }
+}
+
+function buildPokerWorkingMemory(state: unknown): {
+  matchActionsLog: Array<{ seq: number; kind: string; actorAgentId: string | null; payload: Record<string, unknown> }>
+  currentHandNumber: number
+} {
+  const pokerState = state as Partial<PokerState>
+  const actionHistory = Array.isArray(pokerState.actionHistory) ? pokerState.actionHistory : []
+  return {
+    matchActionsLog: actionHistory.map((record: PokerActionRecord) => ({
+      seq: record.seq,
+      kind: 'poker/action',
+      actorAgentId: record.agentId,
+      payload: record.action as unknown as Record<string, unknown>,
+    })),
+    currentHandNumber: typeof pokerState.handNumber === 'number' ? pokerState.handNumber : 0,
   }
 }
 

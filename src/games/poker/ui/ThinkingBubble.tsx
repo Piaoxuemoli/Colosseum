@@ -5,6 +5,7 @@ import {
   FloatingPortal,
   flip,
   offset,
+  type Placement,
   shift,
   size,
   useFloating,
@@ -16,19 +17,21 @@ export const ThinkingBubble = memo(function ThinkingBubble({
   anchorRef,
   text,
   visible,
+  placement = 'top',
 }: {
   anchorRef: RefObject<HTMLElement | null>
   text: string
   visible: boolean
+  placement?: Placement
 }) {
   const { refs, floatingStyles, context } = useFloating({
     open: visible,
     strategy: 'fixed',
-    placement: 'top',
+    placement,
     whileElementsMounted: autoUpdate,
     middleware: [
       offset(10),
-      flip({ fallbackPlacements: ['bottom'], padding: 8 }),
+      flip({ padding: 8 }),
       shift({ padding: 8 }),
       size({
         padding: 8,
