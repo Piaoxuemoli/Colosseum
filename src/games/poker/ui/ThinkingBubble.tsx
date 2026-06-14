@@ -3,7 +3,6 @@
 import { memo, useEffect, type RefObject } from 'react'
 import {
   FloatingPortal,
-  autoPlacement,
   flip,
   offset,
   shift,
@@ -11,6 +10,7 @@ import {
   useFloating,
   useTransitionStyles,
 } from '@floating-ui/react'
+import { autoUpdate } from '@floating-ui/react-dom'
 
 export const ThinkingBubble = memo(function ThinkingBubble({
   anchorRef,
@@ -25,12 +25,13 @@ export const ThinkingBubble = memo(function ThinkingBubble({
     open: visible,
     strategy: 'fixed',
     placement: 'top',
+    whileElementsMounted: autoUpdate,
     middleware: [
       offset(10),
-      flip({ fallbackPlacements: ['bottom', 'left', 'right'] }),
+      flip({ fallbackPlacements: ['bottom'], padding: 8 }),
       shift({ padding: 8 }),
-      autoPlacement({ allowedPlacements: ['top', 'bottom', 'left', 'right'], crossAxis: true }),
       size({
+        padding: 8,
         apply({ availableWidth, availableHeight, elements }) {
           elements.floating.style.maxWidth = `${Math.min(320, Math.max(200, availableWidth - 16))}px`
           elements.floating.style.maxHeight = `${Math.min(240, Math.max(120, availableHeight - 16))}px`

@@ -119,7 +119,7 @@ export function RightPanel({
             <Menu size={18} />
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="flex w-80 max-w-[90vw] flex-col gap-3 overflow-y-auto">
+        <SheetContent side="right" className="flex w-80 max-w-[90vw] flex-col gap-3 overflow-hidden">
           <SheetHeader>
             <SheetTitle>对局信息</SheetTitle>
           </SheetHeader>

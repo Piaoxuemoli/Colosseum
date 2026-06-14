@@ -47,7 +47,7 @@ export function PokerBoard({
   return (
     <>
       {/* Desktop: oval table with 6 absolutely-positioned seats. */}
-      <div className="relative mx-auto hidden aspect-[16/10] w-full max-w-7xl lg:block">
+      <div className="relative mx-auto hidden aspect-[16/10] w-full max-w-7xl overflow-hidden lg:block">
         <div className="absolute inset-[9%] flex items-center justify-center rounded-[50%] border-[10px] border-amber-900/70 bg-[radial-gradient(circle_at_center,#14532d,#052e16_65%,#04140b)] shadow-2xl shadow-black/50">
           <div className="absolute inset-8 rounded-[50%] border border-cyan-200/10" />
           <div className="relative z-10 flex flex-col items-center gap-5">

@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useMatchViewStore } from '@/frontend/store/match-view-store'
 import type { GameEvent } from '@/platform/core/types'
 
 const RECENT_EVENT_LIMIT = 400
+const SCROLL_THRESHOLD_PX = 48
 
 const SUIT_SYMBOLS: Record<string, string> = {
   spades: '♠',
@@ -109,10 +111,40 @@ function describeSystemEvent(event: GameEvent): string {
   }
 }
 
+function CurrentActionPanel({
+  event,
+  nameOf,
+  phase,
+}: {
+  event: GameEvent
+  nameOf: (agentId: string | null) => string
+  phase: string
+}) {
+  const { text, className } = describeAction(event, nameOf)
+  const hand = (event as GameEvent & { handNumberAt?: number }).handNumberAt ?? 0
+
+  return (
+    <div className="shrink-0 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.08] p-3">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-200">当前行动</span>
+        <span className="text-[10px] text-muted-foreground">
+          第 {hand} 手 · {phase}
+        </span>
+      </div>
+      <div className="text-sm">
+        <span className="mr-2 text-cyan-300/70">#{event.seq}</span>
+        <span className={className}>{text}</span>
+      </div>
+    </div>
+  )
+}
+
 export function ActionLog() {
   const events = useMatchViewStore((state) => state.events)
   const players = useMatchViewStore((state) => state.players)
-  const ref = useRef<HTMLDivElement>(null)
+  const phase = useMatchViewStore((state) => state.phase)
+  const historyRef = useRef<HTMLDivElement>(null)
+  const [expandedHands, setExpandedHands] = useState<Set<number>>(new Set())
 
   const actions = useMemo(() => {
     const recent = events.slice(-RECENT_EVENT_LIMIT)
@@ -140,52 +172,94 @@ export function ActionLog() {
     return Array.from(map.entries()).sort((a, b) => a[0] - b[0])
   }, [actions])
 
+  const latestHand = grouped.length > 0 ? grouped[grouped.length - 1][0] : null
+  const currentAction = actions.length > 0 ? actions[actions.length - 1] : null
+
   useEffect(() => {
-    if (typeof ref.current?.scrollTo === 'function') {
-      ref.current.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' })
+    if (latestHand === null) return
+    setExpandedHands((prev) => {
+      if (prev.has(latestHand)) return prev
+      const next = new Set(prev)
+      next.add(latestHand)
+      return next
+    })
+  }, [latestHand])
+
+  useEffect(() => {
+    const el = historyRef.current
+    if (!el) return
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - SCROLL_THRESHOLD_PX
+    if (nearBottom) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
     }
-  }, [grouped.length, actions.length])
+  }, [actions.length])
+
+  const toggleHand = (hand: number) => {
+    setExpandedHands((prev) => {
+      const next = new Set(prev)
+      if (next.has(hand)) next.delete(hand)
+      else next.add(hand)
+      return next
+    })
+  }
 
   const nameOf = (agentId: string | null) =>
     agentId ? players.find((player) => player.agentId === agentId)?.displayName ?? agentId : 'system'
 
   return (
-    <div ref={ref} className="thin-scrollbar h-full min-h-0 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 pr-2 text-xs">
-      {actions.length === 0 ? (
-        <div className="text-muted-foreground">等待行动...</div>
-      ) : (
-        <ul className="space-y-4">
-          {grouped.map(([handNumber, handEvents]) => (
-            <li key={handNumber}>
-              <div className="sticky top-0 z-10 mb-2 rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
-                第 {handNumber} 手
-              </div>
-              <ol className="space-y-1.5 font-mono">
-                {handEvents.map((event, eventIndex, arr) => {
-                  const { text, className } = describeAction(event, nameOf)
-                  const isLatest = event.id === actions[actions.length - 1]?.id
-                  const isLastInHand = eventIndex === arr.length - 1
-                  return (
-                    <li
-                      key={event.id}
-                      className={`rounded-xl px-3 py-2 transition-colors ${
-                        isLatest
-                          ? 'border border-cyan-300/20 bg-cyan-300/[0.08]'
-                          : isLastInHand
-                            ? 'bg-slate-900/70'
-                            : 'bg-slate-900/50'
-                      }`}
-                    >
-                      <span className="mr-2 text-cyan-300/70">#{event.seq}</span>
-                      <span className={className}>{text}</span>
-                    </li>
-                  )
-                })}
-              </ol>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      {currentAction ? <CurrentActionPanel event={currentAction} nameOf={nameOf} phase={phase} /> : null}
+
+      <div
+        ref={historyRef}
+        className="thin-scrollbar min-h-0 flex-1 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 pr-2 text-xs"
+      >
+        {actions.length === 0 ? (
+          <div className="text-muted-foreground">等待行动...</div>
+        ) : (
+          <ul className="space-y-4">
+            {grouped.map(([handNumber, handEvents]) => {
+              const expanded = expandedHands.has(handNumber)
+              return (
+                <li key={handNumber}>
+                  <button
+                    onClick={() => toggleHand(handNumber)}
+                    className="sticky top-0 z-10 mb-2 flex w-full items-center justify-between rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100 transition hover:bg-slate-700/95"
+                  >
+                    <span>第 {handNumber} 手</span>
+                    {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </button>
+
+                  {expanded && (
+                    <ol className="space-y-1.5 font-mono">
+                      {handEvents.map((event, eventIndex, arr) => {
+                        const { text, className } = describeAction(event, nameOf)
+                        const isLatest = event.id === actions[actions.length - 1]?.id
+                        const isLastInHand = eventIndex === arr.length - 1
+                        return (
+                          <li
+                            key={event.id}
+                            className={`rounded-xl px-3 py-2 transition-colors ${
+                              isLatest
+                                ? 'border border-cyan-300/20 bg-cyan-300/[0.08]'
+                                : isLastInHand
+                                  ? 'bg-slate-900/70'
+                                  : 'bg-slate-900/50'
+                            }`}
+                          >
+                            <span className="mr-2 text-cyan-300/70">#{event.seq}</span>
+                            <span className={className}>{text}</span>
+                          </li>
+                        )
+                      })}
+                    </ol>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   )
 }
