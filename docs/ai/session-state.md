@@ -205,6 +205,69 @@
 - 2026-06-14 AI IDE 部署流程同步完成：新增 `.cursor/.claude` 的 `deploy-production` 命令与 `deployment-router`，均回读 `.kimi-code/skills/deployment/SKILL.md` 作为权威部署流程；`AGENTS.md` 与 `docs/ai/rules/README.md` 已补充部署/运维路由信息。
 - 2026-06-14 思考气泡重叠/过期修复完成：新增 `thinking-bubble-layout` 统一座位方位，底部左右座位气泡改为贴座位上方 start/end 对齐，移动端气泡宽度收窄；`PlayerSeat` 在 thinking 清空时立刻收起旧气泡，`thinking-store` 新增 `expireStaleThinking` 兜底把超时 current 归档到 history，`SpectatorView` 每秒清理超过 7s 的 stale thinking 并处理 `agent-action-ready`。
 
+## 项目内多处复用的状态梳理
+
+结合“刷新后观战页数据丢失/手数不一致”问题，对项目中存在多份副本或派生关系的状态做一次梳理。
+
+### 1. 对局事件（events）
+- **权威来源**：`game_events` 表（`src/platform/db/queries/events.ts`）。
+- **运行时缓存**：Redis `matchState`（`src/platform/redis/keys.ts`）由 GM 每 tick 读写。
+- **前端副本**：
+  - `match-view-store.events`（`src/frontend/store/match-view-store.ts`）从 SSR bundle 或 SSE 重放后持有。
+  - `replay-store.events/cursor`（`src/frontend/store/replay-store.ts`）本质也是 events 的另一种视图。
+- **问题**：`loadMatchSpectatorBundle` 只取最近 100 条公开事件，所有派生状态都被截断；live 与 replay 共用 `match-view-store` 的 reducer，但数据源长度不同。
+
+### 2. 玩家状态
+- **DB**：`matchParticipants` 只保存初始座位/agent 关联。
+- **Redis**：`matchState.players` 是运行时权威。
+- **前端**：`match-view-store.players` 从 `initialPlayers` 开始按 events 更新。
+- **问题**：刷新后 `initialPlayers` 从 DB 重建为初始筹码，再靠 events 恢复；events 不全时玩家筹码/状态错误。
+
+### 3. 手数 / 阶段
+- **DB/Redis**：`poker/state.payload.handNumber`、`poker/hand-start.payload.handNumber`。
+- **前端**：`match-view-store.handNumber` 由 `poker/state` 事件更新。
+- **问题**：state 事件与 hand-start 事件都能表达手数；events 被截断后 `handNumber` 可能停在旧值，而 `pot-award` 快照时使用的 `handNumber` 又可能滞后/超前。
+
+### 4. 筹码曲线
+- **DB/Redis**：没有独立持久化，完全由 events 派生。
+- **前端**：`match-view-store.chipHistory` 在 `poker/pot-award` 时生成快照。
+- **问题**：刷新后曲线丢失或被错标手数；观战包需要完整 events 才能重算。
+
+### 5. 思考流
+- **权威来源**：SSE 实时 `thinking-delta` 消息（无持久化）。
+- **前端**：`thinking-store.current/history`（`src/frontend/store/thinking-store.ts`）。
+- **问题**：刷新后 `resetThinking()` 清空，历史无法恢复；与 events 无关。
+
+### 6. Agent 错误 / 兜底
+- **DB**：`agent_errors` 表。
+- **前端**：
+  - `match-view-store.errorCount` 在 `agent_error` 事件时递增。
+  - `ErrorBadge` 从 `/api/matches/[matchId]/errors` 重新加载聚合。
+- **问题**：前端计数与后端聚合可能不同步；events 截断会导致 `errorCount` 偏低。
+
+### 7. 记忆系统
+- **Working memory**：每局独立（`working_memory`），GM 读写。
+- **Episodic memory**：每局独立（`episodic_memory`），从 events 派生。
+- **Semantic memory**：跨局长期（`semantic_memory`），从 episodic 聚合。
+- **问题**：episodic/semantic 与 events 存在派生关系，但没有自动回放/校验；删除 match 时 semantic 保留，working/episodic 删除。
+
+### 8. 对局状态标志
+- **DB**：`matches.status`。
+- **Redis**：`matchState.matchComplete/stopRequested`、`force-end:match:*`。
+- **前端**：`match-view-store.matchComplete/stopRequested/status`。
+- **问题**：多个地方维护比赛是否结束，force-end 新增了 Redis 标志。
+
+### 9. API Key
+- **客户端**：`localStorage` 按 profileId 保存。
+- **服务端**：Redis `matchKeyring`。
+- **问题**：浏览器与服务端 keyring 可能不一致；TTL 相关。
+
+### 10. 推荐收敛方向
+- 把 `game_events` 作为唯一真相来源，前端/回放只读 events 并通过单一 reducer 派生所有 UI 状态。
+- Redis `matchState` 视为 DB 的缓存，GM 崩溃/重启后能从 events 重建。
+- 思考流如需回放，应持久化到 `game_events` 或单独表。
+- 观战/回放加载全部公开 events；replay 可额外加载私有事件。
+
 ## SDK / Plan Drift Notes
 
 - `next lint` is deprecated and failed with ESLint 10 option errors. Project now uses `eslint .` with `eslint.config.mjs`.
