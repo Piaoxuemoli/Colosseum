@@ -1,69 +1,35 @@
 'use client'
 
-import { memo, useEffect, type RefObject } from 'react'
-import {
-  FloatingPortal,
-  flip,
-  offset,
-  type Placement,
-  shift,
-  size,
-  useFloating,
-  useTransitionStyles,
-} from '@floating-ui/react'
-import { autoUpdate } from '@floating-ui/react-dom'
+import { memo } from 'react'
+import type { Placement } from '@floating-ui/react'
+import { cn } from '@/platform/utils'
+
+function bubblePositionClass(placement: Placement): string {
+  if (placement.startsWith('bottom')) return 'left-1/2 top-full mt-2 -translate-x-1/2'
+  if (placement.startsWith('left')) return 'right-full top-1/2 mr-2 -translate-y-1/2'
+  if (placement.startsWith('right')) return 'left-full top-1/2 ml-2 -translate-y-1/2'
+  return 'bottom-full left-1/2 mb-2 -translate-x-1/2'
+}
 
 export const ThinkingBubble = memo(function ThinkingBubble({
-  anchorRef,
   text,
   visible,
   placement = 'top',
 }: {
-  anchorRef: RefObject<HTMLElement | null>
   text: string
   visible: boolean
   placement?: Placement
 }) {
-  const { refs, floatingStyles, context } = useFloating({
-    open: visible,
-    strategy: 'fixed',
-    placement,
-    whileElementsMounted: autoUpdate,
-    middleware: [
-      offset(10),
-      flip({ padding: 8 }),
-      shift({ padding: 8 }),
-      size({
-        padding: 8,
-        apply({ availableWidth, availableHeight, elements }) {
-          elements.floating.style.maxWidth = `${Math.min(320, Math.max(200, availableWidth - 16))}px`
-          elements.floating.style.maxHeight = `${Math.min(240, Math.max(120, availableHeight - 16))}px`
-        },
-      }),
-    ],
-  })
-
-  useEffect(() => {
-    refs.setReference(anchorRef.current)
-  }, [anchorRef, refs])
-
-  const { isMounted, styles } = useTransitionStyles(context, {
-    duration: 150,
-    initial: { opacity: 0, transform: 'scale(0.95)' },
-    open: { opacity: 1, transform: 'scale(1)' },
-  })
-
-  if (!isMounted) return null
+  if (!visible) return null
 
   return (
-    <FloatingPortal>
-      <div
-        ref={refs.setFloating}
-        style={{ ...floatingStyles, ...styles }}
-        className="thin-scrollbar z-50 max-w-xs overflow-y-auto rounded-lg border border-cyan-200/25 bg-slate-950/95 p-3 text-sm leading-6 text-cyan-50 shadow-2xl shadow-cyan-950/40 backdrop-blur"
-      >
-        {text ? text : <span className="italic text-cyan-100/60">思考中...</span>}
-      </div>
-    </FloatingPortal>
+    <div
+      className={cn(
+        'thin-scrollbar absolute z-40 max-h-36 w-[min(20rem,42vw)] overflow-y-auto rounded-lg border border-cyan-200/25 bg-slate-950/95 p-3 text-sm leading-6 text-cyan-50 shadow-2xl shadow-cyan-950/40 backdrop-blur',
+        bubblePositionClass(placement),
+      )}
+    >
+      {text ? text : <span className="italic text-cyan-100/60">思考中...</span>}
+    </div>
   )
 })
