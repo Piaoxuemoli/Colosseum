@@ -2,8 +2,12 @@ import type { GameEvent, GameType } from '@/platform/core/types'
 import { requestAgentDecisionToy } from '@/backend/a2a-core/client'
 import { appendEvents, nextSeq } from '@/platform/db/queries/events'
 import { recordAgentError } from '@/platform/db/queries/errors'
-import { insertEpisodic, loadSemantic, upsertSemantic } from '@/platform/db/queries/memory'
+import { insertEpisodic, listEpisodic, loadSemantic, upsertSemantic } from '@/platform/db/queries/memory'
+import { findAgentById } from '@/platform/db/queries/agents'
 import { findMatchById, listParticipants } from '@/platform/db/queries/matches'
+import { generateImpressionParagraph } from '@/games/poker/memory/summary'
+import type { PokerEpisodicEntry } from '@/games/poker/memory/episodic'
+import type { PokerSemanticProfile } from '@/games/poker/memory/semantic'
 import { getGame } from '@/platform/core/registry'
 import { loadEnv } from '@/platform/env'
 import { redis } from '@/platform/redis/client'
@@ -218,6 +222,13 @@ async function persistHandImpressions(
 ): Promise<void> {
   if (gameType !== 'poker') return
   const participants = await listParticipants(matchId)
+  const agentNames = new Map<string, string>()
+  await Promise.all(
+    participants.map(async (participant) => {
+      const agent = await findAgentById(participant.agentId)
+      agentNames.set(participant.agentId, agent?.displayName ?? participant.agentId)
+    }),
+  )
   const working = buildPokerWorkingMemory(finalState)
 
   for (const observer of participants) {
@@ -247,8 +258,22 @@ async function persistHandImpressions(
         targetAgentId: target.agentId,
         gameType,
       })
-      const current = existing ? game.memory.deserialize.semantic(existing.profileJson) : null
-      const semantic = game.memory.updateSemantic(current, episodic)
+      const current = existing ? (game.memory.deserialize.semantic(existing.profileJson) as PokerSemanticProfile) : null
+      const semantic = game.memory.updateSemantic(current, episodic) as PokerSemanticProfile
+
+      const recentEpisodes = await listEpisodic({
+        observerAgentId: observer.agentId,
+        targetAgentId: target.agentId,
+        gameType,
+        limit: 5,
+      })
+      semantic.note = generateImpressionParagraph({
+        targetName: agentNames.get(target.agentId) ?? target.agentId,
+        observerName: agentNames.get(observer.agentId) ?? observer.agentId,
+        profile: semantic,
+        recentEpisodes: recentEpisodes.map((row) => row.entryJson as PokerEpisodicEntry),
+      })
+
       const profileJson = game.memory.serialize.semantic(semantic)
       const observed =
         typeof profileJson.handCount === 'number'
