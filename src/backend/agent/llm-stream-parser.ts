@@ -145,15 +145,18 @@ export class LlmStreamParser {
   private emitAction(body: string, events: ParserEvent[]): void {
     const stripped = stripMarkdownFence(body)
     try {
-      events.push({ kind: 'action', action: JSON.parse(stripped) })
+      const parsed = JSON.parse(stripped)
+      const action = extractActionFromObject(parsed) ?? parsed
+      events.push({ kind: 'action', action })
       this.actionEmitted = true
       return
     } catch {
       // Try to salvage a JSON object from the body; useful when the model
       // wrapped its answer in prose inside the <action> tag.
       const salvaged = extractFirstJsonObject(stripped)
-      if (salvaged !== null) {
-        events.push({ kind: 'action', action: salvaged })
+      const action = salvaged ? extractActionFromObject(salvaged) ?? salvaged : null
+      if (action !== null) {
+        events.push({ kind: 'action', action })
         this.actionEmitted = true
         return
       }
@@ -296,18 +299,29 @@ function findBalancedBraceObjects(text: string): string[] {
 
 /**
  * Parse + sanity-check a JSON string as a poker / werewolf action. Accepts
- * any object with a string `type` (validation happens later in the game
- * engine). Returns null if it isn't parseable or doesn't smell like an
- * action.
+ * any object with a string `type`, or an object with an `action` field that
+ * itself has a string `type` (validation happens later in the game engine).
+ * Returns null if it isn't parseable or doesn't smell like an action.
  */
 function tryParseAsAction(raw: string): unknown | null {
   try {
     const parsed = JSON.parse(raw)
-    if (parsed && typeof parsed === 'object' && typeof (parsed as { type?: unknown }).type === 'string') {
-      return parsed
-    }
-    return null
+    return extractActionFromObject(parsed)
   } catch {
     return null
   }
+}
+
+function extractActionFromObject(parsed: unknown): unknown | null {
+  if (!parsed || typeof parsed !== 'object') return null
+  const record = parsed as Record<string, unknown>
+
+  if (typeof record.type === 'string') return parsed
+
+  const nested = record.action
+  if (nested && typeof nested === 'object' && typeof (nested as Record<string, unknown>).type === 'string') {
+    return nested
+  }
+
+  return null
 }

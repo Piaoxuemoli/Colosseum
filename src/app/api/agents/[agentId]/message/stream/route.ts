@@ -22,6 +22,10 @@ import { log } from '@/platform/telemetry/logger'
 
 export const runtime = 'nodejs'
 
+function isActionLike(value: unknown): value is { type: string } {
+  return typeof value === 'object' && value !== null && typeof (value as { type?: unknown }).type === 'string'
+}
+
 const messageSchema = z.object({
   message: z.object({
     messageId: z.string(),
@@ -285,12 +289,20 @@ export async function POST(
 
         // Use the game-specific parser for normalization (bet↔raise, synonyms, etc.).
         const parsed = game.responseParser.parse(result.rawResponse, validActions)
-        const validated = coerceToValidAction(parsed.action, validActions, state, game.botStrategy, {
+
+        // If the generic stream parser already extracted a valid action but the
+        // game parser fell back (e.g., bare JSON without <action> tags), don't
+        // throw away the valid action.
+        const candidateAction =
+          parsed.fallbackUsed && isActionLike(result.action) ? result.action : parsed.action
+        const parserFallback = parsed.fallbackUsed && !isActionLike(result.action)
+
+        const validated = coerceToValidAction(candidateAction, validActions, state, game.botStrategy, {
           matchId: tokenContext.matchId,
           agentId,
           layerIfPassed: 'parse',
         })
-        const isFallback = parsed.fallbackUsed || validated.layer === 'fallback'
+        const isFallback = parserFallback || validated.layer === 'fallback'
         if (isFallback) {
           await recordFallbackError({
             matchId: tokenContext.matchId,
