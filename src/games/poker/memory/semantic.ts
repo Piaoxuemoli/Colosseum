@@ -23,13 +23,14 @@ export function updateSemantic(
 ): PokerSemanticProfile {
   const base = current ?? initSemantic()
   if (!episodic) return { ...base, handCount: base.handCount + 1 }
+  if (base.lastUpdatedHandId === episodic.handId) return base
 
   const raw: RawImpressionScores = {
-    looseness: base.looseness,
-    aggression: base.aggression,
-    stickiness: base.stickiness,
-    honesty: base.honesty,
-    note: base.note,
+    looseness: episodic.tags.includes('showdown') || episodic.tags.includes('sticky') ? 7 : episodic.tags.includes('folded') ? 3 : 5,
+    aggression: episodic.tags.includes('aggressive') ? 8 : 4,
+    stickiness: episodic.tags.includes('sticky') || episodic.tags.includes('showdown') ? 7 : episodic.tags.includes('folded') ? 3 : 5,
+    honesty: episodic.tags.includes('showdown') ? 6 : 5,
+    note: episodic.summary,
   }
   const next = applyEMA(base, raw)
   return { ...next, lastUpdatedHandId: episodic.handId }

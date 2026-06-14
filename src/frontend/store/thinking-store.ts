@@ -21,6 +21,7 @@ export type ThinkingState = {
   history: ThinkingEntry[]
   appendThinking(agentId: string, displayName: string, handNumber: number, delta: string): void
   finalizeThinking(agentId: string): void
+  finalizeAllThinking(): void
   reset(): void
 }
 
@@ -59,6 +60,25 @@ export const useThinkingStore = create<ThinkingState>((set) => ({
           { agentId, displayName: item.displayName, handNumber: item.handNumber, text: item.text, at: Date.now() },
         ],
       }
+    })
+  },
+
+  finalizeAllThinking() {
+    set((state) => {
+      const entries = Object.entries(state.current).flatMap(([agentId, item]) => {
+        if (item.text.trim().length === 0) return []
+        return [
+          {
+            agentId,
+            displayName: item.displayName,
+            handNumber: item.handNumber,
+            text: item.text,
+            at: Date.now(),
+          },
+        ]
+      })
+      if (entries.length === 0 && Object.keys(state.current).length === 0) return state
+      return { current: {}, history: [...state.history, ...entries] }
     })
   },
 
