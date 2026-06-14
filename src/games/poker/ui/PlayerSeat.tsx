@@ -24,6 +24,7 @@ export const PlayerSeat = memo(function PlayerSeat({
 }) {
   const anchorRef = useRef<HTMLDivElement>(null)
   const folded = player.status === 'folded'
+  const eliminated = player.status === 'eliminated'
 
   const [bubbleText, setBubbleText] = useState('')
   const [bubbleVisible, setBubbleVisible] = useState(false)
@@ -43,12 +44,25 @@ export const PlayerSeat = memo(function PlayerSeat({
     }
   }, [thinking])
 
+  const statusLabel =
+    player.status === 'eliminated'
+      ? '已淘汰'
+      : player.status === 'sittingOut'
+        ? '离场'
+        : player.status === 'allIn'
+          ? 'all-in'
+          : player.status === 'folded'
+            ? '弃牌'
+            : null
+
   return (
-    <div ref={anchorRef} className={folded ? 'opacity-45' : 'opacity-100'}>
+    <div ref={anchorRef} className={folded || eliminated ? 'opacity-45' : 'opacity-100'}>
       <motion.div
         className={`flex min-w-64 items-center gap-3 rounded-lg border bg-slate-950/80 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur transition ${
-          isCurrentActor ? 'border-cyan-200/70 shadow-[0_0_28px_rgba(34,211,238,0.14)]' : 'border-white/10'
-        }`}
+          isCurrentActor && !eliminated
+            ? 'border-cyan-200/70 shadow-[0_0_28px_rgba(34,211,238,0.14)]'
+            : 'border-white/10'
+        } ${eliminated ? 'grayscale' : ''}`}
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
@@ -60,15 +74,18 @@ export const PlayerSeat = memo(function PlayerSeat({
           </div>
           <div className="mt-1 text-xs text-muted-foreground">筹码 ${player.chips}</div>
           {player.currentBet > 0 ? <div className="text-xs text-primary">下注 ${player.currentBet}</div> : null}
-          {player.status !== 'active' ? <div className="text-xs text-muted-foreground">{player.status}</div> : null}
+          {statusLabel ? <div className="text-xs text-muted-foreground">{statusLabel}</div> : null}
         </div>
         <div className="flex gap-1">
-          {player.holeCards.length > 0
+          {!eliminated && player.holeCards.length > 0
             ? player.holeCards.slice(0, 2).map((card) => <PlayingCard key={`${card.rank}-${card.suit}`} card={card} size="sm" />)
-            : [0, 1].map((slot) => <PlayingCard key={slot} faceDown size="sm" />)}
+            : null}
+          {!eliminated && player.holeCards.length === 0
+            ? [0, 1].map((slot) => <PlayingCard key={slot} faceDown size="sm" />)
+            : null}
         </div>
       </motion.div>
-      <ThinkingBubble anchorRef={anchorRef} text={bubbleText} visible={bubbleVisible} />
+      {!eliminated && <ThinkingBubble anchorRef={anchorRef} text={bubbleText} visible={bubbleVisible} />}
     </div>
   )
 })

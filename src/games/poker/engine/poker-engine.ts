@@ -130,7 +130,26 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       }
     }
 
-    // Endless table: always start the next hand unless the user requested stop.
+    // Elimination table: stop when only one player still has chips.
+    const eligiblePlayers = next.players.filter(
+      (player) => player.status !== 'eliminated' && player.status !== 'sittingOut' && player.chips > 0,
+    )
+    if (eligiblePlayers.length <= 1) {
+      next.currentActor = null
+      next.matchComplete = true
+      return {
+        nextState: next,
+        events: [
+          this.makeEvent({
+            kind: 'poker/match-end',
+            actorAgentId: null,
+            payload: { winnerId: this.chipLeaderId(next) },
+          }),
+          this.makePublicStateEvent(next),
+        ],
+      }
+    }
+
     this.startNextHand(next)
     return {
       nextState: next,
@@ -493,9 +512,14 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
       )
     }
 
-    // Endless table: players with zero chips are not eliminated; they will be
-    // reloaded in startNextHand. The match only ends when the user explicitly
-    // requests stop after the current hand.
+    // Reset pot accounting so the public state after settlement is consistent.
+    for (const player of state.players) {
+      player.currentBet = 0
+      player.totalCommitted = 0
+    }
+    state.pot = 0
+    state.streetPots = this.emptyStreetPots()
+    state.sidePots = []
     return events
   }
 
@@ -523,15 +547,13 @@ export class PokerEngine implements GameEngine<PokerState, PokerAction, PokerCon
     state.sidePots = []
     state.deck = shuffleDeck(createDeck())
 
-    // Endless table: reload any player who cannot afford the big blind.
+    // Elimination table: players with zero chips are out; short stacks play all-in.
     for (const player of state.players) {
       player.currentBet = 0
       player.totalCommitted = 0
       player.hasActedThisStreet = false
       player.holeCards = []
-      if (player.chips < state.bigBlind && player.status !== 'sittingOut') {
-        player.chips = state.startingChips
-      }
+      if (player.status === 'sittingOut') continue
       player.status = player.chips > 0 ? 'active' : 'eliminated'
     }
 
