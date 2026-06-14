@@ -34,6 +34,22 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
 
   const tickStart = performance.now()
   try {
+    const forceEndRequested = await redis.get(keys.matchForceEnd(matchId))
+    if (forceEndRequested === '1') {
+      const stateRaw = await redis.get(keys.matchState(matchId))
+      if (stateRaw) {
+        const state = JSON.parse(stateRaw) as Record<string, unknown>
+        state.matchComplete = true
+        state.currentActor = null
+        state.stopRequested = true
+        await redis.set(keys.matchState(matchId), JSON.stringify(state), 'EX', 24 * 60 * 60)
+      }
+      await finalizeMatch(matchId)
+      await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
+      await redis.del(keys.matchForceEnd(matchId))
+      return { done: true }
+    }
+
     const match = await findMatchById(matchId)
     if (!match || match.status !== 'running') return { done: true }
 

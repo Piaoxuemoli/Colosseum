@@ -10,4 +10,5 @@ export const keys = {
   matchWorkingMemory: (matchId: string, agentId: string) => `match:${matchId}:memory:${agentId}:working`,
   matchChannel: (matchId: string) => `channel:match:${matchId}`,
   matchLock: (matchId: string) => `lock:match:${matchId}`,
+  matchForceEnd: (matchId: string) => `force-end:match:${matchId}`,
 } as const

@@ -1,8 +1,10 @@
 import { desc } from 'drizzle-orm'
+import Link from 'next/link'
 import { Badge } from '@/frontend/components/ui/badge'
 import { Button } from '@/frontend/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/components/ui/card'
 import { Empty } from '@/frontend/components/Empty'
+import { MatchCardActions } from '@/frontend/components/match/MatchCardActions'
 import { PendingLink } from '@/frontend/components/navigation/PendingLink'
 import { db } from '@/platform/db/client'
 import { matches } from '@/platform/db/schema.sqlite'
@@ -78,37 +80,43 @@ export default async function Lobby() {
                 match.status === 'errored' ||
                 match.status === 'aborted_by_errors'
               return (
-                <div key={match.id} className="relative">
-                  <PendingLink
-                    href={`/matches/${match.id}`}
-                    className="block"
-                    pendingClassName="opacity-80"
-                  >
-                    <Card className="h-full transition duration-150 ease-out hover:border-cyan-300/40 hover:bg-cyan-300/5 active:translate-y-px">
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-base">
-                          {match.gameType === 'poker' ? '德州扑克' : '狼人杀'}
-                        </CardTitle>
-                        <Badge variant={statusBadgeVariant(match.status)}>{match.status}</Badge>
-                      </CardHeader>
-                      <CardContent className="space-y-2 text-sm text-muted-foreground">
-                        <div>开始：{new Date(match.startedAt).toLocaleString('zh-CN')}</div>
-                        {match.completedAt ? (
-                          <div>结束：{new Date(match.completedAt).toLocaleString('zh-CN')}</div>
-                        ) : null}
-                        <div className="font-mono text-xs text-cyan-100/70">{match.id}</div>
-                      </CardContent>
-                    </Card>
-                  </PendingLink>
-                  {settled ? (
-                    <PendingLink
-                      href={`/matches/${match.id}/replay`}
-                      className="absolute bottom-3 right-3 rounded-md border border-emerald-400/40 bg-emerald-400/10 px-2 py-1 text-xs font-semibold text-emerald-200 hover:bg-emerald-400/20"
-                    >
-                      回放
-                    </PendingLink>
-                  ) : null}
-                </div>
+                <Card
+                  key={match.id}
+                  className="flex h-full flex-col transition duration-150 ease-out hover:border-cyan-300/40 hover:bg-cyan-300/5"
+                >
+                  <CardHeader className="flex flex-row items-start justify-between pb-2">
+                    <div>
+                      <Link
+                        href={`/matches/${match.id}`}
+                        className="text-base font-semibold text-white hover:text-cyan-200"
+                      >
+                        {match.gameType === 'poker' ? '德州扑克' : '狼人杀'}
+                      </Link>
+                      <div className="mt-1 font-mono text-xs text-cyan-100/70">{match.id}</div>
+                    </div>
+                    <Badge variant={statusBadgeVariant(match.status)}>{match.status}</Badge>
+                  </CardHeader>
+                  <CardContent className="flex-1 space-y-2 text-sm text-muted-foreground">
+                    <div>开始：{new Date(match.startedAt).toLocaleString('zh-CN')}</div>
+                    {match.completedAt ? (
+                      <div>结束：{new Date(match.completedAt).toLocaleString('zh-CN')}</div>
+                    ) : null}
+                  </CardContent>
+                  <div className="flex items-center justify-between border-t border-white/5 px-6 py-3">
+                    <div className="flex items-center gap-2">
+                      {settled ? (
+                        <Button asChild variant="outline" size="sm" className="h-7 text-xs">
+                          <Link href={`/matches/${match.id}/replay`}>回放</Link>
+                        </Button>
+                      ) : (
+                        <Button asChild variant="outline" size="sm" className="h-7 text-xs">
+                          <Link href={`/matches/${match.id}`}>观战</Link>
+                        </Button>
+                      )}
+                    </div>
+                    <MatchCardActions matchId={match.id} status={match.status} />
+                  </div>
+                </Card>
               )
             })}
           </div>
