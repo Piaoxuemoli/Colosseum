@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 
 export type ThinkingEntry = {
+  sourceId?: string
   agentId: string
   displayName: string
   handNumber: number
@@ -21,6 +22,7 @@ export type ThinkingState = {
   current: Record<string, CurrentThinking>
   history: ThinkingEntry[]
   appendThinking(agentId: string, displayName: string, handNumber: number, delta: string): void
+  recordThinking(entry: ThinkingEntry): void
   finalizeThinking(agentId: string): void
   finalizeAllThinking(): void
   expireStaleThinking(maxAgeMs: number, now?: number): void
@@ -43,6 +45,27 @@ export const useThinkingStore = create<ThinkingState>((set) => ({
         },
       },
     }))
+  },
+
+  recordThinking(entry) {
+    set((state) => {
+      const text = entry.text.trim()
+      const nextCurrent = { ...state.current }
+      delete nextCurrent[entry.agentId]
+      if (text.length === 0) {
+        return { current: nextCurrent }
+      }
+
+      const nextEntry = { ...entry, text }
+      const history = state.history.filter((item) => {
+        if (entry.sourceId && item.sourceId === entry.sourceId) return false
+        return !(item.sourceId === undefined && item.agentId === entry.agentId && item.handNumber === entry.handNumber)
+      })
+      return {
+        current: nextCurrent,
+        history: [...history, nextEntry],
+      }
+    })
   },
 
   finalizeThinking(agentId) {

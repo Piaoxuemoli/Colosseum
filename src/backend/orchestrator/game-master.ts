@@ -112,6 +112,27 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
     const boundary = game.engine.boundary(state, nextState)
 
     const augmentedEvents = [...events]
+    const thinkingText = agentDecision.thinkingText.trim()
+    if (thinkingText.length > 0) {
+      augmentedEvents.unshift({
+        id: newEventId(),
+        matchId,
+        gameType: match.gameType as GameType,
+        seq: 0,
+        occurredAt: new Date().toISOString(),
+        kind: 'agent/thinking',
+        actorAgentId: actorId,
+        payload: {
+          handNumber:
+            typeof (state as Partial<PokerState>).handNumber === 'number'
+              ? (state as Partial<PokerState>).handNumber
+              : 0,
+          text: thinkingText,
+        },
+        visibility: 'public',
+        restrictedTo: null,
+      })
+    }
     if (match.gameType === 'werewolf') {
       const narrationEvent = moderatorNarrationEvent(
         state as WerewolfState,
@@ -330,6 +351,7 @@ type AgentDecisionResult = {
   action: unknown
   fallback: boolean
   errorCode?: string
+  thinkingText: string
 }
 
 const THINKING_BATCH_MS = 100
@@ -344,11 +366,12 @@ async function requestAgentDecision(input: {
 }): Promise<AgentDecisionResult> {
   const token = await redis.get(keys.matchToken(input.matchId))
   if (!token) {
-    return { action: input.fallback(), fallback: true, errorCode: 'agent-token-missing' }
+    return { action: input.fallback(), fallback: true, errorCode: 'agent-token-missing', thinkingText: '' }
   }
 
   const thinkingPublishes: Array<Promise<void>> = []
   let thinkingBuffer = ''
+  let thinkingText = ''
   let thinkingTimer: ReturnType<typeof setTimeout> | null = null
 
   const flushThinking = () => {
@@ -365,6 +388,7 @@ async function requestAgentDecision(input: {
   }
 
   const onThinking = (delta: string) => {
+    thinkingText += delta
     thinkingBuffer += delta
     if (!thinkingTimer) {
       thinkingTimer = setTimeout(flushThinking, THINKING_BATCH_MS)
@@ -373,7 +397,12 @@ async function requestAgentDecision(input: {
 
   try {
     const env = loadEnv()
-    const decision = await requestAgentDecisionToy<{ action?: unknown; fallback?: boolean; errorKind?: string }>({
+    const decision = await requestAgentDecisionToy<{
+      action?: unknown
+      fallback?: boolean
+      errorKind?: string
+      thinking?: string
+    }>({
       baseUrl: env.BASE_URL,
       agentId: input.agentId,
       taskId: `task_${input.matchId}_${Date.now()}`,
@@ -389,12 +418,16 @@ async function requestAgentDecision(input: {
     flushThinking()
     await Promise.allSettled(thinkingPublishes)
     if (!decision.action) {
-      return { action: input.fallback(), fallback: true, errorCode: 'agent-no-action' }
+      return { action: input.fallback(), fallback: true, errorCode: 'agent-no-action', thinkingText }
     }
     return {
       action: decision.action,
       fallback: decision.fallback ?? false,
       errorCode: normalizeAgentErrorKind(decision.errorKind),
+      thinkingText:
+        typeof decision.thinking === 'string' && decision.thinking.trim().length > 0
+          ? decision.thinking
+          : thinkingText,
     }
   } catch (err) {
     flushThinking()
@@ -404,7 +437,7 @@ async function requestAgentDecision(input: {
       agentId: input.agentId,
       err: String(err),
     })
-    return { action: input.fallback(), fallback: true, errorCode: 'agent-endpoint-failed' }
+    return { action: input.fallback(), fallback: true, errorCode: 'agent-endpoint-failed', thinkingText }
   }
 }
 

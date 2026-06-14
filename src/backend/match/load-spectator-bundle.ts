@@ -54,7 +54,7 @@ export async function loadMatchSpectatorBundle(
     .where(eq(matchParticipants.matchId, matchId))
     .orderBy(asc(matchParticipants.seatIndex))
 
-  const initialEvents = await listMatchEvents(matchId, { visibility: 'public', limit: 100 })
+  const initialEvents = await listMatchEvents(matchId, { visibility: 'public' })
   const initialChips = extractStartingChips(initialEvents)
 
   const initialPlayers: PokerUiPlayer[] = participants.map((p) => ({

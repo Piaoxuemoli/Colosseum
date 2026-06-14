@@ -39,9 +39,8 @@
 - 2026-06-14 修复 `/api/matches/[matchId]/end` 请求失败：路由缺少 `ensureGamesRegistered()` 导致 `getGame('poker')` 抛 `gameType not registered: poker`，已补上调用来注册游戏插件并重新部署。
 - 2026-06-14 印象系统增加长文本描述：每手结束后 `persistHandImpressions` 自动基于观察者视角、semantic profile 分数和最近 5 条 episodic 记录生成一段中文印象段落，写入 `semantic_memory.profileJson.note`；`ImpressionsPanel` 已展示该字段。实现为本地规则化 summary 工具，无需额外 LLM 调用。已 lint/typecheck/build 通过并部署。
 - 2026-06-14 增加对局管理功能：`POST /api/matches/[matchId]/force-end` 立即强制结束运行中对局（上锁 + 设置 matchComplete + finalize + 清理 Redis）；`DELETE /api/matches/[matchId]` 删除对局及其事件、错误、working/episodic memory（semantic memory 长期印象保留）；大厅最近对局卡片增加「强制结束」「删除」按钮。已 lint/typecheck/build 通过并部署到 `43.156.230.108`。
-- 2026-06-14 分析 `agent-endpoint-failed` + `llm-parse_fail`：服务器日志显示 mimo-v2.5-pro / doubao-seed-2.0-pro 在 60s 客户端超时前未返回完整流，导致 GM 记录 `agent-endpoint-failed`；同一请求服务端后续因动作 JSON 不完整（如 `<action>{"type":"fold",`）记录 `llm-parse_fail`。根因是客户端 timeout（60s）短于服务端 budget（180s），且 parser 无法从不完整的 action 标签中抢救动作。
-- 2026-06-14 修复 `agent-endpoint-failed` + `llm-parse_fail`：GM 调用 Agent endpoint 超时从 60s 提到 120s；`LlmStreamParser` 新增 `salvagePartialAction`，能从 `<action>{"type":"fold",` 等不完整 JSON/未闭合标签中抢救出动作类型与金额；德扑 prompt 要求思考控制在 1-2 句并确保 action JSON 完整；`streamText` 增加 `maxOutputTokens: 2048`。本地 lint/typecheck/build 通过并提交到 `main`，暂未部署。
-- 2026-06-14 分析刷新后观战页数据丢失/手数不一致：根因是 `loadMatchSpectatorBundle` 只加载最近 100 条公开事件，长局会截断早期手牌；思考流仅通过 SSE 实时推送、从未持久化，刷新后必然清空；手数显示与走势图不一致是截断后 state 事件与 pot-award 事件不同步所致。尚未执行修复。
+- 2026-06-14 修复 `agent-endpoint-failed` + `llm-parse_fail`：GM 调用 Agent endpoint 超时从 60s 提到 120s；`LlmStreamParser` 新增 `salvagePartialAction` 抢救不完整 action JSON；德扑 prompt 约束思考长度并确保 action JSON 完整；`streamText` 增加 `maxOutputTokens: 2048`。
+- 2026-06-14 重构刷新后观战页状态一致性：`match-view-store` 抽出纯函数 reducer `reduceMatchViewEvent` / `deriveMatchView`，replay/live 共用同一派生路径；`loadMatchSpectatorBundle` 加载全部公开事件；GM 将思考文本持久化为 `agent/thinking` 事件，刷新后重放到 `thinking-store`；`poker/hand-start` 与 `poker/state` 共同作为手数来源；`ActionLog` 不再截断；`ErrorBadge` 改从后端聚合取数并移除 store 中的 `errorCount`/`fallbackCount`。
 
 ## Validation Log
 
@@ -180,6 +179,9 @@
 | 2026-06-14 | Agent error debug panel gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. `/api/matches/:id/errors` now includes agentName and recoveryAction; ErrorBadge popover shows Chinese error causes, layer labels, agent name/id, timestamp, recovery action JSON, and raw response snippets. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
 | 2026-06-14 | AI IDE deployment workflow sync gate | Passed | Synced Kimi deployment Skill routing into Cursor/Claude commands and rule routers; updated AGENTS and docs/ai/rules README. Verified Cursor/Claude deploy command bodies match and deployment routes are discoverable with rg; `npm run lint` passed. |
 | 2026-06-14 | Thinking bubble overlap/expiry gate | Passed | Added targeted Vitest coverage for seat-based bubble placement and stale thinking expiry; `npm run typecheck`, `npm run lint`, and `npm run build` passed. Local browser visual smoke could not be completed because background Next dev processes are reclaimed by the desktop sandbox before `127.0.0.1:3000` becomes reachable. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
+| 2026-06-14 | Match state metric unification gate | Passed | Unified live refresh state around full public `game_events`: spectator bundle no longer truncates to 100 events, `poker/hand-start` updates handNumber, action log no longer slices to recent 400, agent thinking is persisted as `agent/thinking` events and replayed into Thinking tab, and poker impressions display `handCount` as hands. Targeted Vitest, `npm run typecheck`, `npm run lint`, and `npm run build` passed. |
+| 2026-06-14 | Match projection unification gate | Passed | P1 projection layer completed: `deriveMatchView` / `reduceMatchViewEvent` now provide the shared pure projection path, live store `ingestEvent` and replay rewind/seek use the same reducer. Added regression coverage comparing incremental ingestion with derived projection. Targeted Vitest, `npm run typecheck`, `npm run lint`, and `npm run build` passed. |
+| 2026-06-14 | Authority cleanup gate | Passed | P2 essentials completed: ErrorBadge count now comes from `agent_errors` API total count, `match-view-store.errorCount` was removed, and poker semantic profiles now track `sourceEpisodeIds`, `lastUpdatedMatchId`, and `lastUpdatedHandId`. Targeted Vitest, `npm run typecheck`, `npm run lint`, and `npm run build` passed. |
 
 ## Open Questions / Blockers
 
@@ -204,10 +206,21 @@
 - 2026-06-14 Agent 错误展示优化完成：`/api/matches/:id/errors` 返回 `agentName` 和 `recoveryAction`；`ErrorBadge` 从“errorCode × count + agentId”改成调试面板，显示中文错误原因/排查提示、错误层级、Agent 名称与 id、发生时间、兜底恢复动作 JSON、原始响应片段，方便定位 `llm-parse_fail` 等问题。
 - 2026-06-14 AI IDE 部署流程同步完成：新增 `.cursor/.claude` 的 `deploy-production` 命令与 `deployment-router`，均回读 `.kimi-code/skills/deployment/SKILL.md` 作为权威部署流程；`AGENTS.md` 与 `docs/ai/rules/README.md` 已补充部署/运维路由信息。
 - 2026-06-14 思考气泡重叠/过期修复完成：新增 `thinking-bubble-layout` 统一座位方位，底部左右座位气泡改为贴座位上方 start/end 对齐，移动端气泡宽度收窄；`PlayerSeat` 在 thinking 清空时立刻收起旧气泡，`thinking-store` 新增 `expireStaleThinking` 兜底把超时 current 归档到 history，`SpectatorView` 每秒清理超过 7s 的 stale thinking 并处理 `agent-action-ready`。
+- 2026-06-14 对局状态度量衡统一完成：观战首屏改为加载完整 public events；`poker/hand-start` 和 `poker/state` 共同作为手数权威来源；Action tab 不再截断最近 400 条；GM 将完整思考落成 `agent/thinking` public event，刷新后 Thinking tab 可从事件表恢复；印象系统 poker 展示从 `profile.handCount` 标为“手”，不再把 semantic `gamesObserved` 文案写成“局”。
+- 2026-06-14 P1 统一投影层完成：`match-view-store` 抽出 `deriveMatchView` / `reduceMatchViewEvent`，live 观战增量 ingest 和 replay rewind/seek 都走同一投影 reducer；新增测试确认同一事件序列的批量 derive 与增量 ingest 结果一致。
+- 2026-06-14 P2 权威来源清理完成：`ErrorBadge` 不再依赖 `match-view-store.errorCount`，错误总数由 `/api/matches/:id/errors` 基于 `agent_errors` 总量返回；`match-view-store` 移除本地错误计数；Poker semantic profile 新增 `sourceEpisodeIds` / `lastUpdatedMatchId` 来源追踪，并保持旧 profile 兼容。
 
 ## 项目内多处复用的状态梳理
 
 结合“刷新后观战页数据丢失/手数不一致”问题，对项目中存在多份副本或派生关系的状态做一次梳理。
+
+> 2026-06-14 进展：已通过 `deriveMatchView` / `reduceMatchViewEvent` 把 live、replay、刷新重放收敛到同一 reducer；`game_events` 成为观战/回放的唯一真相来源；`errorCount`/`fallbackCount` 已从 `match-view-store` 移除。本节不是要求所有状态都只能有一份；合理的系统通常会同时有权威记录、运行时缓存、前端投影和展示状态。关键是每一份副本必须有明确的所有权、生命周期和重建路径。
+
+### 判定原则
+
+- **合理副本**：跨安全边界、跨生命周期、或不同读写性能目标而存在的副本。例如 DB 持久化事件、Redis 运行时缓存、前端只读投影、客户端 keyring。
+- **危险副本**：多个写入者维护同一语义，或刷新/重连后无法从权威来源重建。例如手数、玩家筹码、思考历史分别从不同数据源推导。
+- **收敛目标**：长期以 `game_events` 作为对局事实日志；Redis `matchState` 是运行中缓存；前端 store 是从 events + 当前 SSE 增量派生的视图；DB 查询表只保存跨对局索引、长期记忆和调试数据。
 
 ### 1. 对局事件（events）
 - **权威来源**：`game_events` 表（`src/platform/db/queries/events.ts`）。
@@ -215,58 +228,94 @@
 - **前端副本**：
   - `match-view-store.events`（`src/frontend/store/match-view-store.ts`）从 SSR bundle 或 SSE 重放后持有。
   - `replay-store.events/cursor`（`src/frontend/store/replay-store.ts`）本质也是 events 的另一种视图。
-- **问题**：`loadMatchSpectatorBundle` 只取最近 100 条公开事件，所有派生状态都被截断；live 与 replay 共用 `match-view-store` 的 reducer，但数据源长度不同。
+- **已处理 2026-06-14**：`loadMatchSpectatorBundle` 改为加载完整公开事件，live/replay 的刷新重建都以 `game_events` 为基准。
+- **合理性判断**：合理。DB 事件表是持久事实；Redis 是低延迟运行态；前端 store 是 UI 投影。风险不在多份存在，而在投影没有统一 reducer 或加载不完整。
+- **已处理 2026-06-14 P1**：已抽出 `deriveMatchView(events, roster)` / `reduceMatchViewEvent(state, event)`，live 增量 ingest 与 replay rewind/seek 共用同一个投影逻辑；当事件量变大时再做“完整快照 + 增量事件”的 checkpoint，而不是回到任意截断。
 
 ### 2. 玩家状态
 - **DB**：`matchParticipants` 只保存初始座位/agent 关联。
 - **Redis**：`matchState.players` 是运行时权威。
 - **前端**：`match-view-store.players` 从 `initialPlayers` 开始按 events 更新。
-- **问题**：刷新后 `initialPlayers` 从 DB 重建为初始筹码，再靠 events 恢复；events 不全时玩家筹码/状态错误。
+- **合理性判断**：部分合理。`matchParticipants` 作为静态 roster 是合理的；`matchState.players` 作为运行中缓存也是合理的；前端 players 只能是投影，不应被视为权威。
+- **已处理 2026-06-14**：首屏完整 events 重放后，刷新时玩家筹码/状态可以从公开事件恢复，不再受 100 条截断影响。
+- **后续方案**：把 `initialPlayers` 改名为 `initialRoster` 或在类型上拆分 `PokerRosterPlayer` / `PokerUiPlayer`，避免误以为 DB 初始玩家就是当前玩家状态；为 `playersFromPublicState` 增加“从完整 events 恢复最终状态”的回归测试。
 
 ### 3. 手数 / 阶段
 - **DB/Redis**：`poker/state.payload.handNumber`、`poker/hand-start.payload.handNumber`。
 - **前端**：`match-view-store.handNumber` 由 `poker/state` 事件更新。
-- **问题**：state 事件与 hand-start 事件都能表达手数；events 被截断后 `handNumber` 可能停在旧值，而 `pot-award` 快照时使用的 `handNumber` 又可能滞后/超前。
+- **已处理 2026-06-14**：`poker/state.payload.handNumber` 与 `poker/hand-start.payload.handNumber` 都进入同一个 `match-view-store` reducer；首屏完整 events 重放后 header、状态 tab、行动分组、筹码曲线手数使用同一条事件时间线。
+- **合理性判断**：合理但需要规则。`poker/hand-start` 是手牌边界事实，`poker/state` 是状态快照事实，两者可以共存；不合理的是只有部分 UI 消费其中一种。
+- **后续方案**：约定手数优先级为“按 seq 重放，后到事件覆盖当前投影”；新增 reducer 测试覆盖 `hand-start -> state -> action -> pot-award -> next hand-start` 的完整顺序。
 
 ### 4. 筹码曲线
 - **DB/Redis**：没有独立持久化，完全由 events 派生。
 - **前端**：`match-view-store.chipHistory` 在 `poker/pot-award` 时生成快照。
-- **问题**：刷新后曲线丢失或被错标手数；观战包需要完整 events 才能重算。
+- **已处理 2026-06-14**：观战包加载完整公开 events，筹码曲线可在刷新后从 `poker/pot-award` / `poker/state` 重新派生。
+- **合理性判断**：合理。筹码曲线是展示投影，不需要单独表；只要事件完整、手数一致，派生即可。
+- **后续方案**：当长局事件量影响首屏性能时，增加 `match_projection_snapshots` 或 `poker/chip-snapshot` 事件作为可验证 checkpoint；checkpoint 必须能由 events 重算校验。
 
 ### 5. 思考流
-- **权威来源**：SSE 实时 `thinking-delta` 消息（无持久化）。
+- **权威来源**：实时展示用 SSE `thinking-delta`，刷新回放用持久化 `agent/thinking` 事件。
 - **前端**：`thinking-store.current/history`（`src/frontend/store/thinking-store.ts`）。
-- **问题**：刷新后 `resetThinking()` 清空，历史无法恢复；与 events 无关。
+- **已处理 2026-06-14**：GM 在 Agent 决策完成后写入 `agent/thinking` public event；`SpectatorView` 重放 initial events 时会恢复 Thinking tab history，并用持久化完整文本替换同手同 Agent 的临时流式记录。
+- **合理性判断**：合理。delta 负责实时体验，最终 `agent/thinking` 事件负责刷新恢复和回放；二者语义不同。
+- **后续方案**：为 `agent/thinking` 明确可见性策略。当前是 public，适合观战产品；如果未来要隐藏完整 CoT，应改成摘要事件或 role-restricted/private，并让 UI 文案从“思考”调整为“公开推理摘要”。
 
 ### 6. Agent 错误 / 兜底
 - **DB**：`agent_errors` 表。
 - **前端**：
-  - `match-view-store.errorCount` 在 `agent_error` 事件时递增。
-  - `ErrorBadge` 从 `/api/matches/[matchId]/errors` 重新加载聚合。
-- **问题**：前端计数与后端聚合可能不同步；events 截断会导致 `errorCount` 偏低。
+  - `ErrorBadge` 从 `/api/matches/[matchId]/errors` 重新加载聚合与总数。
+- **已处理 2026-06-14 P2**：错误详情与总数以 `agent_errors` API 为权威；`match-view-store.errorCount` 已移除，避免本地事件计数与 API 聚合双写。
+- **后续方案**：若 UI 需要更实时提醒，SSE 只推送轻量 `agent_error` 通知并触发 ErrorBadge 重新拉取聚合，不恢复本地累计计数作为真相。
 
 ### 7. 记忆系统
 - **Working memory**：每局独立（`working_memory`），GM 读写。
 - **Episodic memory**：每局独立（`episodic_memory`），从 events 派生。
 - **Semantic memory**：跨局长期（`semantic_memory`），从 episodic 聚合。
-- **问题**：episodic/semantic 与 events 存在派生关系，但没有自动回放/校验；删除 match 时 semantic 保留，working/episodic 删除。
+- **合理性判断**：合理。三层记忆的生命周期不同：working 是运行态草稿，episodic 是单局证据，semantic 是跨局长期画像。semantic 在删除 match 时保留也符合“长期印象”语义。
+- **已处理 2026-06-14 P2**：Poker semantic profile 已记录 `sourceEpisodeIds`、`lastUpdatedMatchId`、`lastUpdatedHandId`，旧 profile 反序列化时兼容缺省字段。
+- **后续方案**：提供“从 episodic 重建 semantic”的维护脚本；删除 match 时 UI 明确提示 semantic 长期印象会保留。
 
 ### 8. 对局状态标志
 - **DB**：`matches.status`。
 - **Redis**：`matchState.matchComplete/stopRequested`、`force-end:match:*`。
 - **前端**：`match-view-store.matchComplete/stopRequested/status`。
-- **问题**：多个地方维护比赛是否结束，force-end 新增了 Redis 标志。
+- **合理性判断**：部分合理。DB `matches.status` 是跨请求权威；Redis flags 是运行时控制面；前端 status 是展示投影。风险在结束状态可能由多个路径写入。
+- **后续方案**：保持 `finalizeMatch` / force-end API 为唯一写 DB status 的入口；Redis flags 只表达“下一 tick 意图”或“短期锁”，不得作为最终完成状态；前端只从 events/API 结果派生，不直接假定 Redis flag。
 
 ### 9. API Key
 - **客户端**：`localStorage` 按 profileId 保存。
 - **服务端**：Redis `matchKeyring`。
-- **问题**：浏览器与服务端 keyring 可能不一致；TTL 相关。
+- **合理性判断**：合理。客户端持有用户密钥、服务端只持有对局期临时 keyring，是安全边界导致的必要双副本。
+- **风险**：浏览器与服务端 keyring 可能不一致；TTL 过期后正在运行的 match 会失败。
+- **后续方案**：把 keyring 状态显式化：创建/进入对局时显示“已上传/缺失/过期”；服务端错误返回 `llm-api-key-missing` 时 UI 引导重新上传，而不是只在 ErrorBadge 里展示。
 
-### 10. 推荐收敛方向
-- 把 `game_events` 作为唯一真相来源，前端/回放只读 events 并通过单一 reducer 派生所有 UI 状态。
-- Redis `matchState` 视为 DB 的缓存，GM 崩溃/重启后能从 events 重建。
-- 思考流如需回放，应持久化到 `game_events` 或单独表。
-- 观战/回放加载全部公开 events；replay 可额外加载私有事件。
+### 收敛方案
+
+#### P0 已完成 / 保持
+- 观战/回放加载全部公开 events。
+- `poker/hand-start` 与 `poker/state` 统一进入 `match-view-store` reducer。
+- 思考流最终文本持久化到 `game_events.agent/thinking`。
+- Action tab 与 Thinking tab 不再只依赖不可恢复的内存或任意截断窗口。
+
+#### P1 统一投影层（已完成 2026-06-14）
+- 已抽出共享投影函数：`deriveMatchView(events, roster)` 与 `reduceMatchViewEvent(state, event)`。
+- Live `match-view-store.ingestEvent` 与 Replay rewind/seek 都调用同一 reducer；未来 API projection 可直接复用。
+- 已新增回归测试，确认同一事件序列的批量 derive 与增量 store ingestion 在手数、玩家筹码、筹码曲线和 event handNumberAt 上一致。
+
+#### P2 明确权威写入点（核心项已完成 2026-06-14）
+- Match lifecycle：保持 `finalizeMatch` / force-end route 为写 `matches.status` 的入口。
+- Agent errors：`agent_errors` API 是调试详情与总数权威；前端本地 errorCount 副本已移除。
+- Memory：Poker semantic 已记录来源 episode / match / hand；后续补从 episodic 重建脚本。
+
+#### P3 性能与长局扩展
+- 当完整 public events 影响首屏性能时，引入可校验 checkpoint，而不是随意 limit。
+- checkpoint 形态优先考虑 `match_projection_snapshots` 或显式 `poker/chip-snapshot` 事件。
+- checkpoint 必须保留 `fromSeq/toSeq`，并能用事件重算验证。
+
+#### 当前判断
+- **合理保留**：`game_events` + Redis `matchState` + 前端投影；`matchParticipants` 静态 roster + runtime players；thinking delta + final thinking event；working/episodic/semantic 三层记忆；client keyring + server temporary keyring。
+- **需要继续收敛**：对局完成状态的写入路径需要继续保持单入口；semantic 需要重建脚本；长局性能需要 checkpoint 方案。
 
 ## SDK / Plan Drift Notes
 
