@@ -41,6 +41,7 @@
 - 2026-06-14 增加对局管理功能：`POST /api/matches/[matchId]/force-end` 立即强制结束运行中对局（上锁 + 设置 matchComplete + finalize + 清理 Redis）；`DELETE /api/matches/[matchId]` 删除对局及其事件、错误、working/episodic memory（semantic memory 长期印象保留）；大厅最近对局卡片增加「强制结束」「删除」按钮。已 lint/typecheck/build 通过并部署到 `43.156.230.108`。
 - 2026-06-14 分析 `agent-endpoint-failed` + `llm-parse_fail`：服务器日志显示 mimo-v2.5-pro / doubao-seed-2.0-pro 在 60s 客户端超时前未返回完整流，导致 GM 记录 `agent-endpoint-failed`；同一请求服务端后续因动作 JSON 不完整（如 `<action>{"type":"fold",`）记录 `llm-parse_fail`。根因是客户端 timeout（60s）短于服务端 budget（180s），且 parser 无法从不完整的 action 标签中抢救动作。
 - 2026-06-14 修复 `agent-endpoint-failed` + `llm-parse_fail`：GM 调用 Agent endpoint 超时从 60s 提到 120s；`LlmStreamParser` 新增 `salvagePartialAction`，能从 `<action>{"type":"fold",` 等不完整 JSON/未闭合标签中抢救出动作类型与金额；德扑 prompt 要求思考控制在 1-2 句并确保 action JSON 完整；`streamText` 增加 `maxOutputTokens: 2048`。本地 lint/typecheck/build 通过并提交到 `main`，暂未部署。
+- 2026-06-14 分析刷新后观战页数据丢失/手数不一致：根因是 `loadMatchSpectatorBundle` 只加载最近 100 条公开事件，长局会截断早期手牌；思考流仅通过 SSE 实时推送、从未持久化，刷新后必然清空；手数显示与走势图不一致是截断后 state 事件与 pot-award 事件不同步所致。尚未执行修复。
 
 ## Validation Log
 
