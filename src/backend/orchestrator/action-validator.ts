@@ -61,12 +61,12 @@ function coerceActionSynonyms<TAction>(
 
   const synonyms: Record<string, string[]> = {
     bet: ['raise'],
-    raise: ['bet'],
+    raise: ['bet', 'call'],
     check: ['call'],
     call: ['check'],
-    allin: ['allIn'],
-    'all-in': ['allIn'],
-    all_in: ['allIn'],
+    allin: ['allIn', 'call'],
+    'all-in': ['allIn', 'call'],
+    all_in: ['allIn', 'call'],
   }
 
   for (const alias of [actionType, ...(synonyms[actionType] ?? [])]) {
@@ -76,22 +76,26 @@ function coerceActionSynonyms<TAction>(
     if (spec.minAmount === undefined) return { type: alias } as TAction
 
     if (alias === 'raise') {
-      const toAmount =
+      const raw =
         typeof candidateRecord.toAmount === 'number'
           ? candidateRecord.toAmount
           : typeof candidateRecord.amount === 'number'
             ? candidateRecord.amount
             : spec.minAmount
-      return { type: 'raise', toAmount } as TAction
+      return { type: 'raise', toAmount: clamp(raw, spec.minAmount, spec.maxAmount) } as TAction
     }
 
-    const amount =
-      typeof candidateRecord.amount === 'number'
+    // Cross-type synonyms should use the target action's legal amount rather
+    // than the original amount (e.g. raise -> call uses the call amount).
+    const isSameType = alias === actionType
+    const raw = isSameType
+      ? typeof candidateRecord.amount === 'number'
         ? candidateRecord.amount
         : typeof candidateRecord.toAmount === 'number'
           ? candidateRecord.toAmount
           : spec.minAmount
-    return { type: alias, amount } as TAction
+      : spec.minAmount
+    return { type: alias, amount: clamp(raw, spec.minAmount, spec.maxAmount) } as TAction
   }
 
   return null
@@ -101,9 +105,26 @@ function normalizeMatchedAction<TAction>(candidate: TAction, matched: ActionSpec
   if (matched.template) return matched.template
   if (matched.minAmount === undefined) return candidate
 
+  const candidateRecord = candidate as unknown as Record<string, unknown>
+  const rawAmount =
+    typeof candidateRecord.toAmount === 'number'
+      ? candidateRecord.toAmount
+      : typeof candidateRecord.amount === 'number'
+        ? candidateRecord.amount
+        : undefined
+
   if (matched.type === 'raise') {
-    return { type: 'raise', toAmount: matched.minAmount } as TAction
+    const toAmount = clamp(rawAmount, matched.minAmount, matched.maxAmount)
+    return { type: 'raise', toAmount } as TAction
   }
 
-  return { type: matched.type, amount: matched.minAmount } as TAction
+  const amount = clamp(rawAmount, matched.minAmount, matched.maxAmount)
+  return { type: matched.type, amount } as TAction
+}
+
+function clamp(value: number | undefined, min: number, max?: number): number {
+  if (value === undefined || !Number.isFinite(value)) return min
+  let result = Math.max(min, value)
+  if (max !== undefined && Number.isFinite(max)) result = Math.min(max, result)
+  return result
 }

@@ -35,6 +35,26 @@ export type AgentDecisionResult<T = Record<string, unknown>> = {
 export async function requestAgentDecisionRpc<T = Record<string, unknown>>(
   input: RequestAgentInput,
 ): Promise<AgentDecisionResult<T>> {
+  const maxAttempts = 2
+  let lastError: unknown = null
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await requestAgentDecisionRpcOnce<T>(input)
+    } catch (err) {
+      lastError = err
+      if (attempt < maxAttempts) {
+        await delay(500 * attempt)
+      }
+    }
+  }
+
+  throw lastError ?? new Error('agent endpoint failed after retries')
+}
+
+async function requestAgentDecisionRpcOnce<T = Record<string, unknown>>(
+  input: RequestAgentInput,
+): Promise<AgentDecisionResult<T>> {
   const { taskId, message, matchId, matchToken, onThinking, timeoutMs = 60_000 } = input
   const url = resolveAgentStreamUrl(input)
   const abort = new AbortController()
@@ -192,4 +212,8 @@ function consumeSseBlock(
   const dataLine = block.split('\n').find((line) => line.startsWith('data: '))
   if (!dataLine) return
   onPayload(JSON.parse(dataLine.slice(6)) as { kind: string; artifact?: { parts?: Part[] } })
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
