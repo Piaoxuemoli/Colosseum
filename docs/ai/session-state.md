@@ -167,6 +167,8 @@
 | 2026-06-13 | Match spectator UI polish gate | Passed | `npm run lint` + `npm run typecheck` + `npm run build` passed. Deployed to production; `/api/health` OK; `/`, `/matches/new`, `/api/agents?gameType=poker` 200. Full poker match UI smoke will be verified live. |
 | 2026-06-14 | UI/impressions gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. Build included `/api/matches/[matchId]/impressions`; existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. In-app Browser local visual check was blocked by browser security policy for `127.0.0.1:3000`; command-line local dev server requests also hung, so no browser screenshot was captured. |
 | 2026-06-14 | Fixed-height match layout gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. Match and loading pages now use fixed `100dvh` shells with page-level overflow hidden; PokerBoard scales inside remaining height via container query units. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
+| 2026-06-14 | Thinking bubble anchor gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. ThinkingBubble no longer uses FloatingPortal/fixed viewport coordinates; it is locally anchored to PlayerSeat, and current thinkers show a spinner label above the seat. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
+| 2026-06-14 | Agent error debug panel gate | Passed | `npm run typecheck`, `npm run lint`, `npm run build`, and placeholder `npm test` ran. `/api/matches/:id/errors` now includes agentName and recoveryAction; ErrorBadge popover shows Chinese error causes, layer labels, agent name/id, timestamp, recovery action JSON, and raw response snippets. Existing Next ESLint plugin warning and Node `url.parse()` deprecation warnings remain. |
 
 ## Open Questions / Blockers
 
@@ -187,6 +189,8 @@
 - 2026-06-14 新增印象系统：每手牌结束时 `game-master` 为每位观察者生成对其他选手的 episodic / semantic memory；新增 `/api/matches/[matchId]/impressions` 与 `ImpressionsPanel`；德扑 memory 合成维度（松紧、进攻、粘性、诚实）。UI 同步调整 `SpectatorView` / `PokerBoard` / `CommunityCards` / `Pot` / `PlayerSeat`。已再次通过 `lint/typecheck/build` 并部署到 `43.156.230.108`。
 - 2026-06-14 对局 UI/印象系统修复完成：德扑座位移入牌桌容器内并用 `clamp` 缩放，ThinkingBubble 以座位卡片为 anchor 并按座位方位选择 placement；右侧栏 tab/行动展开/思考展开状态迁入 match store，切换 tab/移动端 Sheet 不再丢状态；进入新对局会 reset thinking store，match-end 会 finalize 剩余 current thinking；新增 `/api/matches/:id/impressions` 与右侧“印象”Tab；德扑 hand-end 会从 `actionHistory` 生成 episodic 并更新 semantic memory，印象 Tab 可展示 observer→target 的长期画像。
 - 2026-06-14 对局固定视口布局修复完成：`SpectatorView` poker/werewolf 分支和 match loading skeleton 改为 `100dvh` 固定高度、页面级 `overflow-hidden`；主赛场使用 flex 剩余高度，PokerBoard 桌面端用容器查询单位 `100cqw/100cqh` 等比缩放，避免顶部/底部座位被标题或视口遮盖；移动/平板牌桌改成紧凑公共牌、底池和 2 列座位网格；RightPanel 改为跟随父容器 `h-full`。
+- 2026-06-14 思考气泡锚点修复完成：移除 `ThinkingBubble` 的 `FloatingPortal/useFloating/fixed` 定位，改为 `PlayerSeat` 内局部 absolute 定位，避免在缩放牌桌/动画座位下 reference 丢失后跑到视口左上角；当前正在思考的选手座位上方新增 `LoaderCircle` 旋转“思考中”状态，气泡继续展示最近思考文本。
+- 2026-06-14 Agent 错误展示优化完成：`/api/matches/:id/errors` 返回 `agentName` 和 `recoveryAction`；`ErrorBadge` 从“errorCode × count + agentId”改成调试面板，显示中文错误原因/排查提示、错误层级、Agent 名称与 id、发生时间、兜底恢复动作 JSON、原始响应片段，方便定位 `llm-parse_fail` 等问题。
 
 ## SDK / Plan Drift Notes
 
