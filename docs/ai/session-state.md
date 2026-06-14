@@ -34,6 +34,7 @@
 - 2026-06-13 前端 polish 已完成：左侧导航基于 pathname + 点击乐观高亮，新增全局与观战页 loading skeleton，Tabs/Card/Dialog/Popover/右栏/牌桌座位收敛为紧凑控制台风格，右侧 Tab 内容按当前 Tab 懒挂载，UI 纲领更新为 React + Next.js + Tailwind CSS + shadcn/ui + Radix UI + lucide-react 的 award-grade arena console。
 - 2026-06-13 已用 `C:/Users/Qoobeewang/Downloads/hermesqoobee.pem` 部署到 `http://43.156.230.108`：通过本地 `git archive HEAD` 上传到服务器解包，`docker compose up -d --build nextjs` 重建启动；健康检查和核心页面/API smoke 均通过。部署前尝试 `/opt/colosseum/scripts/backup.sh` 返回 `Permission denied`，未阻塞部署。
 - 2026-06-14 新增错误分布详情、ErrorBadge 聚合展示、PlayerSeat/ThinkingBubble 细节打磨，已本地 lint/typecheck/build 通过并部署到 `43.156.230.108`，`/api/health` OK。
+- 2026-06-14 新增 `.claude`/`.cursor` 部署命令与规则路由、thinking-bubble 布局辅助函数与测试、thinking-store 测试，已 lint/typecheck/build 通过并部署到 `43.156.230.108`，`/api/health` OK。
 
 ## Validation Log
 
