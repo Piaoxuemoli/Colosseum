@@ -39,6 +39,7 @@
 - 2026-06-14 修复 `/api/matches/[matchId]/end` 请求失败：路由缺少 `ensureGamesRegistered()` 导致 `getGame('poker')` 抛 `gameType not registered: poker`，已补上调用来注册游戏插件并重新部署。
 - 2026-06-14 印象系统增加长文本描述：每手结束后 `persistHandImpressions` 自动基于观察者视角、semantic profile 分数和最近 5 条 episodic 记录生成一段中文印象段落，写入 `semantic_memory.profileJson.note`；`ImpressionsPanel` 已展示该字段。实现为本地规则化 summary 工具，无需额外 LLM 调用。已 lint/typecheck/build 通过并部署。
 - 2026-06-14 增加对局管理功能：`POST /api/matches/[matchId]/force-end` 立即强制结束运行中对局（上锁 + 设置 matchComplete + finalize + 清理 Redis）；`DELETE /api/matches/[matchId]` 删除对局及其事件、错误、working/episodic memory（semantic memory 长期印象保留）；大厅最近对局卡片增加「强制结束」「删除」按钮。已 lint/typecheck/build 通过并部署到 `43.156.230.108`。
+- 2026-06-14 分析 `agent-endpoint-failed` + `llm-parse_fail`：服务器日志显示 mimo-v2.5-pro / doubao-seed-2.0-pro 在 60s 客户端超时前未返回完整流，导致 GM 记录 `agent-endpoint-failed`；同一请求服务端后续因动作 JSON 不完整（如 `<action>{"type":"fold",`）记录 `llm-parse_fail`。根因是客户端 timeout（60s）短于服务端 budget（180s），且 parser 无法从不完整的 action 标签中抢救动作。尚未执行修复。
 
 ## Validation Log
 
