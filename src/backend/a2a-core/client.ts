@@ -55,7 +55,7 @@ export async function requestAgentDecisionRpc<T = Record<string, unknown>>(
 async function requestAgentDecisionRpcOnce<T = Record<string, unknown>>(
   input: RequestAgentInput,
 ): Promise<AgentDecisionResult<T>> {
-  const { taskId, message, matchId, matchToken, onThinking, timeoutMs = 60_000 } = input
+  const { taskId, message, matchId, matchToken, onThinking, timeoutMs = 120_000 } = input
   const url = resolveAgentStreamUrl(input)
   const abort = new AbortController()
   const timer = timeoutMs > 0 ? setTimeout(() => abort.abort(), timeoutMs) : null
@@ -138,7 +138,7 @@ async function requestAgentDecisionRpcOnce<T = Record<string, unknown>>(
 }
 
 export async function requestAgentDecisionToy<T = Record<string, unknown>>(input: RequestAgentInput): Promise<T> {
-  const { taskId, message, matchId, matchToken, onThinking, timeoutMs = 60_000 } = input
+  const { taskId, message, matchId, matchToken, onThinking, timeoutMs = 120_000 } = input
   const url = resolveAgentStreamUrl(input)
   const abort = new AbortController()
   const timer = timeoutMs > 0 ? setTimeout(() => abort.abort(), timeoutMs) : null

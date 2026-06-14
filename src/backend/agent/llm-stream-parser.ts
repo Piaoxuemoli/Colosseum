@@ -160,6 +160,16 @@ export class LlmStreamParser {
         this.actionEmitted = true
         return
       }
+
+      // Last resort: the model may have produced an incomplete action JSON
+      // (e.g. <action>{"type":"fold",) because it ran out of tokens.
+      const partial = salvagePartialAction(body)
+      if (partial !== null) {
+        events.push({ kind: 'action', action: partial })
+        this.actionEmitted = true
+        return
+      }
+
       events.push({ kind: 'action', action: { error: 'json_parse', raw: body } })
     }
   }
@@ -237,6 +247,10 @@ function extractFinalActionJson(transcript: string): unknown | null {
     const parsed = tryParseAsAction(objects[i])
     if (parsed !== null) return parsed
   }
+
+  // Last resort: incomplete JSON object with a visible type field.
+  const partial = salvagePartialAction(transcript)
+  if (partial !== null) return partial
 
   return null
 }
@@ -324,4 +338,27 @@ function extractActionFromObject(parsed: unknown): unknown | null {
   }
 
   return null
+}
+
+/**
+ * Rescue an action when the model produced a partial/incomplete JSON object.
+ * Common failure mode: `<action>{"type":"fold",` with no closing brace/tag.
+ * We extract whatever type (and optionally amount) we can find and let the
+ * downstream validator fill in the rest.
+ */
+function salvagePartialAction(text: string): unknown | null {
+  const typeMatch = text.match(/"type"\s*:\s*"([^"]+)"/)
+  if (!typeMatch) return null
+
+  const type = typeMatch[1]
+  const amountMatch = text.match(/"(?:amount|toAmount)"\s*:\s*(\d+)/)
+  const amount = amountMatch ? Number(amountMatch[1]) : undefined
+
+  if (type === 'raise') {
+    return amount !== undefined ? { type, toAmount: amount } : { type }
+  }
+  if (['bet', 'call', 'allIn'].includes(type)) {
+    return amount !== undefined ? { type, amount } : { type }
+  }
+  return { type }
 }

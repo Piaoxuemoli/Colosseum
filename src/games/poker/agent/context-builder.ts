@@ -23,14 +23,15 @@ Small blind: ${state.smallBlind}; big blind: ${state.bigBlind}.
 Output format (STRICT — the parser depends on this):
 
   <thinking>
-  brief reasoning in Chinese, any length you like
+  brief reasoning in Chinese, 1-2 sentences only
   </thinking>
   <action>
   {"type":"fold|check|call|bet|raise|allIn","amount":0}
   </action>
 
 Your final <action> block MUST be a valid JSON object with a string "type"
-field matching one of the legal actions listed below.
+field matching one of the legal actions listed below. Always close the
+</action> tag and make sure the JSON object is complete.
 - fold/check/call: "amount" is optional.
 - bet/allIn: "amount" is required.
 - raise: use "toAmount" (the total chips you want to have in front of you after raising), not "amount".
