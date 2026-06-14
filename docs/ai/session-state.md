@@ -181,7 +181,7 @@
 - 2026-06-13 项目结构重组完成：源码迁入 `src/{app,frontend,backend,platform,games}`，归档整合到 `archive/old/`，`tsconfig.json` paths 改为 `@/*` → `./src/*`，`ops/deploy/Dockerfile` 同步复制 `src/platform/db/` 与 `src/platform/env.ts`；纲领文档 `AGENTS.md`、`docs/ai/rules/project-context.md`、`docs/ai/rules/frontend-backend.md`、`.kimi-code/skills/deployment/SKILL.md`、`README.md`、`.cursor/.claude rules` 已更新。
 - 2026-06-13 对局 UI 优化完成：`/matches/*` 内左侧 Sidebar 收起为图标栏，底部文案改为用户视角平台介绍；思考气泡 4.5s 自动消失；右侧“思考”Tab 按手牌历史记录并结构化展示；“行动”Tab 按手牌分组并用中文描述决策；牌桌 `max-width` 扩至 `max-w-7xl`。
 - 2026-06-13 对局 UI 第二轮打磨完成：思考气泡改用 `FloatingPortal` + fixed 定位避免撑出滚动条；行动/思考 Tab 改为升序排列并美化滚动条与 sticky header；结算弹窗 delta 从 `poker/state` 读取实际 `startingChips`；`chipHistory` 每手去重并兜底记录；筹码走势改用 Area+Line、带起始筹码参考线、点击放大 Dialog。
-- 2026-06-13 UI/引擎/错误修复：气泡修复 `flip`+`autoPlacement` 冲突、增加 `whileElementsMounted:autoUpdate`、牌桌加 `overflow-hidden`；`ActionLog`/`ThinkingLog` 拆出固定“当前区”与可折叠历史区；德扑引擎移除破产 reload 改为淘汰制， settlement 后清零 pot/streetPots/sidePots，只剩一名有筹码玩家时自然结束；Agent endpoint 接入 `PokerResponseParser`，prompt 修正 `raise` 用 `toAmount`，`action-validator` 增加 `bet↔raise`/`check↔call` 容错；keyring TTL 从 2h 延长到 24h。`npm run lint` + `npm run typecheck` + `npm run build` 通过，并用临时 `tsx` 脚本验证引擎淘汰逻辑。
+- 2026-06-13 UI/引擎/错误修复：气泡修复 `flip`+`autoPlacement` 冲突、增加 `whileElementsMounted:autoUpdate`、牌桌加 `overflow-hidden`；`ActionLog`/`ThinkingLog` 拆出固定“当前区”与可折叠历史区；德扑引擎移除破产 reload 改为淘汰制， settlement 后清零 pot/streetPots/sidePots，只剩一名有筹码玩家时自然结束；Agent endpoint 接入 `PokerResponseParser`，prompt 修正 `raise` 用 `toAmount`，`action-validator` 增加 `bet↔raise`/`check↔call` 容错；keyring TTL 从 2h 延长到 24h。`npm run lint` + `npm run typecheck` + `npm run build` 通过，并用临时 `tsx` 脚本验证引擎淘汰逻辑；已合并到 `main` 并部署到 `http://43.156.230.108`，`/api/health` OK。
 
 ## SDK / Plan Drift Notes
 
