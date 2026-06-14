@@ -41,6 +41,7 @@
 - 2026-06-14 增加对局管理功能：`POST /api/matches/[matchId]/force-end` 立即强制结束运行中对局（上锁 + 设置 matchComplete + finalize + 清理 Redis）；`DELETE /api/matches/[matchId]` 删除对局及其事件、错误、working/episodic memory（semantic memory 长期印象保留）；大厅最近对局卡片增加「强制结束」「删除」按钮。已 lint/typecheck/build 通过并部署到 `43.156.230.108`。
 - 2026-06-14 修复 `agent-endpoint-failed` + `llm-parse_fail`：GM 调用 Agent endpoint 超时从 60s 提到 120s；`LlmStreamParser` 新增 `salvagePartialAction` 抢救不完整 action JSON；德扑 prompt 约束思考长度并确保 action JSON 完整；`streamText` 增加 `maxOutputTokens: 2048`。
 - 2026-06-14 重构刷新后观战页状态一致性：`match-view-store` 抽出纯函数 reducer `reduceMatchViewEvent` / `deriveMatchView`，replay/live 共用同一派生路径；`loadMatchSpectatorBundle` 加载全部公开事件；GM 将思考文本持久化为 `agent/thinking` 事件，刷新后重放到 `thinking-store`；`poker/hand-start` 与 `poker/state` 共同作为手数来源；`ActionLog` 不再截断；`ErrorBadge` 改从后端聚合取数并移除 store 中的 `errorCount`/`fallbackCount`。
+- 2026-06-14 本次清理文档、修复 `agent/thinking` 事件 `matchId` 占位与未使用 `fallbackCount` 等阻塞点后，本地 `npm run lint`/`typecheck`/`build`/`npx vitest run`（12 测试）全通过；已提交推送 `main` 并部署到 `http://43.156.230.108`，`/api/health` 与各核心页面/API smoke 均 200。
 
 ## Validation Log
 
