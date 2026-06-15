@@ -41,6 +41,12 @@
     "archive",
     "old",
     "dist",
-    ".next"
+    ".next",
+    ".next-build",
+    // 测试套件重建中：vitest 尚未在 package.json 声明，遗留 *.test.ts 无法编译。
+    // 待 `npm test` 恢复为真实运行器后移除以下三条。见 linting-and-quality.md。
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx"
   ]
 }
