@@ -25,6 +25,8 @@
   },
   "dependencies": {
     "@a2a-js/sdk": "^0.3.13",
+    "@a2ui/react": "^0.10.0",
+    "@a2ui/web_core": "^0.10.0",
     "@ai-sdk/anthropic": "^2.0.79",
     "@ai-sdk/openai-compatible": "^1.0.39",
     "@floating-ui/react": "^0.27.19",
@@ -48,6 +50,7 @@
     "postgres": "^3.4.9",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "react-is": "^19.2.7",
     "recharts": "^3.8.1",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.4.3",
