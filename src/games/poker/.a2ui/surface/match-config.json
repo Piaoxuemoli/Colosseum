@@ -1,0 +1,16 @@
+{
+  "surfaceId": "poker-match-config",
+  "catalogId": "colosseum-basic",
+  "root": "root",
+  "components": [
+    { "id": "root", "component": "Column", "children": ["title", "params", "picker", "submit"] },
+    { "id": "title", "component": "Text", "text": "德扑对局配置", "variant": "h3" },
+    { "id": "params", "component": "Row", "children": ["sb", "bb", "chips"] },
+    { "id": "sb", "component": "TextField", "label": "小盲", "value": { "path": "/smallBlind" } },
+    { "id": "bb", "component": "TextField", "label": "大盲", "value": { "path": "/bigBlind" } },
+    { "id": "chips", "component": "TextField", "label": "初始筹码", "value": { "path": "/startingChips" } },
+    { "id": "picker", "component": "AgentPicker", "label": "选择 6 位选手", "maxCount": 6, "gameType": "poker" },
+    { "id": "submitLabel", "component": "Text", "text": "开始对局" },
+    { "id": "submit", "component": "Button", "child": "submitLabel", "action": { "event": { "name": "submit" } }, "variant": "primary" }
+  ]
+}
