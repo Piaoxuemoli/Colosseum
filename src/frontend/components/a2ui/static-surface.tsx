@@ -24,8 +24,8 @@ export interface StaticA2UISurfaceProps {
   defaults?: SurfaceDefaults
   /** 渲染用的 catalog（含项目自定义组件）。 */
   catalog: Catalog<ReactComponentImplementation>
-  /** 用户动作触发时回调（如点提交按钮）。 */
-  onAction?: (action: unknown) => void
+  /** 用户动作触发时回调（如点提交按钮）；附带当前数据模型快照，避免闭包读到陈旧 state。 */
+  onAction?: (action: unknown, data: Record<string, unknown>) => void
   /** 每次动作时回传当前完整数据模型快照。 */
   onDataModel?: (data: Record<string, unknown>) => void
 }
@@ -66,11 +66,10 @@ export function StaticA2UISurface({
 
   useEffect(() => {
     const processor = new MessageProcessor<ReactComponentImplementation>([catalog], (action) => {
-      onActionRef.current?.(action)
       const dm = processor.getClientDataModel()
-      if (dm !== undefined) {
-        onDataModelRef.current?.(extractSurfaceData(dm, surface.surfaceId))
-      }
+      const data = dm !== undefined ? extractSurfaceData(dm, surface.surfaceId) : {}
+      onDataModelRef.current?.(data)
+      onActionRef.current?.(action, data)
     })
 
     let captured: SurfaceModel<ReactComponentImplementation> | undefined
