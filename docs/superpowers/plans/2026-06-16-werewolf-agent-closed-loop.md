@@ -30,15 +30,15 @@
 ## Task steps
 - [x] T0: 调研完成（spec §2）
 - [x] T1: spec + 本 plan 写就并提交
-- [ ] T2: 补 tsconfig 排除（`.next-build`、`*.test.ts`/`*.test.tsx`/`__tests__`）—— D6
-- [ ] T3: 加 devDep `tsx` + `check:werewolf` 脚本 + 并入 `check`（单独提交）—— D2/D7
-- [ ] T4: 冒烟：`tsx` 能 import `werewolfEngine`（验证 `@/*` 别名解析）
-- [ ] T5: 写 `run-closed-loop.ts`：mock LLM（D3）+ 主循环 + D4 断言 + 多种子
-- [ ] T6: 跑 `npm run check:werewolf`，捕获死角色 bug（预期复现）
-- [ ] T7: 修 `phase-machine` 死角色阶段跳过（D5）；重跑直到多局全绿
-- [ ] T8:（可选）女巫 bot 救药策略优化；重跑
-- [ ] T9: 跑 `npm run lint && npm run typecheck && npm run build`，确保无回归；修 lint/console（脚本顶 `eslint-disable no-console`）
-- [ ] T10: 更新 session-state + MEMORY；commit；最终交付报告
+- [x] T2: 补 tsconfig 排除（`.next-build`、`*.test.ts`/`*.test.tsx`/`__tests__`）—— D6
+- [x] T3: 加 devDep `tsx` + `check:werewolf` 脚本 + 并入 `check`（单独提交）—— D2/D7
+- [x] T4: 冒烟：`tsx` 能 import `werewolfEngine`（验证 `@/*` 别名解析）✓
+- [x] T5: 写 `run-closed-loop.ts`：mock LLM（D3）+ 主循环 + D4 断言 + 多种子
+- [x] T6: 跑 `npm run check:werewolf`，捕获死角色 bug（6/14 复现 ✓）
+- [x] T7: 修 `phase-machine` 死角色阶段跳过（D5）；重跑 14/14 全绿 ✓
+- [x] T8: mock 女巫已含救药逻辑（D3）；bot-strategy 女巫救药优化跳过（非阻塞，YAGNI）
+- [x] T9: `npm run lint`(0 问题) + `typecheck` + `build` 全绿；未用的 eslint-disable 已移除
+- [x] T10: 更新 session-state + MEMORY；5 笔提交（docs/tsconfig/deps/fix/test）；最终交付报告见对话
 
 ## Validation commands
 ```bash
