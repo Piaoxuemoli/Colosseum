@@ -11,6 +11,21 @@ import { checkWin } from './win-condition'
  * is responsible only for the cross-phase transition.
  */
 export function advancePhase(state: WerewolfState): WerewolfState {
+  let s = advancePhaseOnce(state)
+  // 死角色阶段跳过（D5）：非终局状态下若转入的阶段无存活行动者
+  // （如预言家/女巫已被狼杀或被投出），级联推进到下一个可行动阶段，避免
+  // currentActor=null 死锁——GM/tick 见 null actor 会提前 finalize 导致误终局。
+  // 仅夜间的 seerCheck/witchAction 会产生这种空 actor；day 阶段恒有存活者
+  // （否则 checkWin 已结算）。guard 仅为防意外的上界保险。
+  let guard = 0
+  while (s.currentActor === null && !s.matchComplete && guard < 16) {
+    s = advancePhaseOnce(s)
+    guard += 1
+  }
+  return s
+}
+
+function advancePhaseOnce(state: WerewolfState): WerewolfState {
   const s: WerewolfState = structuredClone(state)
 
   switch (s.phase) {
