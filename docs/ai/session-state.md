@@ -43,6 +43,8 @@
 - 2026-06-14 重构刷新后观战页状态一致性：`match-view-store` 抽出纯函数 reducer `reduceMatchViewEvent` / `deriveMatchView`，replay/live 共用同一派生路径；`loadMatchSpectatorBundle` 加载全部公开事件；GM 将思考文本持久化为 `agent/thinking` 事件，刷新后重放到 `thinking-store`；`poker/hand-start` 与 `poker/state` 共同作为手数来源；`ActionLog` 不再截断；`ErrorBadge` 改从后端聚合取数并移除 store 中的 `errorCount`/`fallbackCount`。
 - 2026-06-14 本次清理文档、修复 `agent/thinking` 事件 `matchId` 占位与未使用 `fallbackCount` 等阻塞点后，本地 `npm run lint`/`typecheck`/`build`/`npx vitest run`（12 测试）全通过；已提交推送 `main` 并部署到 `http://43.156.230.108`，`/api/health` 与各核心页面/API smoke 均 200。
 
+- 2026-06-16 狼人杀 agent 闭环（分支 `feature/werewolf-agent-loop`，从 `main` 切出，独立于未合并的 `feature/a2ui-config-page`，未推送）。调研 arXiv:2309.04658（tuning-free：记忆检索+reflection+experience+CoT+信念+通信可见性）+ 字节火山引擎 `langgraph-demo/werewolf` + MetaGPT 落地，确认既有 `src/games/werewolf/` agent 层（context-builder/response-parser/bot-strategy/moderator/memory）已忠实落地该框架，无需重写、不引入 LangChain/LangGraph。spec `docs/superpowers/specs/2026-06-16-werewolf-agent-closed-loop-design.md` + plan `docs/superpowers/plans/2026-06-16-werewolf-agent-closed-loop.md`。交付 Layer1 mock 闭环脚手架 `scripts/werewolf/run-closed-loop.ts`（tsx 运行，14 局多种子驱动真实 agent 层跑到终局，挂 `npm run check:werewolf` 并接入 `check`），并修 Layer2 引擎 bug：`phase-machine.advancePhase` 死角色阶段跳过（神职已死时级联推进，避免 `currentActor=null` 误终局——mock 闭环复现 6/14 死锁并验证修复）。结果 14/14 通过，终局 villagers 6 / werewolves 8 / tie 0，0 fallback。新增 devDep `tsx@^4.22.4`（tsconfig `@/*` 别名原生解析）；从 main 切出补回 tsconfig 测试文件/`.next-build` 排除。`npm run check`（check:werewolf→lint→typecheck→build）全绿。明确不做（YAGNI）：werewolf `.a2ui/` 配置页、GM/Redis/DB/HTTP 全链路 runtime mock（Layer3）、真实 LLM 接入与策略调优、前端/视觉验收。5 笔提交：docs / chore(tsconfig) / chore(deps) / fix(werewolf) / test(werewolf)。
+
 ## Validation Log
 
 | Date | Command | Result | Notes |
