@@ -30,7 +30,9 @@ function thinkingEventEntry(
   if (event.kind !== 'agent/thinking' || !event.actorAgentId) return null
   const text = typeof event.payload.text === 'string' ? event.payload.text : ''
   const handNumber = typeof event.payload.handNumber === 'number' ? event.payload.handNumber : 0
-  if (text.trim().length === 0 || handNumber <= 0) return null
+  // 狼人杀没有「手」概念，GM 持久化 agent/thinking 时 handNumber=0；允许 0 以便
+  // 回放/刷新时恢复狼人思考（扑克 handNumber≥1，不受影响）。
+  if (text.trim().length === 0 || handNumber < 0) return null
   const at = Date.parse(event.occurredAt)
   return {
     sourceId: event.id,

@@ -41,6 +41,11 @@ export function WerewolfBoard({
   const left = ordered.slice(0, 3)
   const right = ordered.slice(3, 6)
 
+  // 狼人事件不更新 store.currentActor（仅扑克事件设置）；用「正在思考者」作为
+  // 当前行动者信号——它与思考气泡同源，高亮与气泡一致。回退到 store.currentActor。
+  const activeThinker = Object.keys(currentThinking)[0] ?? null
+  const highlightActor = activeThinker ?? currentActor
+
   const renderCard = (p: PokerUiPlayer) => (
     <PlayerCard
       key={p.agentId}
@@ -50,7 +55,7 @@ export function WerewolfBoard({
       deathCause={deathCauseByAgent.get(p.agentId) ?? null}
       claimedRole={claimedByAgent.get(p.agentId)}
       revealedRole={ww.roleAssignments?.[p.agentId] ?? null}
-      isCurrentActor={currentActor === p.agentId}
+      isCurrentActor={highlightActor === p.agentId}
       thinking={thinkingText(p.agentId)}
     />
   )
