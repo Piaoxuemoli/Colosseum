@@ -27,8 +27,12 @@ export function WerewolfStatusPanel() {
   const currentActor = useMatchViewStore((s) => s.currentActor)
 
   const aliveCount = Math.max(0, players.length - deaths.length)
-  const actorName = currentActor
-    ? players.find((p) => p.agentId === currentActor)?.displayName ?? currentActor
+  // 狼人 store.currentActor 不可靠（仅扑克事件设置）；显示最近发言/投票者更准确。
+  const lastSpeech = ww.speechLog[ww.speechLog.length - 1]
+  const lastVote = ww.voteLog[ww.voteLog.length - 1]
+  const lastActorId = lastVote?.voter ?? lastSpeech?.agentId ?? currentActor
+  const actorName = lastActorId
+    ? players.find((p) => p.agentId === lastActorId)?.displayName ?? lastActorId
     : null
 
   const stats: Array<{ label: string; value: string; accent?: boolean }> = [
@@ -59,7 +63,7 @@ export function WerewolfStatusPanel() {
       </div>
 
       <div className="rounded-lg border border-white/10 bg-slate-950/45 p-2.5">
-        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">当前行动者</div>
+        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">最近行动</div>
         <div className="mt-1 truncate text-sm font-semibold text-emerald-200">
           {actorName ?? (ww.winner ? '—' : '等待中')}
         </div>
