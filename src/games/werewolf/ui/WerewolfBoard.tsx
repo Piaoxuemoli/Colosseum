@@ -7,6 +7,8 @@ import { SpeechBubbleList } from './SpeechBubble'
 import { VoteTally } from './VoteTally'
 import { useMatchViewStore } from '@/frontend/store/match-view-store'
 import type { PokerUiPlayer } from '@/frontend/store/match-view-store'
+import { useThinkingStore } from '@/frontend/store/thinking-store'
+import type { WerewolfDeathCause } from './PlayerCard'
 
 export function WerewolfBoard({
   players,
@@ -16,6 +18,8 @@ export function WerewolfBoard({
   currentActor: string | null
 }) {
   const ww = useMatchViewStore((s) => s.werewolf)
+  const currentThinking = useThinkingStore((s) => s.current)
+  const thinkingText = (agentId: string) => currentThinking[agentId]?.text
 
   // Derive most-recent claimedRole per player from the speechLog.
   const claimedByAgent = useMemo(() => {
@@ -26,31 +30,37 @@ export function WerewolfBoard({
     return m
   }, [ww.speechLog])
 
+  // 死亡公告 → 存活/死因（夜间刀毒、白日票出均经主持人公告落入 ww.deaths）。
+  const deathCauseByAgent = useMemo(() => {
+    const m = new Map<string, WerewolfDeathCause | null>()
+    for (const d of ww.deaths) m.set(d.agentId, (d.cause as WerewolfDeathCause | null) ?? null)
+    return m
+  }, [ww.deaths])
+
   const ordered = [...players].sort((a, b) => a.seatIndex - b.seatIndex)
   const left = ordered.slice(0, 3)
   const right = ordered.slice(3, 6)
 
+  const renderCard = (p: PokerUiPlayer) => (
+    <PlayerCard
+      key={p.agentId}
+      agentId={p.agentId}
+      name={p.displayName}
+      alive={!deathCauseByAgent.has(p.agentId)}
+      deathCause={deathCauseByAgent.get(p.agentId) ?? null}
+      claimedRole={claimedByAgent.get(p.agentId)}
+      revealedRole={ww.roleAssignments?.[p.agentId] ?? null}
+      isCurrentActor={currentActor === p.agentId}
+      thinking={thinkingText(p.agentId)}
+    />
+  )
+
   return (
-    <div
-      className="grid gap-4 grid-cols-1 lg:grid-cols-[1fr_2fr_1fr]"
-      data-testid="werewolf-board"
-    >
+    <div className="grid gap-4 grid-cols-1 lg:grid-cols-[1fr_2fr_1fr]" data-testid="werewolf-board">
       {/* Left column — moderator + left half of seats */}
       <div className="flex flex-col gap-3">
         <ModeratorPanel />
-        <div className="flex flex-col gap-2">
-          {left.map((p) => (
-            <PlayerCard
-              key={p.agentId}
-              agentId={p.agentId}
-              name={p.displayName}
-              alive={true}
-              claimedRole={claimedByAgent.get(p.agentId)}
-              revealedRole={ww.roleAssignments?.[p.agentId] ?? null}
-              isCurrentActor={currentActor === p.agentId}
-            />
-          ))}
-        </div>
+        <div className="flex flex-col gap-2">{left.map(renderCard)}</div>
       </div>
 
       {/* Middle column — day/phase header + speech timeline */}
@@ -66,19 +76,7 @@ export function WerewolfBoard({
 
       {/* Right column — right half of seats + vote tally */}
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2">
-          {right.map((p) => (
-            <PlayerCard
-              key={p.agentId}
-              agentId={p.agentId}
-              name={p.displayName}
-              alive={true}
-              claimedRole={claimedByAgent.get(p.agentId)}
-              revealedRole={ww.roleAssignments?.[p.agentId] ?? null}
-              isCurrentActor={currentActor === p.agentId}
-            />
-          ))}
-        </div>
+        <div className="flex flex-col gap-2">{right.map(renderCard)}</div>
         <VoteTally />
       </div>
     </div>
