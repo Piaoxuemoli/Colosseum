@@ -54,12 +54,19 @@ export type WerewolfNarrationEntry = {
   narration: string
 }
 
+export type WerewolfDeathEntry = {
+  agentId: string
+  day: number
+  cause: string | null
+}
+
 export type WerewolfDerived = {
   day: number
   phase: string | null
   speechLog: WerewolfSpeechEntry[]
   voteLog: WerewolfVoteEntry[]
   moderatorNarration: WerewolfNarrationEntry[]
+  deaths: WerewolfDeathEntry[]
   roleAssignments: Record<string, string> | null
   winner: 'werewolves' | 'villagers' | 'tie' | null
 }
@@ -124,6 +131,7 @@ const initialWerewolf: WerewolfDerived = {
   speechLog: [],
   voteLog: [],
   moderatorNarration: [],
+  deaths: [],
   roleAssignments: null,
   winner: null,
 }
@@ -459,11 +467,29 @@ export function reduceMatchViewEvent(state: MatchViewProjection, event: GameEven
       const day = typeof event.payload.day === 'number' ? event.payload.day : werewolf.day
       const upcomingPhase = typeof event.payload.upcomingPhase === 'string' ? event.payload.upcomingPhase : werewolf.phase
       const narration = typeof event.payload.narration === 'string' ? event.payload.narration : ''
+      // 公告出局名单（夜间刀/毒在白天公告、投票在切换夜间时公告）。
+      const rawDeaths = Array.isArray(event.payload.deaths) ? event.payload.deaths : []
+      const existingDead = new Set(werewolf.deaths.map((d) => d.agentId))
+      const newDeaths: WerewolfDeathEntry[] = []
+      for (const d of rawDeaths) {
+        if (d && typeof d === 'object' && typeof (d as { agentId?: unknown }).agentId === 'string') {
+          const agentId = (d as { agentId: string }).agentId
+          if (!existingDead.has(agentId)) {
+            existingDead.add(agentId)
+            newDeaths.push({
+              agentId,
+              day,
+              cause: typeof (d as { cause?: unknown }).cause === 'string' ? (d as { cause: string }).cause : null,
+            })
+          }
+        }
+      }
       werewolf = {
         ...werewolf,
         day,
         phase: upcomingPhase,
         moderatorNarration: [...werewolf.moderatorNarration, { day, phase: upcomingPhase ?? '', narration }],
+        deaths: newDeaths.length > 0 ? [...werewolf.deaths, ...newDeaths] : werewolf.deaths,
       }
       break
     }
