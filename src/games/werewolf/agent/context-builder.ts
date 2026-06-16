@@ -36,7 +36,6 @@ const ACTION_SCHEMA: Record<string, string> = {
  *
  * 输出契约（parser 依赖）：
  *   <thinking>简短推理（1-2 句中文）</thinking>
- *   <belief>{...}</belief>     # 可选，保持简短
  *   <action>{...}</action>     # 必需，type 必须是下方「合法动作」之一，JSON 完整、闭合
  */
 export class WerewolfPlayerContextBuilder implements PlayerContextBuilder {
@@ -84,13 +83,12 @@ export class WerewolfPlayerContextBuilder implements PlayerContextBuilder {
       '',
       '输出格式（严格遵守，解析器依赖此格式）：',
       '<thinking>简短推理，1-2 句中文即可</thinking>',
-      '<belief>JSON：key=玩家 agentId，value={werewolf,villager,seer,witch 概率(和为1),reasoning}。可选，保持简短</belief>',
       '<action>JSON：对应当前阶段合法动作</action>',
       '',
       '## 关键纪律（违反会导致动作被丢弃）',
       `- <action> 的 "type" 必须且只能是下列之一：${legalTypes.map((t) => `"${t}"`).join('、')}。`,
       '- <action> 必须是完整、合法的 JSON 对象，且 `</action>` 标签必须闭合。',
-      '- 把 <action> 放在最后输出；先闭合 <thinking>/<belief> 再开 <action>。',
+      '- 把 <action> 放在最后输出；先闭合 <thinking> 再开 <action>。',
       '- targetId 必须使用「活人列表」里的 agentId（不是名字/序号）；弃票、不解毒填 null。',
       '- 若你的模型原生会输出自己的推理标签（如 <think>...</think>），可以保留，但仍必须在最后输出完整的 <action>。',
       '- 思考尽量精炼，避免冗长——输出过长会被截断导致没有 <action>。',

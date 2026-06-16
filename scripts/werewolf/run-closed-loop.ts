@@ -147,7 +147,6 @@ function mockLlmDecide(state: WerewolfState, actor: string, rng: () => number): 
 
   return [
     `<thinking>mock：${role} 在 ${phase} 阶段选择动作</thinking>`,
-    `<belief>{}</belief>`,
     `<action>${JSON.stringify(action)}</action>`,
   ].join('\n')
 }
