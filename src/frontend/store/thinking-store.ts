@@ -7,6 +7,13 @@ export type ThinkingEntry = {
   agentId: string
   displayName: string
   handNumber: number
+  /**
+   * Werewolf grouping key. Poker entries leave this undefined and group by
+   * `handNumber`; werewolf entries carry the `state.day` the agent reasoned
+   * in (paired with `phase` so the UI can show「第 N 夜 / 第 N 天」).
+   */
+  day?: number
+  phase?: string
   text: string
   at: number
 }
@@ -15,13 +22,21 @@ type CurrentThinking = {
   text: string
   displayName: string
   handNumber: number
+  day?: number
+  phase?: string
   updatedAt: number
 }
 
 export type ThinkingState = {
   current: Record<string, CurrentThinking>
   history: ThinkingEntry[]
-  appendThinking(agentId: string, displayName: string, handNumber: number, delta: string): void
+  appendThinking(
+    agentId: string,
+    displayName: string,
+    handNumber: number,
+    delta: string,
+    bucket?: { day?: number; phase?: string },
+  ): void
   recordThinking(entry: ThinkingEntry): void
   finalizeThinking(agentId: string): void
   finalizeAllThinking(): void
@@ -29,11 +44,20 @@ export type ThinkingState = {
   reset(): void
 }
 
+/**
+ * Dedup bucket key. Werewolf entries group by (agentId, day) so reasoning
+ * from different days never clobber each other; poker entries (day=undefined)
+ * keep the legacy (agentId, handNumber) grouping.
+ */
+function bucketKey(agentId: string, entry: { day?: number; handNumber: number }): string {
+  return entry.day !== undefined ? `${agentId}:d${entry.day}` : `${agentId}:h${entry.handNumber}`
+}
+
 export const useThinkingStore = create<ThinkingState>((set) => ({
   current: {},
   history: [],
 
-  appendThinking(agentId, displayName, handNumber, delta) {
+  appendThinking(agentId, displayName, handNumber, delta, bucket) {
     set((state) => ({
       current: {
         ...state.current,
@@ -41,6 +65,8 @@ export const useThinkingStore = create<ThinkingState>((set) => ({
           text: (state.current[agentId]?.text ?? '') + delta,
           displayName,
           handNumber,
+          day: bucket?.day ?? state.current[agentId]?.day,
+          phase: bucket?.phase ?? state.current[agentId]?.phase,
           updatedAt: Date.now(),
         },
       },
@@ -57,9 +83,12 @@ export const useThinkingStore = create<ThinkingState>((set) => ({
       }
 
       const nextEntry = { ...entry, text }
+      const key = bucketKey(entry.agentId, entry)
       const history = state.history.filter((item) => {
+        // Same sourceId always wins (dedupe by persisted event id).
         if (entry.sourceId && item.sourceId === entry.sourceId) return false
-        return !(item.sourceId === undefined && item.agentId === entry.agentId && item.handNumber === entry.handNumber)
+        // Same bucket (same hand for poker, same day for werewolf) replaces.
+        return bucketKey(item.agentId, item) !== key
       })
       return {
         current: nextCurrent,
@@ -83,7 +112,15 @@ export const useThinkingStore = create<ThinkingState>((set) => ({
         current: nextCurrent,
         history: [
           ...state.history,
-          { agentId, displayName: item.displayName, handNumber: item.handNumber, text: item.text, at: Date.now() },
+          {
+            agentId,
+            displayName: item.displayName,
+            handNumber: item.handNumber,
+            day: item.day,
+            phase: item.phase,
+            text: item.text,
+            at: Date.now(),
+          },
         ],
       }
     })
@@ -98,6 +135,8 @@ export const useThinkingStore = create<ThinkingState>((set) => ({
             agentId,
             displayName: item.displayName,
             handNumber: item.handNumber,
+            day: item.day,
+            phase: item.phase,
             text: item.text,
             at: Date.now(),
           },
@@ -124,6 +163,8 @@ export const useThinkingStore = create<ThinkingState>((set) => ({
             agentId,
             displayName: item.displayName,
             handNumber: item.handNumber,
+            day: item.day,
+            phase: item.phase,
             text: item.text,
             at: now,
           })
