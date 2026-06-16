@@ -1,6 +1,7 @@
 import type { BotStrategy } from '@/platform/core/registry'
 import type { ActionSpec } from '@/platform/engine/contracts'
 import { log } from '@/platform/telemetry/logger'
+import { normalizeWerewolfActionType } from '@/games/werewolf/engine/werewolf-action-aliases'
 
 export type ValidationResult<TAction> = {
   action: TAction
@@ -17,6 +18,20 @@ export function coerceToValidAction<TAction>(
   const actionType = actionTypeOf(candidate)
   const matched = validActions.find((action) => action.type === actionType)
   if (matched) return { action: normalizeMatchedAction(candidate, matched), layer: meta.layerIfPassed }
+
+  // Werewolf type normalization: LLMs drift on the `phase/action` strings
+  // (drop prefix, swap separators, use synonyms like "kill"/"skip"). Map the
+  // candidate's type to a canonical werewolf type while keeping its other
+  // fields (targetId / content / reason). Poker types return null here and
+  // fall through to the poker-specific coercion paths below.
+  const werewolfType = actionType !== null ? normalizeWerewolfActionType(actionType) : null
+  if (werewolfType && werewolfType !== actionType) {
+    const wwMatched = validActions.find((action) => action.type === werewolfType)
+    if (wwMatched) {
+      const rewritten = { ...(candidate as object), type: werewolfType } as TAction
+      return { action: normalizeMatchedAction(rewritten, wwMatched), layer: meta.layerIfPassed }
+    }
+  }
 
   const freeFoldCoercion = coerceFreeFoldToCheck(actionType, validActions)
   if (freeFoldCoercion) return { action: freeFoldCoercion, layer: meta.layerIfPassed }

@@ -1,6 +1,5 @@
 import type { GameEvent } from '@/platform/core/types'
 import type {
-  BeliefEntry,
   DeathRecord,
   WerewolfWorkingMemory,
 } from './types'
@@ -15,7 +14,6 @@ export function initWorkingMemory(matchId: string, observerAgentId: string): Wer
     speechLog: [],
     voteLog: [],
     deathLog: [],
-    beliefState: {},
   }
 }
 
@@ -162,38 +160,10 @@ function ingestExecute(prev: WerewolfWorkingMemory, event: GameEvent): WerewolfW
 }
 
 /**
- * Merge a parser-supplied belief update into working memory. Missing
- * properties fall back to previous values or uniform prior (0.25).
+ * Format working memory into a prompt section. Currently carries no
+ * belief-state (belief tracking was removed); kept for the
+ * MemoryContextSnapshot contract so episodic/semantic sections still compose.
  */
-export function mergeBeliefUpdate(
-  current: Record<string, BeliefEntry>,
-  patch: Record<string, Partial<BeliefEntry>>,
-): Record<string, BeliefEntry> {
-  const next: Record<string, BeliefEntry> = { ...current }
-  for (const [id, p] of Object.entries(patch)) {
-    const prior = current[id]
-    const merged: BeliefEntry = {
-      werewolf: p.werewolf ?? prior?.werewolf ?? 0.25,
-      villager: p.villager ?? prior?.villager ?? 0.25,
-      seer: p.seer ?? prior?.seer ?? 0.25,
-      witch: p.witch ?? prior?.witch ?? 0.25,
-      reasoning: (p.reasoning ?? prior?.reasoning ?? []).slice(-3),
-      lastUpdatedAt: p.lastUpdatedAt ?? prior?.lastUpdatedAt ?? { day: 0, phase: 'init' },
-    }
-    next[id] = merged
-  }
-  return next
-}
-
-export function formatWorkingForPrompt(memory: WerewolfWorkingMemory): string {
-  const lines: string[] = []
-  if (Object.keys(memory.beliefState).length > 0) {
-    lines.push('## 当前信念分布')
-    for (const [id, b] of Object.entries(memory.beliefState)) {
-      lines.push(
-        `- ${id}: 狼${b.werewolf.toFixed(2)} 神${(b.seer + b.witch).toFixed(2)} 民${b.villager.toFixed(2)}`,
-      )
-    }
-  }
-  return lines.join('\n')
+export function formatWorkingForPrompt(_memory: WerewolfWorkingMemory): string {
+  return ''
 }

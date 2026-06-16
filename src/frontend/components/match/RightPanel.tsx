@@ -10,6 +10,8 @@ import { PokerStatusPanel } from './PokerStatusPanel'
 import { ThinkingLog } from './ThinkingLog'
 import { WerewolfRoster } from '@/games/werewolf/ui/WerewolfRoster'
 import { WerewolfStatusPanel } from '@/games/werewolf/ui/WerewolfStatusPanel'
+import { WerewolfActionLog } from '@/games/werewolf/ui/WerewolfActionLog'
+import { WerewolfThinkingLog } from '@/games/werewolf/ui/WerewolfThinkingLog'
 import { Button } from '@/frontend/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/frontend/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/components/ui/tabs'
@@ -79,11 +81,11 @@ function RightPanelBody({
         </TabsContent>
 
         <TabsContent value="actions" className="mt-2 min-h-0 flex-1 overflow-hidden">
-          {tab === 'actions' ? <ActionLog /> : null}
+          {tab === 'actions' ? (isWerewolf ? <WerewolfActionLog /> : <ActionLog />) : null}
         </TabsContent>
 
         <TabsContent value="thinking" className="mt-2 min-h-0 flex-1 overflow-hidden">
-          {tab === 'thinking' ? <ThinkingLog /> : null}
+          {tab === 'thinking' ? (isWerewolf ? <WerewolfThinkingLog /> : <ThinkingLog />) : null}
         </TabsContent>
 
         <TabsContent value="impressions" className="mt-2 min-h-0 flex-1 overflow-hidden">

@@ -90,6 +90,8 @@ assert('deaths 含 a4(票出)', ww.deaths.some((d) => d.agentId === 'a4' && d.ca
 assert('deaths 去重后共 2 条', ww.deaths.length === 2, `len=${ww.deaths.length}`)
 assert('speechLog 含 a2 自称预言家', ww.speechLog.some((s) => s.agentId === 'a2' && s.claimedRole === 'seer'))
 assert('voteLog 含 a3→a4', ww.voteLog.some((v) => v.voter === 'a3' && v.target === 'a4'))
+assert('moderatorNarration 共 3 条', ww.moderatorNarration.length === 3, `len=${ww.moderatorNarration.length}`)
+assert('moderatorNarration 含投票公告', ww.moderatorNarration.some((n) => n.phase === 'day/vote'))
 assert('winner = villagers', ww.winner === 'villagers', `winner=${ww.winner}`)
 assert('roleAssignments 已揭示', ww.roleAssignments?.a5 === 'werewolf')
 assert('matchComplete = true', view.matchComplete === true)
