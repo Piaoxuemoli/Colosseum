@@ -40,6 +40,13 @@ export function moderatorNarrationEvent(
   if (prev.phase === next.phase) return null
   if (next.matchComplete) return null
 
+  // 公告本轮新出局者：夜间刀/毒在转入白天时结算，投票在转入下一夜时结算。
+  // 仅死亡 fact + cause 对观战公开（夜间私动作细节仍 role-restricted 不在此处）。
+  const prevAlive = new Set(prev.players.filter((p) => p.alive).map((p) => p.agentId))
+  const deaths = next.players
+    .filter((p) => !p.alive && prevAlive.has(p.agentId))
+    .map((p) => ({ agentId: p.agentId, cause: p.deathCause }))
+
   return {
     gameType: 'werewolf',
     occurredAt: new Date().toISOString(),
@@ -49,6 +56,7 @@ export function moderatorNarrationEvent(
       upcomingPhase: next.phase,
       day: next.day,
       narration: fallbackNarrationForPhase(next.phase),
+      deaths,
     },
     visibility: 'public',
     restrictedTo: null,

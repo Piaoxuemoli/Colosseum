@@ -26,17 +26,23 @@ type SseMessage =
 function thinkingEventEntry(
   event: GameEvent,
   displayName: string,
-): { sourceId: string; agentId: string; displayName: string; handNumber: number; text: string; at: number } | null {
+): { sourceId: string; agentId: string; displayName: string; handNumber: number; day?: number; phase?: string; text: string; at: number } | null {
   if (event.kind !== 'agent/thinking' || !event.actorAgentId) return null
   const text = typeof event.payload.text === 'string' ? event.payload.text : ''
   const handNumber = typeof event.payload.handNumber === 'number' ? event.payload.handNumber : 0
-  if (text.trim().length === 0 || handNumber <= 0) return null
+  // 狼人杀没有「手」概念，GM 持久化 agent/thinking 时 handNumber=0；允许 0 以便
+  // 回放/刷新时恢复狼人思考（扑克 handNumber≥1，不受影响）。
+  if (text.trim().length === 0 || handNumber < 0) return null
   const at = Date.parse(event.occurredAt)
   return {
     sourceId: event.id,
     agentId: event.actorAgentId,
     displayName,
     handNumber,
+    // Werewolf grouping fields (undefined for poker). Read straight from the
+    // persisted payload so playback order never affects the day assignment.
+    day: typeof event.payload.day === 'number' ? event.payload.day : undefined,
+    phase: typeof event.payload.phase === 'string' ? event.payload.phase : undefined,
     text,
     at: Number.isFinite(at) ? at : Date.now(),
   }
@@ -98,10 +104,16 @@ export function SpectatorView({
     }
     const buffer = thinkingBuffer.current
     thinkingBuffer.current = {}
+    // Werewolf reasoning groups by day/phase; poker keeps the legacy
+    // handNumber-only path (day undefined).
+    const bucket =
+      gameType === 'werewolf'
+        ? { day: werewolfDay, phase: werewolfPhase ?? undefined }
+        : undefined
     for (const [agentId, delta] of Object.entries(buffer)) {
-      if (delta) appendThinking(agentId, nameOf(agentId), handNumber, delta)
+      if (delta) appendThinking(agentId, nameOf(agentId), handNumber, delta, bucket)
     }
-  }, [appendThinking, handNumber, nameOf])
+  }, [appendThinking, gameType, handNumber, nameOf, werewolfDay, werewolfPhase])
 
   const ingestViewEvent = useCallback(
     (event: GameEvent) => {

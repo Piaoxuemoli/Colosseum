@@ -21,7 +21,9 @@
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
-    "check": "npm run lint && npm run typecheck && npm run build"
+    "check:werewolf": "tsx scripts/werewolf/run-closed-loop.ts",
+    "check:werewolf-ui": "tsx scripts/werewolf/run-frontend-smoke.ts",
+    "check": "npm run check:werewolf && npm run check:werewolf-ui && npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
     "@a2a-js/sdk": "^0.3.13",
@@ -65,6 +67,7 @@
     "eslint-config-next": "^16.2.4",
     "postcss": "^8.5.14",
     "tailwindcss": "^4.2.4",
+    "tsx": "^4.22.4",
     "typescript": "5.9",
     "typescript-eslint": "^8.59.2"
   }

@@ -1,3 +1,5 @@
+import { normalizeWerewolfActionType } from '@/games/werewolf/engine/werewolf-action-aliases'
+
 export type ParserEvent =
   | { kind: 'thinking_delta'; text: string }
   | { kind: 'thinking_end' }
@@ -343,14 +345,39 @@ function extractActionFromObject(parsed: unknown): unknown | null {
 /**
  * Rescue an action when the model produced a partial/incomplete JSON object.
  * Common failure mode: `<action>{"type":"fold",` with no closing brace/tag.
- * We extract whatever type (and optionally amount) we can find and let the
- * downstream validator fill in the rest.
+ * We extract whatever type (and optionally amount/targetId/content) we can
+ * find and let the downstream validator fill in the rest.
  */
 function salvagePartialAction(text: string): unknown | null {
   const typeMatch = text.match(/"type"\s*:\s*"([^"]+)"/)
   if (!typeMatch) return null
 
   const type = typeMatch[1]
+
+  // Werewolf actions: normalize the (possibly aliased) type and salvage the
+  // role-specific fields so a truncated response still carries its target.
+  const wwType = normalizeWerewolfActionType(type)
+  if (wwType) {
+    const out: Record<string, unknown> = { type: wwType }
+    const targetMatch = text.match(/"targetId"\s*:\s*("[^"]*"|null)/)
+    if (targetMatch) {
+      const raw = targetMatch[1]
+      out.targetId = raw === 'null' ? null : JSON.parse(raw)
+    }
+    const contentMatch = text.match(/"content"\s*:\s*"((?:[^"\\]|\\.)*)"/)
+    if (contentMatch) {
+      try {
+        out.content = JSON.parse(`"${contentMatch[1]}"`)
+      } catch {
+        out.content = contentMatch[1]
+      }
+    }
+    const reasonMatch = text.match(/"(?:reason|reasoning)"\s*:\s*"/)
+    if (reasonMatch) out.reasoning = ''
+    return out
+  }
+
+  // Poker actions: salvage the amount if present.
   const amountMatch = text.match(/"(?:amount|toAmount)"\s*:\s*(\d+)/)
   const amount = amountMatch ? Number(amountMatch[1]) : undefined
 

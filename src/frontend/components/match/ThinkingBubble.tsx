@@ -4,6 +4,11 @@ import { memo } from 'react'
 import type { Placement } from '@floating-ui/react'
 import { cn } from '@/platform/utils'
 
+/**
+ * 共享思考气泡（纯展示）。原位于 games/poker/ui，因其为游戏无关的通用组件
+ * 上提到 frontend/components/match，供扑克 PlayerSeat 与狼人 PlayerCard 复用。
+ * 视觉：青色玻璃边框 + streaming 文本 + 局部 absolute 定位（锚定调用方容器）。
+ */
 function bubblePositionClass(placement: Placement): string {
   if (placement === 'bottom-start') return 'left-0 top-full mt-2'
   if (placement === 'bottom-end') return 'right-0 top-full mt-2'

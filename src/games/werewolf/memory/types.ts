@@ -7,16 +7,6 @@ import type {
   WerewolfRole,
 } from '../engine/types'
 
-export interface BeliefEntry {
-  werewolf: number
-  villager: number
-  seer: number
-  witch: number
-  /** Recent reasoning snippets (most-recent last, capped to 3). */
-  reasoning: string[]
-  lastUpdatedAt: { day: number; phase: string }
-}
-
 export interface DeathRecord {
   day: number
   agentId: string
@@ -25,8 +15,7 @@ export interface DeathRecord {
 
 /**
  * Working memory — bound to a single match + observer agent. Accumulates
- * public facts + agent-private evidence and carries the externalised
- * beliefState that the response parser will update each turn.
+ * public facts + agent-private evidence.
  */
 export interface WerewolfWorkingMemory {
   matchId: string
@@ -40,7 +29,6 @@ export interface WerewolfWorkingMemory {
   speechLog: SpeechRecord[]
   voteLog: VoteRecord[]
   deathLog: DeathRecord[]
-  beliefState: Record<string, BeliefEntry>
 }
 
 /**
@@ -54,16 +42,6 @@ export interface WerewolfEpisodicEntry {
   actualRoles: Record<string, WerewolfRole>
   winnerFaction: 'werewolves' | 'villagers' | 'tie'
   ownOutcome: 'won' | 'lost' | 'tie'
-  beliefAccuracy: Record<
-    string,
-    {
-      finalBelief: { werewolf: number; villager: number; seer: number; witch: number }
-      actualRole: WerewolfRole
-      mostLikely: WerewolfRole
-      correct: boolean
-      confidenceCalibration: number
-    }
-  >
   keyMoments: string[]
   summary: string
   tags: string[]

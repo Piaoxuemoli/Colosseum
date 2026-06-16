@@ -8,6 +8,10 @@ import { ImpressionsPanel } from './ImpressionsPanel'
 import { LiveScoreboard } from './LiveScoreboard'
 import { PokerStatusPanel } from './PokerStatusPanel'
 import { ThinkingLog } from './ThinkingLog'
+import { WerewolfRoster } from '@/games/werewolf/ui/WerewolfRoster'
+import { WerewolfStatusPanel } from '@/games/werewolf/ui/WerewolfStatusPanel'
+import { WerewolfActionLog } from '@/games/werewolf/ui/WerewolfActionLog'
+import { WerewolfThinkingLog } from '@/games/werewolf/ui/WerewolfThinkingLog'
 import { Button } from '@/frontend/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/frontend/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/components/ui/tabs'
@@ -24,6 +28,7 @@ function RightPanelBody({
 }) {
   const tab = useMatchViewStore((state) => state.rightPanelTab)
   const setTab = useMatchViewStore((state) => state.setRightPanelTab)
+  const isWerewolf = gameType === 'werewolf'
 
   return (
     <>
@@ -38,14 +43,14 @@ function RightPanelBody({
       </div>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as RightPanelTab)} className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="grid h-auto w-full shrink-0 grid-cols-6 gap-1">
+        <TabsList className={`grid h-auto w-full shrink-0 gap-1 ${isWerewolf ? 'grid-cols-5' : 'grid-cols-6'}`}>
           <TabsTrigger value="status" title="状态" className="px-1.5">
             <Activity size={13} aria-hidden="true" />
             <span>状态</span>
           </TabsTrigger>
-          <TabsTrigger value="rank" title="排名" className="px-1.5">
+          <TabsTrigger value="rank" title={isWerewolf ? '名册' : '排名'} className="px-1.5">
             <Trophy size={13} aria-hidden="true" />
-            <span>排名</span>
+            <span>{isWerewolf ? '名册' : '排名'}</span>
           </TabsTrigger>
           <TabsTrigger value="actions" title="行动" className="px-1.5">
             <ListChecks size={13} aria-hidden="true" />
@@ -59,43 +64,39 @@ function RightPanelBody({
             <Sparkles size={13} aria-hidden="true" />
             <span>印象</span>
           </TabsTrigger>
-          <TabsTrigger value="chart" title="走势" className="px-1.5">
-            <BarChart3 size={13} aria-hidden="true" />
-            <span>走势</span>
-          </TabsTrigger>
+          {isWerewolf ? null : (
+            <TabsTrigger value="chart" title="走势" className="px-1.5">
+              <BarChart3 size={13} aria-hidden="true" />
+              <span>走势</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="status" className="mt-2 min-h-0 flex-1 overflow-hidden">
-          {tab === 'status' ? (
-            gameType === 'poker' ? (
-              <PokerStatusPanel />
-            ) : (
-              <div className="h-full min-h-0 rounded-lg border border-white/10 bg-slate-950/45 p-3 text-sm text-muted-foreground">
-                狼人杀状态面板
-              </div>
-            )
-          ) : null}
+          {tab === 'status' ? (isWerewolf ? <WerewolfStatusPanel /> : <PokerStatusPanel />) : null}
         </TabsContent>
 
         <TabsContent value="rank" className="mt-2 min-h-0 flex-1 overflow-hidden">
-          {tab === 'rank' ? <LiveScoreboard /> : null}
+          {tab === 'rank' ? (isWerewolf ? <WerewolfRoster /> : <LiveScoreboard />) : null}
         </TabsContent>
 
         <TabsContent value="actions" className="mt-2 min-h-0 flex-1 overflow-hidden">
-          {tab === 'actions' ? <ActionLog /> : null}
+          {tab === 'actions' ? (isWerewolf ? <WerewolfActionLog /> : <ActionLog />) : null}
         </TabsContent>
 
         <TabsContent value="thinking" className="mt-2 min-h-0 flex-1 overflow-hidden">
-          {tab === 'thinking' ? <ThinkingLog /> : null}
+          {tab === 'thinking' ? (isWerewolf ? <WerewolfThinkingLog /> : <ThinkingLog />) : null}
         </TabsContent>
 
         <TabsContent value="impressions" className="mt-2 min-h-0 flex-1 overflow-hidden">
           {tab === 'impressions' ? <ImpressionsPanel matchId={matchId} gameType={gameType} /> : null}
         </TabsContent>
 
-        <TabsContent value="chart" className="mt-2 min-h-0 flex-1 overflow-hidden">
-          {tab === 'chart' ? <ChipChart startingChips={startingChips} /> : null}
-        </TabsContent>
+        {isWerewolf ? null : (
+          <TabsContent value="chart" className="mt-2 min-h-0 flex-1 overflow-hidden">
+            {tab === 'chart' ? <ChipChart startingChips={startingChips} /> : null}
+          </TabsContent>
+        )}
       </Tabs>
     </>
   )

@@ -61,7 +61,6 @@ export async function runDecision(input: LlmRuntimeInput): Promise<LlmRuntimeRes
       system: agent.systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
       abortSignal: signal,
-      maxOutputTokens: 2048,
     })
 
     for await (const delta of result.textStream) {

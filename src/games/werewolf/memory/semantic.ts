@@ -53,22 +53,6 @@ export function updateSemantic(
     return { ...base, gamesObserved: base.gamesObserved + 1 }
   }
 
-  // acting / reasoning signals from calibration
-  const accuracy = episodic.beliefAccuracy[targetAgentId]
-  let actingSkill = base.actingSkill
-  let reasoningDepth = base.reasoningDepth
-  if (accuracy) {
-    // If observer was WRONG (incorrect mostLikely), that implies the target
-    // acted convincingly for a different role — bump actingSkill.
-    if (!accuracy.correct) {
-      actingSkill = clamp(actingSkill + 0.5, 1, 10)
-    }
-    if (accuracy.correct && accuracy.confidenceCalibration > 0.6) {
-      // Observer was confidently correct → target played "readably" → reasoningDepth not really moved.
-      reasoningDepth = clamp(reasoningDepth + 0.1, 1, 10)
-    }
-  }
-
   // win-loss tally for this actual role
   const wl = { ...base.winLossRecord }
   const roleKey = roleToKey(actualRole)
@@ -78,8 +62,6 @@ export function updateSemantic(
 
   return {
     ...base,
-    actingSkill: Math.round(actingSkill * 10) / 10,
-    reasoningDepth: Math.round(reasoningDepth * 10) / 10,
     winLossRecord: wl,
     gamesObserved: base.gamesObserved + 1,
     note: (episodic.summary.slice(0, 28) || base.note).slice(0, 30),
@@ -97,10 +79,6 @@ export function formatSemanticSection(
     )
   }
   return lines.join('\n')
-}
-
-function clamp(x: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, x))
 }
 
 function roleToKey(role: WerewolfRole): keyof WerewolfSemanticProfile['winLossRecord'] {
