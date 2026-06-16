@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useMatchViewStore } from '@/frontend/store/match-view-store'
-import { useThinkingStore } from '@/frontend/store/thinking-store'
+import { useThinkingStore, type ThinkingEntry } from '@/frontend/store/thinking-store'
 import { Badge } from '@/frontend/components/ui/badge'
 import { Button } from '@/frontend/components/ui/button'
 
@@ -69,11 +69,26 @@ function formatActionType(type: string | null): string {
   return ACTION_TYPE_ZH[type] ?? type
 }
 
-function ThinkingEntryCard({
-  entry,
-}: {
-  entry: { agentId: string; displayName: string; text: string }
-}) {
+/**
+ * Group label for a thinking entry. Werewolf `state.day` only increments on
+ * the night→day transition, so a night phase with `day=N` is「第 N+1 夜」and
+ * a day phase with `day=N` is「第 N 天」. Entries without a day (legacy /
+ * pre-injection) fall back to「实时」.
+ */
+function dayLabel(day: number | undefined, phase: string | undefined): string {
+  if (day === undefined) return '实时'
+  const isNight = phase?.startsWith('night/') ?? false
+  return isNight ? `第 ${day + 1} 夜` : `第 ${day} 天`
+}
+
+/** Sort + group key: night(day=N) and day(day=N) are different buckets even
+ *  if they share a numeric day, so we tag the bucket with night/day. */
+function bucketId(day: number | undefined, phase: string | undefined): string {
+  if (day === undefined) return 'live'
+  return `${day}:${phase?.startsWith('night/') ? 'n' : 'd'}`
+}
+
+function ThinkingEntryCard({ entry }: { entry: ThinkingEntry }) {
   const [expanded, setExpanded] = useState(true)
   const sections = useMemo(() => parseThinking(entry.text), [entry.text])
   const actionTag = useMemo(() => extractActionTag(entry.text), [entry.text])
@@ -129,30 +144,63 @@ function ThinkingEntryCard({
 export function WerewolfThinkingLog() {
   const current = useThinkingStore((s) => s.current)
   const history = useThinkingStore((s) => s.history)
-  const phase = useMatchViewStore((s) => s.werewolf.phase)
   const day = useMatchViewStore((s) => s.werewolf.day)
+  const phase = useMatchViewStore((s) => s.werewolf.phase)
   const historyRef = useRef<HTMLDivElement>(null)
 
   const currentEntries = useMemo(
     () =>
       Object.entries(current)
         .filter(([, item]) => item.text.trim().length > 0)
-        .map(([agentId, item]) => ({ agentId, displayName: item.displayName, text: item.text, at: Date.now() }))
+        .map(([agentId, item]) => ({
+          agentId,
+          displayName: item.displayName,
+          handNumber: item.handNumber,
+          day: item.day,
+          phase: item.phase,
+          text: item.text,
+          at: Date.now(),
+        }))
         .reverse(),
     [current],
   )
 
-  // Werewolf has no hands; show history newest-first (most recent reasoning on top).
-  const historyEntries = useMemo(() => [...history].reverse(), [history])
+  // Group history by day bucket (oldest first), newest entry on top within a bucket.
+  const grouped = useMemo(() => {
+    const map = new Map<string, { label: string; entries: ThinkingEntry[] }>()
+    for (const entry of history) {
+      if (entry.day === undefined) continue
+      const id = bucketId(entry.day, entry.phase)
+      const existing = map.get(id)
+      if (existing) {
+        existing.entries.unshift(entry) // newest first within the bucket
+      } else {
+        map.set(id, { label: dayLabel(entry.day, entry.phase), entries: [entry] })
+      }
+    }
+    // Sort buckets by their day value ascending; night-before-day on same day
+    // value is preserved by the bucket id's n/d suffix ordering naturally.
+    return Array.from(map.entries())
+      .map(([id, group]) => ({ id, ...group }))
+      .sort((a, b) => {
+        const [ad] = a.id.split(':')
+        const [bd] = b.id.split(':')
+        return Number(ad) - Number(bd)
+      })
+  }, [history])
+
+  // Ungrouped (no day) history entries — legacy/edge case, shown last.
+  const ungrouped = useMemo(
+    () => history.filter((e) => e.day === undefined).reverse(),
+    [history],
+  )
 
   useEffect(() => {
     const el = historyRef.current
     if (!el) return
     const nearTop = el.scrollTop <= SCROLL_THRESHOLD_PX
-    if (nearTop && historyEntries.length > 0) {
-      el.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }, [historyEntries.length, currentEntries.length])
+    if (nearTop) el.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [grouped.length, currentEntries.length])
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2" data-testid="werewolf-thinking-log">
@@ -160,7 +208,7 @@ export function WerewolfThinkingLog() {
         <div className="thin-scrollbar max-h-[42%] shrink-0 overflow-y-auto rounded-xl border border-cyan-300/20 bg-cyan-300/[0.06] p-3">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">实时思考</span>
-            <span className="text-[10px] text-muted-foreground">Day {day}{phase ? ` · ${phase}` : ''}</span>
+            <span className="text-[10px] text-muted-foreground">{dayLabel(day, phase ?? undefined)}</span>
           </div>
           <ul className="space-y-2">
             {currentEntries.map((entry) => (
@@ -174,17 +222,38 @@ export function WerewolfThinkingLog() {
         ref={historyRef}
         className="thin-scrollbar min-h-0 flex-1 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/45 p-3 pr-2 text-xs"
       >
-        {historyEntries.length === 0 && currentEntries.length === 0 ? (
+        {grouped.length === 0 && ungrouped.length === 0 && currentEntries.length === 0 ? (
           <div className="text-muted-foreground">等待思考流...</div>
         ) : (
-          <ul className="space-y-2">
-            {historyEntries.map((entry, idx) => (
-              <ThinkingEntryCard
-                key={`${entry.agentId}-${entry.at}-${idx}`}
-                entry={{ agentId: entry.agentId, displayName: entry.displayName, text: entry.text }}
-              />
+          <div className="space-y-4">
+            {grouped.map((group) => (
+              <div key={group.id}>
+                <div className="sticky top-0 z-10 mb-2 rounded-md border border-cyan-300/15 bg-slate-800/95 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                  {group.label}
+                </div>
+                <ul className="space-y-2">
+                  {group.entries.map((entry, idx) => (
+                    <ThinkingEntryCard
+                      key={`${entry.agentId}-${entry.at}-${idx}`}
+                      entry={entry}
+                    />
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+            {ungrouped.length > 0 ? (
+              <div>
+                <div className="sticky top-0 z-10 mb-2 rounded-md border border-white/10 bg-slate-800/95 px-2 py-1 text-left text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  其他
+                </div>
+                <ul className="space-y-2">
+                  {ungrouped.map((entry, idx) => (
+                    <ThinkingEntryCard key={`x-${entry.agentId}-${entry.at}-${idx}`} entry={entry} />
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
         )}
       </div>
     </div>

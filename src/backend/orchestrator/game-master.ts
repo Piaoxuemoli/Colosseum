@@ -127,6 +127,13 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
             typeof (state as Partial<PokerState>).handNumber === 'number'
               ? (state as Partial<PokerState>).handNumber
               : 0,
+          // Werewolf has no "hand"; carry day + phase so the spectator UI can
+          // group reasoning by「第 N 夜 / 第 N 天」. Read from the pre-action
+          // `state` (the world the agent reasoned about), which is accurate
+          // because `s.day += 1` only happens inside `applyAction`'s phase
+          // transition. Poker leaves these undefined.
+          day: match.gameType === 'werewolf' ? (state as WerewolfState).day : undefined,
+          phase: match.gameType === 'werewolf' ? (state as WerewolfState).phase : undefined,
           text: thinkingText,
         },
         visibility: 'public',
