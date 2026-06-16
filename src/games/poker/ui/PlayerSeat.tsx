@@ -5,9 +5,9 @@ import type { Placement } from '@floating-ui/react'
 import { motion } from 'framer-motion'
 import { LoaderCircle } from 'lucide-react'
 import { Badge } from '@/frontend/components/ui/badge'
+import { ThinkingBubble } from '@/frontend/components/match/ThinkingBubble'
 import type { PokerUiPlayer } from '@/frontend/store/match-view-store'
 import { PlayingCard } from './PlayingCard'
-import { ThinkingBubble } from './ThinkingBubble'
 import {
   bubblePlacementForSeat,
   shouldKeepBubbleOpen,
