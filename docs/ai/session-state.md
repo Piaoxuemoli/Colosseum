@@ -10,6 +10,7 @@
 - Current phase: Phase 4 Task 1–5 完成(已部署到 `http://43.156.230.108`)
 - Current task: Phase 4 Task 6 (M7 manual smoke checklist,生产部署已复测;仍建议用户跑一轮带真实 key 的 UI 对局)
 - 生产部署:`http://43.156.230.108/`,栈 = nextjs(colosseum:prod) + redis:7-alpine + caddy:2-alpine,SQLite on `/data` 卷。
+- **A2UI 配置页接入（分支 `feature/a2ui-config-page`，Claude 独立版）**：spec `docs/superpowers/specs/2026-06-16-a2ui-config-page-design-claude.md`、plan `docs/superpowers/plans/2026-06-16-a2ui-config-page-claude.md`。方案 B（官方 `@a2ui/react@0.10.0` + `@a2ui/web_core` + `colosseumCatalog` + 每游戏 `.a2ui/`）。已交付：静态渲染核心 `src/frontend/components/a2ui/static-surface.tsx`、catalog（basicCatalog + AgentPicker/KeyCheckPanel stub）、`/a2ui-playground` 组件测试工具（左粘 surface JSON / 右实时渲染）、德扑 `.a2ui/`（surface+schema+defaults+handle+manifest）+ 插件注册、`A2UIConfigSurface`、kill-switch（`NEXT_PUBLIC_A2UI_CONFIG=on`，默认关，`src/frontend/lib/client/a2ui-flag.ts`）、surface 构建校验器 `scripts/a2ui/validate-surfaces.mjs`（`npm run check:surfaces`，已并入 `npm run check`）。`npm run check` 全过（surfaces/lint/typecheck/build）。kill-switch 默认关 → 旧表单为零风险默认路径。已知 stub：AgentPicker/KeyCheckPanel 为占位，A2UI 路径不含 keyring（旧表单仍为可用路径）。zod 3/4 经 `zod3` alias 共存。`.a2ui/` 点目录构建期解析已验证通过。
 
 ## Last Known Status
 

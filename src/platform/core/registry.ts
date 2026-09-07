@@ -1,8 +1,15 @@
 import type { GameEngine } from '@/platform/engine/contracts'
 import type { ApplyActionResult, BoundaryKind } from '@/platform/engine/contracts'
 import type { MemoryContextSnapshot, MemoryModule } from '@/platform/memory/contracts'
+import type { ZodTypeAny } from 'zod'
 import type { GameEvent } from './types'
 import type { GameType } from './types'
+import type {
+  A2UIManifest,
+  ConfigHandle,
+  SurfaceDefaults,
+  SurfaceDefinition,
+} from './a2ui-types'
 
 export type GameModule = {
   gameType: GameType
@@ -15,6 +22,13 @@ export type GameModule = {
   publicStateEvent?: (state: unknown) => GameEvent
   continueAfterBoundary?: (state: unknown, boundary: BoundaryKind) => ApplyActionResult<unknown> | null
   requestStopAfterHand?: (state: unknown) => unknown
+  // ── A2UI 声明式配置页（可选；未提供则该游戏无声明式配置页）──
+  // 详见 spec: docs/superpowers/specs/2026-06-16-a2ui-config-page-design-claude.md
+  configSurface?: SurfaceDefinition
+  configSchema?: ZodTypeAny
+  configDefaults?: SurfaceDefaults
+  configHandle?: ConfigHandle
+  configManifest?: A2UIManifest
 }
 
 export interface PlayerContextBuilder {
