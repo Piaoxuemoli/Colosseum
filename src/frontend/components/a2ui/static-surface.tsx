@@ -7,7 +7,7 @@
  * 捕获生成的 SurfaceModel，交给官方 <A2uiSurface> 渲染。
  * 配置页（A2UIConfigSurface）与组件测试工具（SurfacePlayground）共用本核心。
  *
- * 详见 spec: docs/superpowers/specs/2026-06-16-a2ui-config-page-design-claude.md（方案 B / D2 / D3）
+ * 详见 spec: docs/specs/2026-06-16-a2ui-config-page-design-claude.md（方案 B / D2 / D3）
  */
 
 import { useEffect, useRef, useState } from 'react'

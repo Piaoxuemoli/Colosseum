@@ -1,4 +1,5 @@
 # Phase 3-3 — Moderator Agent + GM 狼人杀分支 + Plugin 注册
+> 状态：已完成并合入 main（2026-05/06 期间交付；checkbox 于 2026-09-07 文档重构时按 session-state 验证记录统一勾选）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
@@ -68,7 +69,7 @@ type WerewolfEventKind =
   | 'werewolf/gameEnd'           // public
 ```
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/games/werewolf/events.ts
@@ -104,7 +105,7 @@ export function visibilityForKind(kind: WerewolfEventKind, opts: { actorAgentId:
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -130,7 +131,7 @@ describe('visibilityForKind', () => {
 Run: `npx vitest run tests/src/games/werewolf/events.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/events.ts tests/src/games/werewolf/events.test.ts
@@ -148,7 +149,7 @@ git commit -m "feat(p3-3): werewolf event kinds + visibility rules"
 
 **Context:** Moderator 输出主持词（≤80 字），只看最近 N 条 public + role-restricted（对所有人公开）事件，不读任何玩家记忆。
 
-- [ ] **Step 1: moderator-context.ts**
+- [x] **Step 1: moderator-context.ts**
 
 ```typescript
 // src/games/werewolf/agent/moderator-context.ts
@@ -183,7 +184,7 @@ export function buildModeratorContext(i: ModeratorContextInput): { systemMessage
 }
 ```
 
-- [ ] **Step 2: moderator-parser.ts**
+- [x] **Step 2: moderator-parser.ts**
 
 ```typescript
 // src/games/werewolf/agent/moderator-parser.ts
@@ -201,7 +202,7 @@ export function parseModeratorResponse(raw: string): ModeratorParseResult {
 }
 ```
 
-- [ ] **Step 3: 测试**
+- [x] **Step 3: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -240,7 +241,7 @@ describe('parseModeratorResponse', () => {
 Run: `npx vitest run tests/src/games/werewolf/moderator-context.test.ts`
 Expected: PASS。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/games/werewolf/agent/moderator-context.ts src/games/werewolf/agent/moderator-parser.ts tests/src/games/werewolf/moderator-context.test.ts
@@ -258,7 +259,7 @@ git commit -m "feat(p3-3): moderator context builder + parser"
 
 **Context:** 把 engine / player + moderator context / parser / bot / memory 聚合到一个 plugin 对象。
 
-- [ ] **Step 1: plugin.ts**
+- [x] **Step 1: plugin.ts**
 
 ```typescript
 // src/games/werewolf/plugin.ts
@@ -289,7 +290,7 @@ export const werewolfPlugin: GamePlugin = {
 } as any
 ```
 
-- [ ] **Step 2: 注册**
+- [x] **Step 2: 注册**
 
 ```typescript
 // src/games/index.ts
@@ -303,7 +304,7 @@ export function registerAllGames() {
 }
 ```
 
-- [ ] **Step 3: 测试**
+- [x] **Step 3: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -324,7 +325,7 @@ describe('werewolfPlugin', () => {
 Run: `npx vitest run tests/src/games/werewolf/plugin.test.ts`
 Expected: PASS。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/games/werewolf/plugin.ts src/games/index.ts tests/src/games/werewolf/plugin.test.ts
@@ -342,7 +343,7 @@ git commit -m "feat(p3-3): register werewolf plugin"
 
 **Context:** match 创建时如果未指定 moderator，用系统默认的 "SystemJudge" agent（一条 kind=moderator 的 agents 行）。profile 用一个特定 kind='moderator' profile（对应系统默认 provider，比如用和 admin 同一 profile）。
 
-- [ ] **Step 1: seed 脚本**
+- [x] **Step 1: seed 脚本**
 
 ```typescript
 // db/seeds/default-moderator.ts
@@ -380,7 +381,7 @@ export async function ensureDefaultModerator() {
 }
 ```
 
-- [ ] **Step 2: CLI entry**
+- [x] **Step 2: CLI entry**
 
 ```typescript
 // scripts/seed.ts
@@ -393,7 +394,7 @@ ensureDefaultModerator().then(() => { console.log('seed ok'); process.exit(0) })
 "scripts": { "db:seed": "tsx scripts/seed.ts" }
 ```
 
-- [ ] **Step 3: 测试 / 手动运行**
+- [x] **Step 3: 测试 / 手动运行**
 
 ```bash
 npm run db:push && npm run db:seed
@@ -401,7 +402,7 @@ npm run db:push && npm run db:seed
 
 Expected: 输出 `seed ok`；再次运行不报错（幂等）。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add db/seeds/default-moderator.ts scripts/seed.ts package.json
@@ -425,7 +426,7 @@ git commit -m "feat(p3-3): default system moderator seed"
   3. 否则：请求 actor Agent（走 A2A client，同 poker 一样），得到 action → `applyAction` → 发布对应 event（带 visibility）→ 自触发下个 tick
   4. `isComplete(state)` → 结算 + dropMatch(key-cache) + 调每位 agent 的 `memoryModule.settleMatch`
 
-- [ ] **Step 1: gm-werewolf.ts 骨架**
+- [x] **Step 1: gm-werewolf.ts 骨架**
 
 ```typescript
 // src/backend/orchestrator/gm-werewolf.ts
@@ -632,7 +633,7 @@ function advanceAndNarrate(state: any) {
 
 **注意：** 本 plan 留下几个 TODO（`hintForPhase` 详细 hint、`recentPublicEvents` 查询实现）——分别见 Step 2 / 3。
 
-- [ ] **Step 2: 补 `event-query.ts`**
+- [x] **Step 2: 补 `event-query.ts`**
 
 ```typescript
 // src/backend/orchestrator/event-query.ts
@@ -648,7 +649,7 @@ export async function recentPublicEvents(matchId: string, limit = 8) {
 }
 ```
 
-- [ ] **Step 3: gm.ts dispatch**
+- [x] **Step 3: gm.ts dispatch**
 
 ```typescript
 // src/backend/orchestrator/gm.ts
@@ -663,7 +664,7 @@ export async function tickMatch(matchId: string) {
 }
 ```
 
-- [ ] **Step 4: 测试（mock agent + mock moderator）**
+- [x] **Step 4: 测试（mock agent + mock moderator）**
 
 ```typescript
 import { describe, it, expect, vi } from 'vitest'
@@ -688,7 +689,7 @@ describe('tickWerewolf', () => {
 Run: `npx vitest run tests/orchestrator/gm-werewolf.test.ts`
 Expected: PASS。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/backend/orchestrator/gm-werewolf.ts src/backend/orchestrator/event-query.ts src/backend/orchestrator/gm.ts tests/orchestrator/gm-werewolf.test.ts
@@ -703,7 +704,7 @@ git commit -m "feat(p3-3): GM werewolf tick branch + dispatch"
 - Modify: `src/app/api/matches/route.ts`（或相应的 match-lifecycle）
 - Modify: `src/backend/orchestrator/match-lifecycle.ts`
 
-- [ ] **Step 1: 校验函数**
+- [x] **Step 1: 校验函数**
 
 ```typescript
 // src/backend/orchestrator/match-lifecycle.ts 内部
@@ -718,7 +719,7 @@ export function validateWerewolfCreate(input: { agents: string[]; moderatorAgent
 2. 调 `validateWerewolfCreate`
 3. 创建 match，`state = werewolfEngine.init({...})`
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 // tests/api/matches-create-werewolf.test.ts
@@ -726,7 +727,7 @@ it('creates a werewolf match with default moderator when not specified', async (
 it('rejects werewolf match with 5 agents', async () => { /* ... */ })
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/app/api/matches/route.ts src/backend/orchestrator/match-lifecycle.ts tests/api/matches-create-werewolf.test.ts
@@ -737,12 +738,12 @@ git commit -m "feat(p3-3): werewolf match creation validation"
 
 ## Done criteria (Phase 3-3)
 
-- [ ] `src/games/werewolf/events.ts` visibility 规则单测全绿
-- [ ] Moderator ContextBuilder / Parser 单测全绿
-- [ ] Werewolf plugin 注册到 registry
-- [ ] 默认系统 moderator seed 脚本可 idempotent 运行
-- [ ] GM `tickWerewolf` 能分别处理 boundary / action 两种 tick
-- [ ] match 创建对 gameType=werewolf 做必要校验
-- [ ] lint / tsc 全绿
+- [x] `src/games/werewolf/events.ts` visibility 规则单测全绿
+- [x] Moderator ContextBuilder / Parser 单测全绿
+- [x] Werewolf plugin 注册到 registry
+- [x] 默认系统 moderator seed 脚本可 idempotent 运行
+- [x] GM `tickWerewolf` 能分别处理 boundary / action 两种 tick
+- [x] match 创建对 gameType=werewolf 做必要校验
+- [x] lint / tsc 全绿
 
 完成后进入 **Phase 3-4 · Werewolf UI**。

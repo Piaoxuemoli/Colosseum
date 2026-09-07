@@ -10,7 +10,7 @@ import { log } from '@/platform/telemetry/logger'
  *   1. The probe is a trivial round-trip; the SDK's model/parse machinery is
  *      unnecessary complexity.
  *   2. `ai@5` + `@ai-sdk/openai-compatible@2.x` currently mismatch on
- *      LanguageModelV2/V3 — see `docs/ai/session-state.md` "SDK / Plan Drift
+ *      LanguageModelV2/V3 — see `docs/session-state.md` "SDK / Plan Drift
  *      Notes". The SDK throws at runtime even though TS compiles.
  *
  * The API key is only held in memory during the request and is **never**

@@ -4,14 +4,16 @@
 
 Colosseum 是一个纯 AI 博弈竞技平台。用户配置 LLM Profile，创建比赛，观看多个 Agent 通过 A2A 协议自主博弈，赛后查看排名、筹码图和思考链日志。
 
-当前仓库是重写版。`old/` 是旧项目归档，只能作为游戏规则、交互和视觉参考；除非用户明确要求，不在 `old/` 内继续开发。
+当前仓库处于 R0 重建期：需求权威在 `docs/prd/`，实现层将按 PRD 逐任务重构；现有 `src/` 不是基线，只是现存。
 
 ## 必读材料
 
-- 简要设计：`docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`
-- 完整 spec：`docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`
-- 实施 plan：`docs/superpowers/plans/`
-- 长任务状态：`docs/ai/session-state.md`
+- 文档总入口：`docs/INDEX.md`
+- 需求权威（PRD、路线图、设计体系）：`docs/prd/`
+- 历史简要设计（归档）：`docs/legacy/2026-05-06-colosseum-rewrite-brief.md`
+- 历史完整 spec（归档）：`docs/legacy/2026-05-06-colosseum-rewrite-design.md`
+- 历史 plan（归档）：`docs/legacy/plans/`
+- 长任务状态：`docs/session-state.md`
 - 部署 Skill：`.kimi-code/skills/deployment/SKILL.md`
 
 ## 目录结构
@@ -25,8 +27,7 @@ Colosseum 是一个纯 AI 博弈竞技平台。用户配置 LLM Profile，创建
 │   ├── platform/         # 基础设施：core、db、redis、llm、telemetry、memory、engine
 │   └── games/            # 游戏自治包
 ├── ops/                  # 部署与开发环境
-├── docs/                 # 文档
-├── archive/              # 归档
+├── docs/                 # 文档（入口 docs/INDEX.md）
 └── package.json 等根文件
 ```
 

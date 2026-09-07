@@ -1,4 +1,5 @@
 # Phase 3-2 — 狼人杀 Agent + 三层记忆（beliefState 外化）
+> 状态：已完成并合入 main（2026-05/06 期间交付；checkbox 于 2026-09-07 文档重构时按 session-state 验证记录统一勾选）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
@@ -44,7 +45,7 @@ Colosseum/
 **Files:**
 - Create: `src/games/werewolf/agent/types.ts`
 
-- [ ] **Step 1: 类型（严格对齐 spec 6.4）**
+- [x] **Step 1: 类型（严格对齐 spec 6.4）**
 
 ```typescript
 // src/games/werewolf/agent/types.ts
@@ -115,7 +116,7 @@ export interface WerewolfSemanticProfile {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src/games/werewolf/agent/types.ts
@@ -137,7 +138,7 @@ git commit -m "feat(p3-2): werewolf memory types"
 - 白天发言：固定模板 "我是 {claimedRole}，还在观察。"
 - 投票：随机投一个非自己的活人（30% 弃权）
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/games/werewolf/agent/werewolf-bot.ts
@@ -183,7 +184,7 @@ function pick<T>(arr: T[], rng: () => number): T | undefined {
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -225,7 +226,7 @@ describe('decideWerewolfBot', () => {
 Run: `npx vitest run tests/src/games/werewolf/agent/werewolf-bot.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/agent/werewolf-bot.ts tests/src/games/werewolf/agent/werewolf-bot.test.ts
@@ -257,7 +258,7 @@ parser 产出：
 }
 ```
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/games/werewolf/agent/werewolf-parser.ts
@@ -300,7 +301,7 @@ function extract(raw: string, tag: string): string | null {
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -331,7 +332,7 @@ describe('parseWerewolfResponse', () => {
 Run: `npx vitest run tests/src/games/werewolf/agent/werewolf-parser.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/agent/werewolf-parser.ts tests/src/games/werewolf/agent/werewolf-parser.test.ts
@@ -348,7 +349,7 @@ git commit -m "feat(p3-2): werewolf response parser with belief extraction"
 
 **Context:** 输出中文 system+user。system 中强制指定输出格式 + 角色专属私密信息 + 当前信念分布。
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/games/werewolf/agent/werewolf-context.ts
@@ -439,7 +440,7 @@ function formatSemantic(s: Record<string, WerewolfSemanticProfile>): string {
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -490,7 +491,7 @@ describe('buildWerewolfContext', () => {
 Run: `npx vitest run tests/src/games/werewolf/agent/werewolf-context.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/agent/werewolf-context.ts tests/src/games/werewolf/agent/werewolf-context.test.ts
@@ -512,7 +513,7 @@ git commit -m "feat(p3-2): werewolf context builder (role-specific private info)
 
 Working 存 Redis；Episodic / Semantic 存 DB (JSONB)。
 
-- [ ] **Step 1: 接口实现骨架**
+- [x] **Step 1: 接口实现骨架**
 
 ```typescript
 // src/games/werewolf/agent/werewolf-memory.ts
@@ -667,7 +668,7 @@ async function updateSemantic(observer: string, ep: WerewolfEpisodicEntry) {
 
 （`werewolfEpisodic` / `werewolfSemantic` 两张表需在 `db/schema.ts` 补；定义字段：`id uuid PK, matchId text, observer text, targetAgentId text?, data jsonb, createdAt timestamp`。这一 step 可作为独立 sub-step，见 Step 2。）
 
-- [ ] **Step 2: 补 schema**
+- [x] **Step 2: 补 schema**
 
 在 `db/schema.ts` 增：
 
@@ -690,7 +691,7 @@ export const werewolfSemantic = pgTable('werewolf_semantic', {
 
 运行 `npm run db:push` 应用到 SQLite dev。
 
-- [ ] **Step 3: 测试（Redis/DB 用 mock 或真实 docker）**
+- [x] **Step 3: 测试（Redis/DB 用 mock 或真实 docker）**
 
 ```typescript
 import { describe, it, expect, beforeAll } from 'vitest'
@@ -716,7 +717,7 @@ describe('werewolfMemory', () => {
 Run: `npx vitest run tests/src/games/werewolf/agent/werewolf-memory.test.ts`
 Expected: PASS（需 docker compose redis / dev db）。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/games/werewolf/agent/werewolf-memory.ts db/schema.ts tests/src/games/werewolf/agent/werewolf-memory.test.ts
@@ -727,12 +728,12 @@ git commit -m "feat(p3-2): werewolf memory module (working/episodic/semantic)"
 
 ## Done criteria (Phase 3-2)
 
-- [ ] Memory 类型对齐 spec 6.4
-- [ ] Bot 策略覆盖 5 阶段
-- [ ] Parser 能提取 thinking / belief / action 三段
-- [ ] ContextBuilder 按角色注入私密信息
-- [ ] Memory 三层读写通过单测
-- [ ] DB schema 补两张表，`db:push` 成功
-- [ ] lint / tsc 全绿
+- [x] Memory 类型对齐 spec 6.4
+- [x] Bot 策略覆盖 5 阶段
+- [x] Parser 能提取 thinking / belief / action 三段
+- [x] ContextBuilder 按角色注入私密信息
+- [x] Memory 三层读写通过单测
+- [x] DB schema 补两张表，`db:push` 成功
+- [x] lint / tsc 全绿
 
 完成后进入 **Phase 3-3 · Moderator + GM 分支**。

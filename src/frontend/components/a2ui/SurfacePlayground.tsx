@@ -6,7 +6,7 @@
  * 左侧：粘贴/编辑 surface JSON。
  * 右侧：用 colosseumCatalog + 官方渲染器实时渲染，校验组件是否正常工作。
  *
- * 详见 spec D5/T5：docs/superpowers/specs/2026-06-16-a2ui-config-page-design-claude.md
+ * 详见 spec D5/T5：docs/specs/2026-06-16-a2ui-config-page-design-claude.md
  */
 
 import { useEffect, useMemo, useState } from 'react'

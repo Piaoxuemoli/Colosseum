@@ -1,4 +1,5 @@
 # Phase 2-2 — 并发多对局 + 观测性
+> 状态：已完成并合入 main（2026-05/06 期间交付；checkbox 于 2026-09-07 文档重构时按 session-state 验证记录统一勾选）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
@@ -55,7 +56,7 @@ Colosseum/
 
 **Context:** P1 的 token 是内存 Map，进程重启会丢 + 不利于多实例。改为 HMAC-SHA256，payload 含 `matchId + exp`。
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/backend/auth/match-token.ts
@@ -90,7 +91,7 @@ export function verifyMatchToken(token: string | null | undefined, matchId: stri
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect, beforeAll } from 'vitest'
@@ -122,7 +123,7 @@ describe('match-token HMAC', () => {
 Run: `npx vitest run tests/auth/match-token.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/backend/auth/match-token.ts tests/auth/match-token.test.ts
@@ -139,7 +140,7 @@ git commit -m "feat(p2-2): HMAC-signed match-token"
 
 **Context:** in-process `Map` 缓存，match 结束或 2 小时 TTL 后清理。
 
-- [ ] **Step 1: 升级 key-cache**
+- [x] **Step 1: 升级 key-cache**
 
 ```typescript
 // src/backend/agent/key-cache.ts
@@ -170,7 +171,7 @@ export function _stats() {
 }
 ```
 
-- [ ] **Step 2: match 结束钩子**
+- [x] **Step 2: match 结束钩子**
 
 在 `src/backend/orchestrator/match-lifecycle.ts` 的 `settleMatch(matchId)` 成功后调用：
 
@@ -181,7 +182,7 @@ dropMatch(matchId)
 logger.info({ event: 'match.settled', matchId })
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/backend/agent/key-cache.ts src/backend/orchestrator/match-lifecycle.ts
@@ -197,7 +198,7 @@ git commit -m "feat(p2-2): key-cache TTL + cleanup on match settle"
 
 **Context:** 不引入 pino，用轻量自写：每行 JSON，字段 `ts/level/msg/...extra`。避免破坏 stdout 流。
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // lib/obs/logger.ts
@@ -226,7 +227,7 @@ export const logger = {
 }
 ```
 
-- [ ] **Step 2: 在 GM 关键点埋点**
+- [x] **Step 2: 在 GM 关键点埋点**
 
 在 `src/backend/orchestrator/gm.ts` 替换 `console.log` 为 `logger.info`：
 - `tick.start` / `tick.end`（附 matchId + handNumber + phase）
@@ -234,7 +235,7 @@ export const logger = {
 - `agent.fallback`（errorKind）
 - `match.settled`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add lib/obs/logger.ts src/backend/orchestrator/gm.ts
@@ -251,7 +252,7 @@ git commit -m "feat(p2-2): JSON logger + GM instrumentation"
 - Create: `src/app/api/_metrics/route.ts`
 - Create: `src/app/api/_health/route.ts`
 
-- [ ] **Step 1: 实现 metrics**
+- [x] **Step 1: 实现 metrics**
 
 ```typescript
 // lib/obs/metrics.ts
@@ -290,7 +291,7 @@ function key(name: string, labels?: Record<string, string>): string {
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -319,7 +320,7 @@ describe('metrics', () => {
 Run: `npx vitest run tests/obs/metrics.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: API routes**
+- [x] **Step 3: API routes**
 
 ```typescript
 // src/app/api/_metrics/route.ts
@@ -336,7 +337,7 @@ export async function GET() {
 }
 ```
 
-- [ ] **Step 4: GM 埋点**
+- [x] **Step 4: GM 埋点**
 
 在 `src/backend/orchestrator/gm.ts`：
 
@@ -354,7 +355,7 @@ observe('agent.request_ms', ms, { agentId })
 inc('agent.fallback', 1, { kind: errorKind })
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/obs/metrics.ts src/app/api/_metrics src/app/api/_health tests/obs/metrics.test.ts src/backend/orchestrator/gm.ts
@@ -370,7 +371,7 @@ git commit -m "feat(p2-2): in-process metrics + health/metrics endpoints"
 
 **Context:** 启用 `M4_MOCK_LLM=1`（P1b-5 已做），并发跑 2 个 match，每手 / 最终筹码都互不污染。
 
-- [ ] **Step 1: 测试**
+- [x] **Step 1: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -401,7 +402,7 @@ async function createAndRunMatch(opts: any): Promise<any> {
 }
 ```
 
-- [ ] **Step 2: 实现 helper + 跑**
+- [x] **Step 2: 实现 helper + 跑**
 
 把 P1b-5 Task 7 的 helper 抽到 `tests/e2e/helpers.ts`，让本文件 import。跑：
 
@@ -411,7 +412,7 @@ npx vitest run tests/e2e/concurrent-matches.test.ts
 
 Expected: PASS（可能 30-50s）。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/e2e/concurrent-matches.test.ts tests/e2e/helpers.ts
@@ -427,7 +428,7 @@ git commit -m "test(p2-2): concurrent matches isolation e2e"
 
 **Context:** P1b-4 已有 ErrorBadge。这里补：区分 `kind`（timeout/api_error/parse_fail），在 popover 里分组展示；点击可查看完整 `raw` 字段（折叠）。
 
-- [ ] **Step 1: 增强组件**
+- [x] **Step 1: 增强组件**
 
 在原 Popover 内容替换为分组：
 
@@ -466,7 +467,7 @@ return (
 )
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add components/match/ErrorBadge.tsx
@@ -480,31 +481,31 @@ git commit -m "feat(p2-2): ErrorBadge groups by kind + raw preview"
 **Files:**
 - Create: `docs/demo/phase-2-m5-checklist.md`
 
-- [ ] **Step 1: 文件**
+- [x] **Step 1: 文件**
 
 ```markdown
 # Phase 2 M5 · 合规 + 多对局 + 观测
 
 ## 合规（P2-1 已验）
-- [ ] AgentCard 可 curl
-- [ ] curl JSON-RPC message/stream 正常输出 SSE
+- [x] AgentCard 可 curl
+- [x] curl JSON-RPC message/stream 正常输出 SSE
 
 ## 多对局
-- [ ] UI 开两 tab 分别创建 6-bot match，同时进行不串扰
-- [ ] 任一 match 的 ErrorBadge 只反映自己 match 的错误
-- [ ] 任一 match 结束后另一 match 不受影响
+- [x] UI 开两 tab 分别创建 6-bot match，同时进行不串扰
+- [x] 任一 match 的 ErrorBadge 只反映自己 match 的错误
+- [x] 任一 match 结束后另一 match 不受影响
 
 ## 观测
-- [ ] `GET /api/_health` 200 + JSON
-- [ ] `GET /api/_metrics` JSON 包含 `tick.count`, `agent.request_ms`, `agent.fallback`
-- [ ] 日志是单行 JSON（grep `"event":"tick.end"` 能找到）
+- [x] `GET /api/_health` 200 + JSON
+- [x] `GET /api/_metrics` JSON 包含 `tick.count`, `agent.request_ms`, `agent.fallback`
+- [x] 日志是单行 JSON（grep `"event":"tick.end"` 能找到）
 
 ## 安全
-- [ ] MATCH_TOKEN_SECRET 未设置时服务启动抛错（或中间件拦截）
-- [ ] 过期 token 调 endpoint 返回 401
+- [x] MATCH_TOKEN_SECRET 未设置时服务启动抛错（或中间件拦截）
+- [x] 过期 token 调 endpoint 返回 401
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/demo/phase-2-m5-checklist.md
@@ -515,13 +516,13 @@ git commit -m "docs(p2-2): Phase 2 M5 checklist"
 
 ## Done criteria (Phase 2-2)
 
-- [ ] HMAC match-token 通过 4 个单测
-- [ ] key-cache TTL + cleanup
-- [ ] JSON logger + health/metrics endpoints
-- [ ] Metrics 埋点覆盖 tick / agent / fallback
-- [ ] 并发 match e2e 测试通过
-- [ ] ErrorBadge 按 kind 分组
-- [ ] M5 手动 checklist 全绿
-- [ ] `npm run lint` / `npx vitest run` 全绿
+- [x] HMAC match-token 通过 4 个单测
+- [x] key-cache TTL + cleanup
+- [x] JSON logger + health/metrics endpoints
+- [x] Metrics 埋点覆盖 tick / agent / fallback
+- [x] 并发 match e2e 测试通过
+- [x] ErrorBadge 按 kind 分组
+- [x] M5 手动 checklist 全绿
+- [x] `npm run lint` / `npx vitest run` 全绿
 
 完成后进入 **Phase 3 · Werewolf**。

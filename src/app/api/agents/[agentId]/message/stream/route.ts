@@ -43,8 +43,8 @@ const messageSchema = z.object({
 /**
  * A2A v0.3 exposes `message/stream` via JSON-RPC. Next.js route path segments
  * cannot contain a colon, so the physical path uses `/message/stream` but the
- * JSON-RPC `method` string is still `"message/stream"`. This is documented in
- * `docs/demo/a2a-compliance-check.md`.
+ * JSON-RPC `method` string is still `"message/stream"`. This was documented in
+ * the A2A compliance plan, now archived under `docs/legacy/`.
  *
  * This route accepts BOTH shapes for backward compatibility:
  * 1. Direct body  : `{ message: { taskId, role, parts } }` (legacy GM path)

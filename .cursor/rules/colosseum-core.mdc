@@ -1,11 +1,11 @@
 ---
-description: Route Colosseum tasks to the right docs/ai rule documents
+description: Route Colosseum tasks to the right docs/rules documents
 alwaysApply: true
 ---
 
 # Colosseum Rule Router
 
-Keep this rule thin. Do not duplicate detailed project conventions here; route to `docs/ai/rules/` instead.
+Keep this rule thin. Do not duplicate detailed project conventions here; route to `docs/rules/` instead.
 
 ## Always Read
 
@@ -13,13 +13,13 @@ Keep this rule thin. Do not duplicate detailed project conventions here; route t
 
 ## Read On Demand
 
-- Project context / architecture constraints: `docs/ai/rules/project-context.md`
-- Development environment / bootstrap / sync: `docs/ai/rules/development-environment.md`
-- Lint / formatting / typecheck / tests: `docs/ai/rules/linting-and-quality.md`
-- UI design / visual style / components: `docs/ai/rules/ui-style.md`
-- Frontend / backend / API / data / security: `docs/ai/rules/frontend-backend.md`
-- Specs / plans / session state: `docs/ai/rules/spec-plan-workflow.md`
-- Git branches / commits / merges: `docs/ai/rules/git-workflow.md`
+- Project context / architecture constraints: `docs/rules/project-context.md`
+- Development environment / bootstrap / sync: `docs/rules/development-environment.md`
+- Lint / formatting / typecheck / tests: `docs/rules/linting-and-quality.md`
+- UI design / visual style / components: `docs/rules/ui-style.md`
+- Frontend / backend / API / data / security: `docs/rules/frontend-backend.md`
+- Specs / plans / session state: `docs/rules/spec-plan-workflow.md`
+- Git branches / commits / merges: `docs/rules/git-workflow.md`
 - Deployment / production operations: `.kimi-code/skills/deployment/SKILL.md` + `ops/deploy/README.md`
 
 If a task touches multiple areas, read only the relevant docs before editing.

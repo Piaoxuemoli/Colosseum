@@ -5,7 +5,7 @@
  *
  * 设计期声明的静态 surface（非运行时 agent 生成）：游戏开发者在
  * `src/games/<game>/.a2ui/surface/*.json` 手写组件树，构建期静态打包进 GameModule。
- * 详见 spec: docs/superpowers/specs/2026-06-16-a2ui-config-page-design-claude.md
+ * 详见 spec: docs/specs/2026-06-16-a2ui-config-page-design-claude.md
  */
 
 /** A2UI v0.9 单个组件节点：id + 组件名 + 组件特定属性（label/value/children 等）。 */

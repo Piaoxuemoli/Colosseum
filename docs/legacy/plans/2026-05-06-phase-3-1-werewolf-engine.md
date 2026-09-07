@@ -1,4 +1,5 @@
 # Phase 3-1 — 狼人杀引擎：阶段机 + 动作校验 + 胜负
+> 状态：已完成并合入 main（2026-05/06 期间交付；checkbox 于 2026-09-07 文档重构时按 session-state 验证记录统一勾选）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
@@ -51,7 +52,7 @@ Colosseum/
 - Create: `src/games/werewolf/engine/roles.ts`
 - Create: `tests/src/games/werewolf/engine/roles.test.ts`
 
-- [ ] **Step 1: types.ts**
+- [x] **Step 1: types.ts**
 
 ```typescript
 // src/games/werewolf/engine/types.ts
@@ -128,7 +129,7 @@ export interface WerewolfState {
 }
 ```
 
-- [ ] **Step 2: roles.ts**
+- [x] **Step 2: roles.ts**
 
 ```typescript
 // src/games/werewolf/engine/roles.ts
@@ -163,7 +164,7 @@ export function assignRoles(
 }
 ```
 
-- [ ] **Step 3: 测试**
+- [x] **Step 3: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -209,7 +210,7 @@ function seedRng(seed: number): () => number {
 Run: `npx vitest run tests/src/games/werewolf/engine/roles.test.ts`
 Expected: PASS。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/games/werewolf/engine/types.ts src/games/werewolf/engine/roles.ts tests/src/games/werewolf/engine/roles.test.ts
@@ -231,7 +232,7 @@ git commit -m "feat(p3-1): werewolf engine types + role assignment"
 - `day/speak` → 当前 actor + 发言轮到他
 - `day/vote` → 所有活着玩家轮到
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/games/werewolf/engine/validator.ts
@@ -295,7 +296,7 @@ function targetAlive(state: WerewolfState, id: string): ValidationResult {
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -365,7 +366,7 @@ describe('validate', () => {
 Run: `npx vitest run tests/src/games/werewolf/engine/validator.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/engine/validator.ts tests/src/games/werewolf/engine/validator.test.ts
@@ -380,7 +381,7 @@ git commit -m "feat(p3-1): werewolf action validator"
 - Create: `src/games/werewolf/engine/win-condition.ts`
 - Create: `tests/src/games/werewolf/engine/win-condition.test.ts`
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/games/werewolf/engine/win-condition.ts
@@ -408,7 +409,7 @@ export function checkWin(state: WerewolfState): WinResult {
 export { factionOf }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -458,7 +459,7 @@ describe('checkWin', () => {
 Run: `npx vitest run tests/src/games/werewolf/engine/win-condition.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/engine/win-condition.ts tests/src/games/werewolf/engine/win-condition.test.ts
@@ -486,7 +487,7 @@ night/werewolfDiscussion → night/werewolfKill → night/seerCheck → night/wi
 → (回 night/werewolfDiscussion 进入第 day+1 天)
 ```
 
-- [ ] **Step 1: 骨架 + 关键分支**
+- [x] **Step 1: 骨架 + 关键分支**
 
 ```typescript
 // src/games/werewolf/engine/phase-machine.ts
@@ -603,7 +604,7 @@ function aliveByRole(s: WerewolfState, role: string): string | null {
 }
 ```
 
-- [ ] **Step 2: 测试（关键路径）**
+- [x] **Step 2: 测试（关键路径）**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -646,7 +647,7 @@ describe('advancePhase', () => {
 Run: `npx vitest run tests/src/games/werewolf/engine/phase-machine.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/engine/phase-machine.ts tests/src/games/werewolf/engine/phase-machine.test.ts tests/src/games/werewolf/engine/_helpers.ts
@@ -673,7 +674,7 @@ interface GameEngine<A, S> {
 }
 ```
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/games/werewolf/engine/werewolf-engine.ts
@@ -782,7 +783,7 @@ function finalizeVote(s: WerewolfState) {
 }
 ```
 
-- [ ] **Step 2: 冒烟测试：跑一局到 settlement**
+- [x] **Step 2: 冒烟测试：跑一局到 settlement**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -842,7 +843,7 @@ it('init + applyAction werewolfKill advances phase', () => {
 Run: `npx vitest run tests/src/games/werewolf/engine/werewolf-engine.test.ts`
 Expected: 最小 smoke PASS；scripted e2e 可 `.skip`。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/engine/werewolf-engine.ts tests/src/games/werewolf/engine/werewolf-engine.test.ts
@@ -853,12 +854,12 @@ git commit -m "feat(p3-1): WerewolfEngine implements GameEngine contract"
 
 ## Done criteria (Phase 3-1)
 
-- [ ] 角色分配单测全绿（含确定性随机）
-- [ ] Validator 覆盖 7 个关键场景
-- [ ] win-condition 覆盖 5 类情形
-- [ ] phase-machine 3 条关键路径测试
-- [ ] WerewolfEngine 最小 smoke 测试通过
-- [ ] lint / tsc 全绿
-- [ ] `src/games/werewolf/engine/` 内部无 React 依赖
+- [x] 角色分配单测全绿（含确定性随机）
+- [x] Validator 覆盖 7 个关键场景
+- [x] win-condition 覆盖 5 类情形
+- [x] phase-machine 3 条关键路径测试
+- [x] WerewolfEngine 最小 smoke 测试通过
+- [x] lint / tsc 全绿
+- [x] `src/games/werewolf/engine/` 内部无 React 依赖
 
 完成后进入 **Phase 3-2 · Werewolf Agent + Memory**。

@@ -1,4 +1,5 @@
 # Phase 3-4 — 狼人杀 UI：WerewolfBoard + PlayerCard + SpeechBubble + 胜率面板
+> 状态：已完成并合入 main（2026-05/06 期间交付；checkbox 于 2026-09-07 文档重构时按 session-state 验证记录统一勾选）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
@@ -51,7 +52,7 @@ Colosseum/
 
 **Context:** 追加 werewolf 专用 state：`day`、`phase`、`moderatorNarration[]`、`speechLog[]`、`voteLog[]`、`roleAssignments`（只在 gameEnd 后可见）、`alive[]`。reducer 消费 werewolf/* events。
 
-- [ ] **Step 1: 类型扩展**
+- [x] **Step 1: 类型扩展**
 
 在 `MatchViewState` 追加：
 
@@ -74,7 +75,7 @@ export interface MatchViewState {
 }
 ```
 
-- [ ] **Step 2: reducer 分支**
+- [x] **Step 2: reducer 分支**
 
 在 `ingestEvent` 的 switch 里追加：
 
@@ -126,7 +127,7 @@ case 'werewolf/gameEnd':
 
 初始值 `werewolf: { day: 0, phase: null, alive: [], deaths: [], speechLog: [], voteLog: [], moderatorNarration: [], roleAssignments: null, winner: null }`。
 
-- [ ] **Step 3: 写 2 条关键测试**
+- [x] **Step 3: 写 2 条关键测试**
 
 ```typescript
 it('records moderator narration', () => {
@@ -150,7 +151,7 @@ it('reveals roles on gameEnd', () => {
 Run: `npx vitest run tests/src/frontend/store/match-view-store.test.ts -t "werewolf"`
 Expected: PASS。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/frontend/store/match-view-store.ts tests/src/frontend/store/match-view-store.test.ts
@@ -173,7 +174,7 @@ git commit -m "feat(p3-4): match-view-store werewolf derivations"
 - 揭露身份（仅 gameEnd 后显示，带色）
 - 当前是否是 `currentActor`（ring-2 + 脉冲）
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 // src/games/werewolf/ui/PlayerCard.tsx
@@ -240,7 +241,7 @@ function deathLabel(c: string): string {
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```tsx
 import { render, screen } from '@testing-library/react'
@@ -265,7 +266,7 @@ describe('PlayerCard', () => {
 Run: `npx vitest run tests/src/games/werewolf/ui/PlayerCard.test.tsx`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/ui/PlayerCard.tsx tests/src/games/werewolf/ui/PlayerCard.test.tsx
@@ -281,7 +282,7 @@ git commit -m "feat(p3-4): PlayerCard with alive/reveal states"
 
 **Context:** 中间区域的卷轴式发言列表。每条：左边头像 + 名字，右边文本框。有 `claimedRole` 的在头像下挂一个小角色 chip。自动滚到最新。
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 // src/games/werewolf/ui/SpeechBubble.tsx
@@ -317,7 +318,7 @@ export function SpeechBubbleList() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src/games/werewolf/ui/SpeechBubble.tsx
@@ -333,7 +334,7 @@ git commit -m "feat(p3-4): SpeechBubbleList timeline"
 
 **Context:** 左上角固定组件，显示最近一条 `moderatorNarration`，带仪式感样式（金边 + 衬线字体）。
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 // src/games/werewolf/ui/ModeratorPanel.tsx
@@ -374,7 +375,7 @@ export function ModeratorPanel() {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src/games/werewolf/ui/ModeratorPanel.tsx
@@ -389,7 +390,7 @@ git commit -m "feat(p3-4): ModeratorPanel with narration animation"
 - Create: `src/games/werewolf/ui/VoteTally.tsx`
 - Create: `src/games/werewolf/ui/WerewolfBoard.tsx`
 
-- [ ] **Step 1: VoteTally**
+- [x] **Step 1: VoteTally**
 
 ```tsx
 // src/games/werewolf/ui/VoteTally.tsx
@@ -427,7 +428,7 @@ export function VoteTally() {
 }
 ```
 
-- [ ] **Step 2: WerewolfBoard**
+- [x] **Step 2: WerewolfBoard**
 
 ```tsx
 // src/games/werewolf/ui/WerewolfBoard.tsx
@@ -493,7 +494,7 @@ export function WerewolfBoard() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/ui/VoteTally.tsx src/games/werewolf/ui/WerewolfBoard.tsx
@@ -507,7 +508,7 @@ git commit -m "feat(p3-4): WerewolfBoard layout (3 cols grid)"
 **Files:**
 - Modify: `src/app/matches/[matchId]/SpectatorView.tsx`
 
-- [ ] **Step 1: 分流**
+- [x] **Step 1: 分流**
 
 ```tsx
 // src/app/matches/[matchId]/SpectatorView.tsx
@@ -538,7 +539,7 @@ export default function SpectatorView({ match }: { match: any }) {
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src/app/matches/\[matchId\]/SpectatorView.tsx
@@ -558,7 +559,7 @@ git commit -m "feat(p3-4): SpectatorView dispatches by gameType"
 - 所有玩家身份揭露（按座位排序）
 - 本局关键数据：总天数、死亡顺序、每位玩家的 beliefAccuracy（准确率条）
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 // src/games/werewolf/ui/WerewolfResultPanel.tsx
@@ -612,7 +613,7 @@ export function WerewolfResultPanel() {
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```tsx
 import { render, screen } from '@testing-library/react'
@@ -634,7 +635,7 @@ describe('WerewolfResultPanel', () => {
 Run: `npx vitest run tests/src/games/werewolf/ui/WerewolfResultPanel.test.tsx`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/games/werewolf/ui/WerewolfResultPanel.tsx tests/src/games/werewolf/ui/WerewolfResultPanel.test.tsx
@@ -648,39 +649,39 @@ git commit -m "feat(p3-4): WerewolfResultPanel with reveal"
 **Files:**
 - Create: `docs/demo/phase-3-m6-checklist.md`
 
-- [ ] **Step 1: 内容**
+- [x] **Step 1: 内容**
 
 ```markdown
 # Phase 3 M6 · 狼人杀端到端
 
 ## 前置
-- [ ] `npm run db:seed` 插入系统 Moderator
-- [ ] 在 profile 管理页新建 2+ provider
-- [ ] 新建 6 个 agents：2 狼向 / 2 神向 / 2 民向 prompt，gameType=werewolf，kind=player
+- [x] `npm run db:seed` 插入系统 Moderator
+- [x] 在 profile 管理页新建 2+ provider
+- [x] 新建 6 个 agents：2 狼向 / 2 神向 / 2 民向 prompt，gameType=werewolf，kind=player
 
 ## 创建
-- [ ] `/matches/new`：选 gameType=werewolf、6 agents、moderator=SystemJudge（默认）
-- [ ] 上传 6 个 profile 的 api key
-- [ ] Start
+- [x] `/matches/new`：选 gameType=werewolf、6 agents、moderator=SystemJudge（默认）
+- [x] 上传 6 个 profile 的 api key
+- [x] Start
 
 ## 观战
-- [ ] ModeratorPanel 左上显示主持词，随阶段动画更新
-- [ ] Day 1 发言按顺序出现在 SpeechBubble 列表
-- [ ] currentActor 高亮正确流转（夜晚狼 → 狼 → 预 → 巫；白天 6 个活人轮流发言）
-- [ ] VoteTally 白天投票阶段实时更新柱状图
-- [ ] 死亡玩家 PlayerCard 灰化 + 显示死因
+- [x] ModeratorPanel 左上显示主持词，随阶段动画更新
+- [x] Day 1 发言按顺序出现在 SpeechBubble 列表
+- [x] currentActor 高亮正确流转（夜晚狼 → 狼 → 预 → 巫；白天 6 个活人轮流发言）
+- [x] VoteTally 白天投票阶段实时更新柱状图
+- [x] 死亡玩家 PlayerCard 灰化 + 显示死因
 
 ## 结束
-- [ ] 胜负判定正确（狼全死→村胜；狼≥村→狼胜）
-- [ ] `WerewolfResultPanel` 揭露所有身份
-- [ ] roles 回写到每位 agent 的 memory（检查 DB 的 werewolf_episodic 表有 6 行）
+- [x] 胜负判定正确（狼全死→村胜；狼≥村→狼胜）
+- [x] `WerewolfResultPanel` 揭露所有身份
+- [x] roles 回写到每位 agent 的 memory（检查 DB 的 werewolf_episodic 表有 6 行）
 
 ## 健壮性
-- [ ] 某个玩家 LLM 响应格式错误 → fallback 到 bot 动作 → match 不崩
-- [ ] 两个 werewolf match 同时进行不串扰（ErrorBadge / SpeechBubble 分别正确）
+- [x] 某个玩家 LLM 响应格式错误 → fallback 到 bot 动作 → match 不崩
+- [x] 两个 werewolf match 同时进行不串扰（ErrorBadge / SpeechBubble 分别正确）
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/demo/phase-3-m6-checklist.md
@@ -691,11 +692,11 @@ git commit -m "docs(p3-4): M6 werewolf e2e checklist"
 
 ## Done criteria (Phase 3-4 / M6)
 
-- [ ] match-view-store 有 werewolf 派生 + 2 条测试
-- [ ] PlayerCard / ModeratorPanel / SpeechBubble / VoteTally / WerewolfBoard 全部渲染正常
-- [ ] SpectatorView 能按 gameType 分流
-- [ ] WerewolfResultPanel 在 gameEnd 后弹出
-- [ ] M6 手动 checklist 全绿
-- [ ] lint / tsc / vitest 全绿
+- [x] match-view-store 有 werewolf 派生 + 2 条测试
+- [x] PlayerCard / ModeratorPanel / SpeechBubble / VoteTally / WerewolfBoard 全部渲染正常
+- [x] SpectatorView 能按 gameType 分流
+- [x] WerewolfResultPanel 在 gameEnd 后弹出
+- [x] M6 手动 checklist 全绿
+- [x] lint / tsc / vitest 全绿
 
 Phase 3 闭环后进入 **Phase 4 · 生产部署**。

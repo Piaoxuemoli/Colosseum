@@ -6,22 +6,22 @@
 
 如果用户没有指定 plan，先按优先级选择：
 
-1. 当前打开或用户提到的 `docs/superpowers/plans/*.md`
-2. `docs/ai/session-state.md` 中记录的 active plan
-3. `docs/superpowers/plans/` 下最新的 plan
+1. 当前打开或用户提到的 `docs/legacy/plans/*.md`
+2. `docs/session-state.md` 中记录的 active plan
+3. `docs/legacy/plans/` 下最新的 plan
 
 ## Command Flow
 
 1. 读取 `AGENTS.md`。
-2. 按任务类型读取 `docs/ai/rules/` 中对应规则，不要默认读取全部规则。
+2. 按任务类型读取 `docs/rules/` 中对应规则，不要默认读取全部规则。
 3. 运行开发前置检查：`npm run sync`，然后按当前阶段判断是否运行 `npm run doctor`。如果工作区不干净导致 sync 跳过，记录并继续。
 4. 读取当前 plan，以及 plan 引用的 spec 章节。
-5. 读取 `docs/ai/session-state.md`，确认当前任务、已知阻塞和上次验证结果。
+5. 读取 `docs/session-state.md`，确认当前任务、已知阻塞和上次验证结果。
 6. 找到 plan 中第一个未完成 checkbox。一次只处理一个 task，除非用户明确要求连续推进。
 7. 复述本次要改的文件和验证命令，必要时先用 todo 拆分。
 8. 先写或确认失败测试，再做最小实现。
 9. 运行该 task 指定的验证命令；如果可行，再运行局部 lint/typecheck/test。
-10. 验证通过后，更新 plan checkbox 和 `docs/ai/session-state.md`。
+10. 验证通过后，更新 plan checkbox 和 `docs/session-state.md`。
 11. 如果当前会话已允许自动分步提交，用 `npm run commit:step -- "<type>(<scope>): <summary>"` 创建 task 边界提交。
 12. 最后报告：完成内容、验证命令与结果、当前本地分支、提交哈希（如已提交）、是否已推送、下一步未完成 task。不要提示 PR / MR，除非用户明确要求。
 

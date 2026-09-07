@@ -4,7 +4,7 @@
 
 ## 标准脚本
 
-项目有 `package.json` 后，应逐步收敛到这些脚本名：
+当前 `package.json` 实际提供的脚本：
 
 ```json
 {
@@ -18,20 +18,19 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"Test suite intentionally cleared while it is rebuilt\"",
-    "test:watch": "echo \"Test suite intentionally cleared while it is rebuilt\"",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
-    "check": "npm run lint && npm run typecheck && npm run build"
+    "check:surfaces": "node scripts/a2ui/validate-surfaces.mjs",
+    "check": "npm run check:surfaces && npm run lint && npm run typecheck && npm run build"
   }
 }
 ```
 
-> 注意：当前 `test` / `test:watch` 是占位命令，因为测试套件正在重建。在 `npm test` 恢复为真实运行器之前，使用 `npm run check` 作为上线前门禁。
+> 测试体系已按 2026-09-07 重建决策整体清空，新测试+CI 体系将依据 `docs/research/` 的调研报告另立任务重建；在此之前 `npm run check` 是唯一上线门禁。
 
 如果某个阶段工具尚未安装，不要伪造通过结果；记录为“当前 Phase 尚未具备运行条件”。
 
@@ -84,9 +83,10 @@ npm run check
 
 lint/typecheck 默认忽略：
 
-- `old/**`
 - `node_modules/**`
 - `.next/**`
 - `dist/**`
 - `build/**`
 - 生成的 DB migration 快照如确实不可读，可在工具层按需忽略，但不要默认忽略业务代码。
+
+（`old/**` 与 `archive/**` 已随归档目录删除而移除，不再需要出现在忽略清单中。）

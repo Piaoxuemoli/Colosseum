@@ -6,13 +6,13 @@
 
 | 场景 | 读取文档 |
 |---|---|
-| 项目整体上下文、架构红线 | `docs/ai/rules/project-context.md` |
-| 新设备初始化、环境检测、开发前同步 | `docs/ai/rules/development-environment.md` |
-| lint、格式化、类型检查、测试与质量门禁 | `docs/ai/rules/linting-and-quality.md` |
-| UI 视觉风格、交互、组件约定 | `docs/ai/rules/ui-style.md` |
-| 前后端边界、API、数据、安全注意事项 | `docs/ai/rules/frontend-backend.md` |
-| spec/plan 写作、执行、状态更新 | `docs/ai/rules/spec-plan-workflow.md` |
-| Git 分支、提交、合入、AI git 安全边界 | `docs/ai/rules/git-workflow.md` |
+| 项目整体上下文、架构红线 | `docs/rules/project-context.md` |
+| 新设备初始化、环境检测、开发前同步 | `docs/rules/development-environment.md` |
+| lint、格式化、类型检查、测试与质量门禁 | `docs/rules/linting-and-quality.md` |
+| UI 视觉风格、交互、组件约定 | `docs/rules/ui-style.md` |
+| 前后端边界、API、数据、安全注意事项 | `docs/rules/frontend-backend.md` |
+| spec/plan 写作、执行、状态更新 | `docs/rules/spec-plan-workflow.md` |
+| Git 分支、提交、合入、AI git 安全边界 | `docs/rules/git-workflow.md` |
 | 生产部署、回滚、备份恢复、服务器运维、生产 smoke | `.kimi-code/skills/deployment/SKILL.md` + `ops/deploy/README.md` |
 | Vercel fallback 部署 | `.kimi-code/skills/deployment/SKILL.md` + `docs/deploy/vercel.md` |
 
@@ -20,5 +20,5 @@
 
 - AI 不需要默认读取所有规则。
 - 先读 `AGENTS.md`，再按任务类型读取本目录中相关文档。
-- 修改规则时优先改 `docs/ai/rules/*.md`，只在路由变化时改 `.cursor/` 或 `.claude/`。
+- 修改规则时优先改 `docs/rules/*.md`，只在路由变化时改 `.cursor/` 或 `.claude/`。
 - 修改部署流程时优先改 `.kimi-code/skills/deployment/SKILL.md`，再同步 `.cursor/commands/deploy-production.md`、`.claude/commands/deploy-production.md` 和部署 router 摘要。

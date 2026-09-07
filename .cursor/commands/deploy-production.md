@@ -10,7 +10,7 @@
 2. `.kimi-code/skills/deployment/SKILL.md`
 3. `ops/deploy/README.md`
 4. `docs/deploy/vercel.md`（仅 Vercel fallback 时）
-5. `docs/ai/session-state.md`（确认当前生产状态、已知阻塞和最近部署记录）
+5. `docs/session-state.md`（确认当前生产状态、已知阻塞和最近部署记录）
 
 ## Command Flow
 
@@ -21,7 +21,7 @@
 5. 确认敏感文件不会进入 Git 或同步包：`.env*`、`ops/private/`、SSH key、token、cookie。
 6. 生产主路径优先使用 Docker Compose + SQLite + Redis + Caddy；只有主服务器不可用或用户明确要求时使用 Vercel fallback。
 7. 部署后执行 smoke：`/api/health`、核心页面、`/api/providers`、`/api/agents?gameType=poker`，必要时跑一局最小对局。
-8. 更新 `docs/ai/session-state.md` 的生产状态、验证日志、阻塞项或漂移说明。
+8. 更新 `docs/session-state.md` 的生产状态、验证日志、阻塞项或漂移说明。
 9. 最后报告：执行动作、目标环境、验证结果、是否更新 session-state、仍需人工确认的事项。
 
 ## Guardrails
@@ -38,5 +38,5 @@
 - 动作：部署/回滚/备份/恢复/smoke 等
 - 环境：主服务器或 Vercel fallback
 - 验证：命令 + 结果
-- 更新：`docs/ai/session-state.md` 是否已更新
+- 更新：`docs/session-state.md` 是否已更新
 - 后续：仍需人工确认或下一步

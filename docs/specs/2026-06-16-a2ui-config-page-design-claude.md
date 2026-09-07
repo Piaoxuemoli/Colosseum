@@ -5,7 +5,7 @@
 > - **状态**：待用户审阅 → 通过后进入 `writing-plans`
 > - **范围**：仅 Match 配置页（闭环验证），架构按可扩展设计
 > - **并行说明**：仓库内另有 kimi-code 产出的同名设计（`2026-06-16-a2ui-config-page-design.md`）与 plan/spike；本文件为 Claude 独立完成的并行版本，互不覆盖，最终以用户裁定为准。
-> - **关联**：`docs/A2A-A2UI-游戏配置页可行性调研报告.md`、`docs/a2ui-dev-references.md`、`docs/a2ui-enhancement-scenarios.md`、`docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`
+> - **关联**：`docs/research/A2A-A2UI-游戏配置页可行性调研报告.md`、`docs/research/a2ui-dev-references.md`、`docs/research/a2ui-enhancement-scenarios.md`、`docs/legacy/2026-05-06-colosseum-rewrite-design.md`
 
 ---
 
@@ -71,7 +71,7 @@ A2UI（Google，2025-12 开源）的「声明式组件树 + JSON Pointer 数据�
 - **D1 渲染器**：采用官方 `@a2ui/react@^0.10.0` + `@a2ui/web_core@^0.10.0`，**不自建渲染器**。
 - **D2 A2UI 用法**：用作「设计期手写声明式 UI schema」，非运行时 agent 生成；`surface.json` 构建期静态 import 打包进 GameModule。
 - **D3 跳过运行时协商**：Catalog 退化为**编译期契约**（构建期校验 surface↔catalog）；运行时协商握手留给未来动态场景（如 Moderator SSE 旁白）。
-- **D4 `.a2ui/` 目录模板**：每游戏建立 `.a2ui/`，五分类 `surface`/`data`/`handle`/`runtime`/`script`；poker + werewolf 补齐；模板放 `docs/ai/templates/game-a2ui/`。
+- **D4 `.a2ui/` 目录模板**：每游戏建立 `.a2ui/`，五分类 `surface`/`data`/`handle`/`runtime`/`script`；poker + werewolf 补齐；模板放 `docs/templates/game-a2ui/`。
 - **D5 handle 替代**：`.a2ui/handle/submit.ts` 作为原 `handle.sh` 的 **TS 替代**（Zod 结构校验 + 跨字段规则 + payload 转换）。
 - **D6 GameModule 扩展**：新增可选字段 `configSurface` / `configSchema` / `configDefaults` / `configHandle` / `configManifest`；共享类型放 `src/platform/core/a2ui-types.ts`。
 - **D7 提交闭环**：`configHandle.submit` → `POST /api/matches`（**现有端点不动**）。
@@ -172,7 +172,7 @@ src/games/<game>/.a2ui/
 
 ### 6.3 模板来源与补齐
 
-- 模板：`docs/ai/templates/game-a2ui/.a2ui/`（**不**放 `src/games/`，避免被当真实游戏注册）。
+- 模板：`docs/templates/game-a2ui/.a2ui/`（**不**放 `src/games/`，避免被当真实游戏注册）。
 - 补齐：现有 **poker、werewolf** 都建 `.a2ui/`——poker 本轮全量实现（闭环），werewolf 第二迁移。
 - 新游戏：复制模板填三件套即可（零前端代码）。可选后续加 `npm run new-game:a2ui <name>` 脚手架（本轮**不做**，YAGNI）。
 
@@ -263,7 +263,7 @@ NewMatchTabs(gameType)
 
 ## 12. 测试与质量门禁
 
-> 项目 `npm test` 当前「intentionally cleared while being rebuilt」。本特性最小测试集须与 `docs/ai/rules/linting-and-quality.md` 对齐（实施期再读）。
+> 项目 `npm test` 当前「intentionally cleared while being rebuilt」。本特性最小测试集须与 `docs/rules/linting-and-quality.md` 对齐（实施期再读）。
 
 | 门禁 | 内容 |
 |---|---|
@@ -312,7 +312,7 @@ NewMatchTabs(gameType)
 
 ### 15.2 随附小任务（plan 中纳入）
 
-更新 `docs/a2ui-dev-references.md`：修正仓库地址（核实 `a2ui-project/a2ui`）、`@a2ui/react` 版本（稳定 0.10.0）、核验可疑 arxiv ID。
+更新 `docs/research/a2ui-dev-references.md`：修正仓库地址（核实 `a2ui-project/a2ui`）、`@a2ui/react` 版本（稳定 0.10.0）、核验可疑 arxiv ID。
 
 ---
 

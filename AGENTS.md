@@ -1,96 +1,66 @@
 # AGENTS.md — Colosseum AI 协作入口
 
-> 给 Cursor / Claude / 其他 AI 代码助手的稳定上下文。进入本仓库后先读本文件，再读当前任务涉及的 spec 和 plan。
+Colosseum 是纯 AI 博弈竞技平台：配置 LLM Profile → 创建对局 → 观看多个 Agent 通过 A2A 协议自主博弈 → 赛后排名/筹码图/思考链。
 
-## 项目定位
+**当前阶段：R0 重建期。** 需求体系已重建于 `docs/prd/`，实现层将按 PRD 逐任务重构——现有 `src/` 不是基线，只是现存；不要把现状当作正确性的依据。
 
-Colosseum 是一个纯 AI 博弈竞技平台：用户在浏览器里配置多个 LLM Profile，创建比赛，观看多个 Agent 通过 A2A 协议自主博弈，并在赛后查看排名、筹码图和思考链日志。
+## 第一步
 
-当前仓库是重写版。`old/` 是旧前端项目归档，只作为游戏规则、交互和视觉参考，不在 `old/` 内继续开发。
+任何 agent 进入本仓库，先读 [docs/INDEX.md](docs/INDEX.md)：文档分区表、阅读路径、权威声明都在那里。本文件不重复维护文档清单。
 
-## 必读文档
-
-1. `docs/ai/rules/README.md`：规则路由索引，按任务类型选择要读的详细规则。
-2. `docs/superpowers/specs/2026-05-06-colosseum-rewrite-brief.md`：简要设计，适合快速建立全局图景。
-3. `docs/superpowers/specs/2026-05-06-colosseum-rewrite-design.md`：完整技术 spec，是架构与边界的主来源。
-4. `docs/superpowers/plans/`：按 Phase 拆分的实施计划。执行代码任务时以当前 plan 的 checkbox 为进度来源。
-5. `docs/ai/session-state.md`：长任务状态记录。上下文压缩或换 Agent 后先读这里。
-
-## 项目结构
-
-仓库按职责分为 7 大类：
+## 仓库地图
 
 ```
 .
 ├── src/
-│   ├── app/              # Next.js App Router（frontend 页面 + backend API routes）
-│   ├── frontend/         # 页面组件、store、前端工具
-│   ├── backend/          # API 业务层：orchestrator、agent、a2a-core、auth、match
-│   ├── platform/         # 共享基础设施：core、db、redis、llm、telemetry、memory、engine
-│   └── games/            # 游戏自治包：poker / werewolf
-├── ops/                  # 部署流水线 + 本地开发环境
-├── docs/                 # AI 规则、spec、plan、部署/开发文档
-├── archive/              # 旧项目与过时文档
-└── project files         # package.json、tsconfig、next.config、eslint 等
+│   ├── app/         # Next.js App Router：页面 + API routes（HTTP 边界）
+│   ├── frontend/    # 页面组件、store、前端工具
+│   ├── backend/     # orchestrator、agent、a2a-core、auth、match
+│   ├── platform/    # core、db、redis、llm、telemetry、memory、engine
+│   └── games/       # 游戏自治包：poker / werewolf（各含 engine、agent、memory、ui）
+├── docs/            # 唯一权威文档树（入口 docs/INDEX.md）
+├── ops/             # 部署流水线 + 本地开发环境
+├── scripts/         # dev-bootstrap / dev-sync / dev-doctor / a2ui 校验等脚本
+└── tmp/             # 临时产物，不提交
 ```
 
-- `app/` 是 Next.js 强制的 HTTP 边界：页面在 `src/app/(page)`，A2A 与 GM 端点在 `src/app/api/`。
-- `frontend/` 只 import `@/frontend/*` 和 `@/platform/*` 的纯类型/工具；禁止直接 import `@/backend/*` 或 `@/platform/db`。
-- `backend/` 和 `platform/` 可被 API routes 与游戏包 import。
-- `games/` 保持自治：每个游戏拥有自己的 engine、agent、memory、ui 子目录。
+- `src/app/` 是 HTTP 边界：页面在 `src/app/(page)`，A2A 与 GM 端点在 `src/app/api/`。
+- `docs/rules/*.md` 仍以路由方式按任务类型选读，不默认全部加载。
 
-## 部署与运维
+## 红线
 
-- 部署 Skill（权威入口）：`.kimi-code/skills/deployment/SKILL.md`
-- Cursor / Claude 部署命令：`.cursor/commands/deploy-production.md`、`.claude/commands/deploy-production.md`（只做流程入口，具体步骤回读部署 Skill）
-- 生产部署手册：`ops/deploy/README.md`
-- Vercel fallback：`docs/deploy/vercel.md`
-- 本地开发环境：`ops/dev/README.md`
-- 过时文档归档：`archive/old/docs-archive/`
+1. 依赖方向 `app → frontend/backend → platform/games` 严格向下；frontend 只 import `@/frontend/*` 和 `@/platform/*` 的纯类型/工具，禁止 import `@/backend/*` 或 `@/platform/db`。
+2. `games/` 自治：每个游戏拥有自己的 engine/agent/memory/ui，禁止跨游戏 if/else 或共享游戏逻辑。
+3. 需求只来自 `docs/prd/`，禁止从现有实现反推需求；实现与 PRD 冲突时以 PRD 为准并记入 `docs/repair/`。
+4. `AGENTS.md` 与 `docs/INDEX.md` 是导航的唯一权威，改路径必须同步两者。
+5. 生产部署走 `.kimi-code/skills/deployment/SKILL.md`（Cursor/Claude 经各自 deployment-router 路由），手册在 `ops/deploy/README.md`。
 
-## 规则加载策略
+## 工作流
 
-`.cursor/rules` 和 `.claude/rules` 只做路由，不承载完整规范。详细规则放在 `docs/ai/rules/`：
+任务开始前读 `docs/rules/spec-plan-workflow.md`。每个任务走：
 
-- 项目上下文与架构红线：`docs/ai/rules/project-context.md`
-- 开发环境与设备复用：`docs/ai/rules/development-environment.md`
-- lint / typecheck / test / build：`docs/ai/rules/linting-and-quality.md`
-- UI 风格：`docs/ai/rules/ui-style.md`
-- 前后端边界：`docs/ai/rules/frontend-backend.md`
-- spec / plan 工作流：`docs/ai/rules/spec-plan-workflow.md`
-- Git 分支、提交、合入：`docs/ai/rules/git-workflow.md`
-- 部署/运维：`.kimi-code/skills/deployment/SKILL.md` + `ops/deploy/README.md`（Cursor/Claude 通过各自 `deployment-router` 路由）
+1. spec → plan：写清目标、文件列表、验证命令、Done 定义。
+2. 最小实现；遇到 SDK API 漂移查官方文档或本地 `.d.ts`，不用 `as any` 硬绕。
+3. 验证：`npm run check`（check:surfaces + lint + typecheck + build）。
+4. 更新 `docs/session-state.md` 与相关 plan checkbox。
 
-按任务类型读取相关文档，不要默认把所有规则都加载进上下文。
+Cursor / Claude 内可用 `/execute-plan` 执行高频 plan 流程（读 spec/plan → 下一个任务 → 实施 → 验证 → 更新状态）。
 
-开发前默认先执行安全同步和环境检查：`npm run sync`、`npm run doctor`。新设备初始化使用 `npm run bootstrap`。
+## 常用命令
 
-## 实施方式
+| 命令 | 用途 |
+|---|---|
+| `npm run dev` / `build` / `start` | 开发 / 构建 / 启动 |
+| `npm run lint` / `typecheck` | ESLint / tsc |
+| `npm run check:surfaces` | A2UI surfaces 校验 |
+| `npm run check` | 唯一上线门禁（check:surfaces && lint && typecheck && build） |
+| `npm run db:generate` / `db:migrate` / `db:studio` | Drizzle schema 迁移 |
+| `npm run infra:up` / `infra:down` / `infra:logs` | 本地 docker compose（Redis/Postgres） |
+| `npm run bootstrap` | 新设备初始化 |
+| `npm run sync` / `doctor` | 开发前安全同步与环境检查 |
 
-优先按 `docs/superpowers/plans/*.md` 的任务顺序执行。每次只推进一个可验证小任务：
+## 不变约束
 
-1. 读当前 plan 的目标、文件列表、当前未完成 checkbox。
-2. 对该任务先写/确认失败测试，再做最小实现。
-3. 跑该任务指定验证命令；能全量验证时再跑 `npm test`、`npm run lint`、`npm run build`。
-4. 更新 plan checkbox 和 `docs/ai/session-state.md`。
-5. 遇到 SDK API 漂移时查官方文档或本地 `.d.ts`，不要用 `as any` 硬绕。
-
-## 常用命令入口
-
-Cursor 内执行高频 plan 流程时，使用自定义命令：
-
-```text
-/execute-plan
-```
-
-该命令会要求 AI 读取当前 spec / plan，找下一个未完成任务，实施、验证并更新状态。
-
-项目脚本以后以 `package.json` 为准。最小质量门禁是：
-
-```bash
-npm test
-npm run lint
-npm run build
-```
-
-如果某个命令因依赖尚未安装或 Phase 尚未完成而不能运行，记录原因，不要伪造通过结果。
+- 不在 `src/` 写测试：新测试体系待 `docs/research/` 调研落地后另立任务重建。
+- `tmp/` 不提交。
+- 不要伪造验证结果；命令跑不了就记录原因。

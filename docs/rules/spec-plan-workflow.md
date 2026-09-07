@@ -15,7 +15,7 @@
 
 ## 写 Plan
 
-Plan 放在 `docs/superpowers/plans/`，使用 checkbox 作为执行状态：
+Plan 使用 checkbox 作为执行状态（重写期 plan 已归档于 `docs/legacy/plans/`，可作格式参考；新任务的 plan 位置在立项时确定并记入 `docs/session-state.md`）：
 
 ```markdown
 - [ ] Step 1: ...
@@ -37,7 +37,7 @@ Plan 放在 `docs/superpowers/plans/`，使用 checkbox 作为执行状态：
 
 执行时使用 `/execute-plan`。AI 应：
 
-1. 读取 `AGENTS.md` 和 `docs/ai/session-state.md`。
+1. 读取 `AGENTS.md` 和 `docs/session-state.md`。
 2. 读取当前 plan 和引用的 spec。
 3. 找到第一个未完成 checkbox。
 4. 一次只做一个任务，除非用户要求连续推进。
@@ -47,7 +47,7 @@ Plan 放在 `docs/superpowers/plans/`，使用 checkbox 作为执行状态：
 
 ## 状态记录
 
-`docs/ai/session-state.md` 只记录恢复工作必需的信息：
+`docs/session-state.md` 只记录恢复工作必需的信息：
 
 - active spec / plan / phase / task
 - last known status

@@ -1,4 +1,5 @@
 # Phase 5-1 — 回放播放器 UI（读取 game_events 重建观战视图）
+> 状态：已完成并合入 main（2026-05/06 期间交付；checkbox 于 2026-09-07 文档重构时按 session-state 验证记录统一勾选）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
@@ -45,7 +46,7 @@ Colosseum/
 **Files:**
 - Modify: `db/queries/events.ts`
 
-- [ ] **Step 1: 追加 query**
+- [x] **Step 1: 追加 query**
 
 ```typescript
 // db/queries/events.ts
@@ -69,7 +70,7 @@ export async function listEventsAfter(matchId: string, seq: number, limit = 100)
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add db/queries/events.ts
@@ -86,7 +87,7 @@ git commit -m "feat(p5-1): list all events by match for replay"
 
 **Context:** 播放状态：`events`, `cursor`(已消费的事件 index), `isPlaying`, `speed`(0.5/1/2/4), `tick()` 按 speed 推进 cursor 一个 event。
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/frontend/store/replay-store.ts
@@ -164,7 +165,7 @@ export const useReplayStore = create<ReplayState>((set, get) => ({
 }))
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -214,7 +215,7 @@ describe('replay-store', () => {
 Run: `npx vitest run tests/src/frontend/store/replay-store.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/frontend/store/replay-store.ts tests/src/frontend/store/replay-store.test.ts
@@ -230,7 +231,7 @@ git commit -m "feat(p5-1): replay-store (play/step/seek)"
 
 **Context:** 底部悬浮条：◀◀ ◀ ⏸/▶ ▶ ▶▶ + 进度条 + 速度下拉。
 
-- [ ] **Step 1: 组件**
+- [x] **Step 1: 组件**
 
 ```tsx
 // components/match/ReplayControls.tsx
@@ -301,7 +302,7 @@ export function ReplayControls() {
 }
 ```
 
-- [ ] **Step 2: 简单渲染测试**
+- [x] **Step 2: 简单渲染测试**
 
 ```tsx
 // tests/components/ReplayControls.test.tsx
@@ -330,7 +331,7 @@ describe('ReplayControls', () => {
 Run: `npx vitest run tests/components/ReplayControls.test.tsx`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/match/ReplayControls.tsx tests/components/ReplayControls.test.tsx
@@ -347,7 +348,7 @@ git commit -m "feat(p5-1): ReplayControls bar"
 
 **Context:** Server 读 match 元数据 + 全部事件；Client load 到 replay-store；根据 gameType 渲染 PokerBoard / WerewolfBoard。
 
-- [ ] **Step 1: page.tsx**
+- [x] **Step 1: page.tsx**
 
 ```tsx
 // src/app/matches/[matchId]/replay/page.tsx
@@ -365,7 +366,7 @@ export default async function ReplayPage({ params }: { params: Promise<{ matchId
 }
 ```
 
-- [ ] **Step 2: ReplayView.tsx**
+- [x] **Step 2: ReplayView.tsx**
 
 ```tsx
 // src/app/matches/[matchId]/replay/ReplayView.tsx
@@ -398,7 +399,7 @@ export default function ReplayView({ match, events }: { match: any; events: any[
 }
 ```
 
-- [ ] **Step 3: 入口按钮**
+- [x] **Step 3: 入口按钮**
 
 在 `/matches/[matchId]/SpectatorView.tsx` 结束后的 `RankingPanel` / `WerewolfResultPanel` 内加 "查看回放" 按钮：
 
@@ -410,7 +411,7 @@ export default function ReplayView({ match, events }: { match: any; events: any[
 
 在 Lobby / 历史列表里，已结束 match 每行也加 "回放" 链接。
 
-- [ ] **Step 4: 手动验证**
+- [x] **Step 4: 手动验证**
 
 ```bash
 npm run dev
@@ -418,7 +419,7 @@ npm run dev
 # 点 ▶ 自动播放；拖动进度条；切换 0.5x / 2x / 4x 速度
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/app/matches/\[matchId\]/replay src/app/matches/\[matchId\]/SpectatorView.tsx
@@ -429,8 +430,8 @@ git commit -m "feat(p5-1): /matches/:id/replay page"
 
 ## Done criteria (Phase 5-1)
 
-- [ ] replay-store 支持 play/pause/step/seek/speed
-- [ ] ReplayControls 底部条可用
-- [ ] `/matches/:id/replay` 能正确重放 poker / werewolf match
-- [ ] 从 Spectator / Lobby 都能跳进 replay
-- [ ] lint / tsc / vitest 全绿
+- [x] replay-store 支持 play/pause/step/seek/speed
+- [x] ReplayControls 底部条可用
+- [x] `/matches/:id/replay` 能正确重放 poker / werewolf match
+- [x] 从 Spectator / Lobby 都能跳进 replay
+- [x] lint / tsc / vitest 全绿

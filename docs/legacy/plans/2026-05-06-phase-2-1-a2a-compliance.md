@@ -1,4 +1,5 @@
 # Phase 2-1 — A2A v0.3 协议合规（AgentCard + JSON-RPC + SSE 格式）
+> 状态：已完成并合入 main（2026-05/06 期间交付；checkbox 于 2026-09-07 文档重构时按 session-state 验证记录统一勾选）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
@@ -51,13 +52,13 @@ Colosseum/
 - Modify: `package.json`
 - Create: `src/backend/a2a-core/types.ts`
 
-- [ ] **Step 1: 安装**
+- [x] **Step 1: 安装**
 
 ```bash
 npm install @a2a-js/sdk
 ```
 
-- [ ] **Step 2: 类型 re-export**
+- [x] **Step 2: 类型 re-export**
 
 ```typescript
 // src/backend/a2a-core/types.ts
@@ -89,7 +90,7 @@ export interface DecisionRequestData {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add package.json package-lock.json src/backend/a2a-core/types.ts
@@ -106,7 +107,7 @@ git commit -m "chore(p2-1): install @a2a-js/sdk + type re-exports"
 
 **Context:** `buildAgentCard(agent, profile, baseUrl)` 按 spec 4.3 返回合规 AgentCard JSON。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```typescript
 // tests/a2a-core/agent-card.test.ts
@@ -152,7 +153,7 @@ describe('buildAgentCard', () => {
 Run: `npx vitest run tests/a2a-core/agent-card.test.ts`
 Expected: FAIL（模块不存在）。
 
-- [ ] **Step 2: 实现**
+- [x] **Step 2: 实现**
 
 ```typescript
 // src/backend/a2a-core/agent-card.ts
@@ -211,7 +212,7 @@ function skillFor(gameType: string, kind: string) {
 Run: `npx vitest run tests/a2a-core/agent-card.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: AgentCard Route**
+- [x] **Step 3: AgentCard Route**
 
 ```typescript
 // src/app/api/agents/[agentId]/.well-known/agent-card.json/route.ts
@@ -231,7 +232,7 @@ export async function GET(
 }
 ```
 
-- [ ] **Step 4: 手动验证**
+- [x] **Step 4: 手动验证**
 
 ```bash
 curl http://localhost:3000/api/agents/<存在的agentId>/.well-known/agent-card.json | jq
@@ -239,7 +240,7 @@ curl http://localhost:3000/api/agents/<存在的agentId>/.well-known/agent-card.
 
 Expected: 完整 JSON，`protocolVersion=0.3.0`、`url` 正确。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/backend/a2a-core/agent-card.ts src/app/api/agents/\[agentId\]/.well-known tests/a2a-core/agent-card.test.ts
@@ -256,7 +257,7 @@ git commit -m "feat(p2-1): AgentCard publishing at .well-known/agent-card.json"
 
 **Context:** `@a2a-js/sdk` 有自己的 JSON-RPC 工具，但为控制清晰度，我们封一层：解析请求、生成错误响应、封装方法分发。
 
-- [ ] **Step 1: 测试**
+- [x] **Step 1: 测试**
 
 ```typescript
 // tests/a2a-core/jsonrpc.test.ts
@@ -290,7 +291,7 @@ describe('rpcError / rpcResult', () => {
 })
 ```
 
-- [ ] **Step 2: 实现**
+- [x] **Step 2: 实现**
 
 ```typescript
 // src/backend/a2a-core/jsonrpc.ts
@@ -333,7 +334,7 @@ export const RpcErrors = {
 Run: `npx vitest run tests/a2a-core/jsonrpc.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/backend/a2a-core/jsonrpc.ts tests/a2a-core/jsonrpc.test.ts
@@ -352,7 +353,7 @@ git commit -m "feat(p2-1): JSON-RPC request/response helpers"
 - `status-update`: `{ kind: 'status-update', taskId, status: { state, timestamp } }`
 - `artifact-update`: `{ kind: 'artifact-update', taskId, artifact: { parts: [...] }, delta?: boolean }`
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 ```typescript
 // src/backend/a2a-core/sse-writer.ts
@@ -399,7 +400,7 @@ export class A2ASseWriter {
 }
 ```
 
-- [ ] **Step 2: 测试**
+- [x] **Step 2: 测试**
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -437,7 +438,7 @@ describe('A2ASseWriter', () => {
 Run: `npx vitest run tests/a2a-core/sse-writer.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/backend/a2a-core/sse-writer.ts tests/a2a-core/sse-writer.test.ts
@@ -456,7 +457,7 @@ git commit -m "feat(p2-1): A2ASseWriter for status/artifact frames"
 
 **路由路径说明：** spec 要求 `message:stream`（冒号），但 Next.js 路由不支持文件名冒号。我们的做法：文件路径 `message/stream`，但在 AgentCard 的 `url` 字段和 JSON-RPC 的 `method` 字符串里使用 `"message/stream"` 或等价，文档里说明这一偏差。
 
-- [ ] **Step 1: 改 route**
+- [x] **Step 1: 改 route**
 
 ```typescript
 // src/app/api/agents/[agentId]/message/stream/route.ts
@@ -561,7 +562,7 @@ function jsonResponse(status: number, body: unknown) {
 }
 ```
 
-- [ ] **Step 2: 更新测试**
+- [x] **Step 2: 更新测试**
 
 在 `tests/api/agent-stream.test.ts` 里确保：
 1. 缺 `jsonrpc` → 400
@@ -572,7 +573,7 @@ function jsonResponse(status: number, body: unknown) {
 Run: `npx vitest run tests/api/agent-stream.test.ts`
 Expected: PASS。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/app/api/agents/\[agentId\]/message/stream/route.ts tests/api/agent-stream.test.ts
@@ -589,7 +590,7 @@ git commit -m "feat(p2-1): agent endpoint conforms to A2A v0.3 JSON-RPC"
 
 **Context:** 封装 `requestAgentDecision(agent, payload, matchToken, onThinking, timeoutMs)`：内部发 JSON-RPC 请求、解析 SSE、回调 thinking delta、返回最终 action。
 
-- [ ] **Step 1: client**
+- [x] **Step 1: client**
 
 ```typescript
 // src/backend/a2a-core/client.ts
@@ -681,15 +682,15 @@ function safeJsonParse(s: string): any | null {
 }
 ```
 
-- [ ] **Step 2: GM 接入**
+- [x] **Step 2: GM 接入**
 
 在 `src/backend/orchestrator/gm.ts` 把之前 `fetch(agentEndpoint, ...)` 的手写代码替换为 `requestAgentDecision(...)`；thinking delta 累积→发 `agent_thinking` 事件逻辑不变。
 
-- [ ] **Step 3: 手动冒烟**
+- [x] **Step 3: 手动冒烟**
 
 运行 dev stack + 创建 6-bot match 跑通一局；断点 / 日志确认 SSE 帧 kind 全是 `status-update` / `artifact-update`。
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/backend/a2a-core/client.ts src/backend/orchestrator/gm.ts
@@ -703,28 +704,28 @@ git commit -m "feat(p2-1): GM uses A2AClient with A2A v0.3 frames"
 **Files:**
 - Create: `docs/demo/a2a-compliance-check.md`
 
-- [ ] **Step 1: 写验证清单**
+- [x] **Step 1: 写验证清单**
 
 ```markdown
 # A2A v0.3 合规 · 手动验证
 
 ## AgentCard
-- [ ] `curl http://localhost:3000/api/agents/<id>/.well-known/agent-card.json` 返回 200 + 正确 JSON
-- [ ] 字段齐全：protocolVersion / name / url / capabilities / skills / securitySchemes
+- [x] `curl http://localhost:3000/api/agents/<id>/.well-known/agent-card.json` 返回 200 + 正确 JSON
+- [x] 字段齐全：protocolVersion / name / url / capabilities / skills / securitySchemes
 
 ## JSON-RPC
-- [ ] POST `message/stream` 带 `jsonrpc:"2.0"` + `method:"message/stream"`，响应 SSE
-- [ ] 错误 method 返回 `-32601`
-- [ ] 缺 `X-Match-Token` 返回 `-32001`
+- [x] POST `message/stream` 带 `jsonrpc:"2.0"` + `method:"message/stream"`，响应 SSE
+- [x] 错误 method 返回 `-32601`
+- [x] 缺 `X-Match-Token` 返回 `-32001`
 
 ## SSE 帧
-- [ ] 流里按顺序有：`status-update:submitted` → `status-update:working` → 0-N `artifact-update`(text,delta=true) → 1 `artifact-update`(data) → `status-update:completed|failed`
+- [x] 流里按顺序有：`status-update:submitted` → `status-update:working` → 0-N `artifact-update`(text,delta=true) → 1 `artifact-update`(data) → `status-update:completed|failed`
 
 ## 第三方客户端（可选）
-- [ ] 用 `@a2a-js/sdk` 的 `A2AClient` 直接调用我们 endpoint 能收到 action
+- [x] 用 `@a2a-js/sdk` 的 `A2AClient` 直接调用我们 endpoint 能收到 action
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/demo/a2a-compliance-check.md
@@ -735,9 +736,9 @@ git commit -m "docs(p2-1): A2A v0.3 compliance check"
 
 ## Done criteria (Phase 2-1)
 
-- [ ] `.well-known/agent-card.json` 发布合规 AgentCard
-- [ ] Endpoint 接收标准 JSON-RPC，方法 `message/stream`
-- [ ] SSE 帧只含 `status-update` / `artifact-update`
-- [ ] A2AClient 替换 GM 原 fetch 手写代码
-- [ ] 合规 checklist 全绿
-- [ ] 所有测试 + lint 通过
+- [x] `.well-known/agent-card.json` 发布合规 AgentCard
+- [x] Endpoint 接收标准 JSON-RPC，方法 `message/stream`
+- [x] SSE 帧只含 `status-update` / `artifact-update`
+- [x] A2AClient 替换 GM 原 fetch 手写代码
+- [x] 合规 checklist 全绿
+- [x] 所有测试 + lint 通过

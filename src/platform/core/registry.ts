@@ -23,7 +23,7 @@ export type GameModule = {
   continueAfterBoundary?: (state: unknown, boundary: BoundaryKind) => ApplyActionResult<unknown> | null
   requestStopAfterHand?: (state: unknown) => unknown
   // ── A2UI 声明式配置页（可选；未提供则该游戏无声明式配置页）──
-  // 详见 spec: docs/superpowers/specs/2026-06-16-a2ui-config-page-design-claude.md
+  // 详见 spec: docs/specs/2026-06-16-a2ui-config-page-design-claude.md
   configSurface?: SurfaceDefinition
   configSchema?: ZodTypeAny
   configDefaults?: SurfaceDefaults

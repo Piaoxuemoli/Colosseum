@@ -149,7 +149,7 @@ test(engine): cover showdown side pots
 
 - `.kimi-code/skills/**` 属于 AI 基建，新增或更新走 `chore` 或 `docs` 提交。
 - `old/docs-archive/` 只接收**已完成或过时**的重写版文档；不要把当前活跃文档放入其中。
-- 归档文档时优先使用 `git mv` 保留历史，并同步更新 `AGENTS.md` 和 `docs/ai/session-state.md` 的索引。
+- 归档文档时优先使用 `git mv` 保留历史，并同步更新 `AGENTS.md` 和 `docs/session-state.md` 的索引。
 - `screenshots/**` 仅用于 README / 文档配图，不提交临时截图；提交前确认图片与当前 UI 一致且已压缩。
 
 ## 合入规范
@@ -162,7 +162,7 @@ test(engine): cover showdown side pots
 2. 本地确认目的、主要改动、验证方式、已知风险。
 3. 相关验证通过；如果不能运行，说明原因。
 4. 没有无关大改、无关格式化、无关旧项目改动。
-5. 涉及 spec/plan/规则变更时，同步更新对应 docs 和 `docs/ai/session-state.md`。
+5. 涉及 spec/plan/规则变更时，同步更新对应 docs 和 `docs/session-state.md`。
 
 推荐本地合入方式：
 
