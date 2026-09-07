@@ -52,8 +52,9 @@ Cursor / Claude 内可用 `/execute-plan` 执行高频 plan 流程（读 spec/pl
 |---|---|
 | `npm run dev` / `build` / `start` | 开发 / 构建 / 启动 |
 | `npm run lint` / `typecheck` | ESLint / tsc |
+| `npm test` / `test:watch` / `test:coverage` | Vitest 单测（`tests/unit/`，19 文件起步） |
 | `npm run check:surfaces` | A2UI surfaces 校验 |
-| `npm run check` | 唯一上线门禁（check:surfaces && lint && typecheck && build） |
+| `npm run check` | 唯一上线门禁（check:surfaces && lint && typecheck && test && build） |
 | `npm run db:generate` / `db:migrate` / `db:studio` | Drizzle schema 迁移 |
 | `npm run infra:up` / `infra:down` / `infra:logs` | 本地 docker compose（Redis） |
 | `npm run bootstrap` | 新设备初始化 |
@@ -61,6 +62,7 @@ Cursor / Claude 内可用 `/execute-plan` 执行高频 plan 流程（读 spec/pl
 
 ## 不变约束
 
-- 不在 `src/` 写测试：新测试体系待 `docs/research/` 调研落地后另立任务重建。
+- 测试只放顶层 `tests/unit/`（镜像 src 结构，配置见 `vitest.config.ts`）；`src/` 内不放任何测试文件（工程与测试独立）。
+- 两个游戏的新引擎/前端工作以 `docs/prd/games/` 四份 PRD 为需求权威，不从现有 src/games/ 反推。
 - `tmp/` 不提交。
 - 不要伪造验证结果；命令跑不了就记录原因。

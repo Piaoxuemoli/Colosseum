@@ -7,11 +7,16 @@
 | 分区 | 路径 | 内容 | 何时读 |
 |---|---|---|---|
 | 需求体系 | `docs/prd/` | PRD、路线图、设计体系——产品真相的唯一来源，与实现严格隔离 | 任何"产品应该是什么"的判断，先来这里 |
-| 大修 | `docs/repair/` | 当前大修的问题清单与状态 | 接手大修任务、查已知问题 |
+| — 产品 PRD | `docs/prd/PRD.md` | 产品需求总纲（FR/NFR/开放决策） | 了解产品全貌、验收口径 |
+| — 路线图 | `docs/prd/roadmap.md` | R1–R4 唯一排期权威 | 找当前该做什么任务 |
+| — 全局设计体系 | `docs/prd/design-system.md` | 视觉/交互需求权威（tokens、布局契约、组件状态） | 任何前端工作之前 |
+| — 页面设计 | `docs/prd/design/` | 各页面设计 PRD（如大厅首页 `lobby-home.md`） | 实现对应页面前 |
+| — 游戏 PRD | `docs/prd/games/` | 各游戏的需求 PRD：`poker-engine.md` / `werewolf-engine.md`（引擎规则）+ `poker-frontend.md` / `werewolf-frontend.md`（观战前端设计） | 实现对应游戏引擎/界面前 |
+| 大修 | `docs/repair/` | 当前大修的问题清单与状态（编号 01–36） | 接手大修任务、查已知问题 |
 | 规则 | `docs/rules/` | 协作规则 8 篇：架构红线、前后端边界、lint、UI、git、spec/plan 工作流等 | 写代码前按任务类型选读 |
 | 活跃规格 | `docs/specs/` | 仍在生效的子系统设计（如 A2UI 配置页） | 实现对应子系统前 |
 | 模板 | `docs/templates/` | 游戏接入 A2UI 的模板说明 | 新游戏接入时 |
-| 调研 | `docs/research/` | 技术调研报告（A2UI 可行性、CI/测试重建调研等） | 立新任务、做技术选型前 |
+| 调研 | `docs/research/` | 技术调研报告：CI/测试体系（`2026-09-ci-test-survey.md`）、德扑实现（`2026-09-poker-implementation-survey.md`）、狼人杀规则（`2026-09-werewolf-rules-survey.md`）、A2UI 可行性等 | 立新任务、做技术选型前；游戏 PRD 的规则溯源依据 |
 | 部署 | `docs/deploy/` 与 `ops/` | Vercel fallback、部署流水线、本地开发环境 | 部署、运维、配本地环境 |
 | 开发 | `docs/dev/` | 开发环境辅助说明（如 LLM API 配置示例） | 本地接 LLM、环境变量配置 |
 | 状态 | `docs/session-state.md` | 长任务状态记录 | 上下文压缩、换 agent、恢复任务时 |

@@ -309,3 +309,4 @@
 | 版本 | 日期 | 章节 | 变更内容 | 状态 |
 |---|---|---|---|---|
 | v0.1 | 2026-09-07 | 全文 | 从零重建产品需求：不继承既有实现结论，现状仅作对照清单。全部章节为草案，待所有者逐节确认 | 草案 |
+| v0.1.1 | 2026-09-08 | 子文档 | 新增需求子文档并挂接：游戏引擎 PRD（`games/poker-engine.md`、`games/werewolf-engine.md`）、游戏观战前端 PRD（`games/poker-frontend.md`、`games/werewolf-frontend.md`）、页面设计 PRD（`design/lobby-home.md`）。规则口径溯源至 `docs/research/` 两份游戏调研报告。本表正文未改 | 草案 |

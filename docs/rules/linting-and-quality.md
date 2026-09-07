@@ -18,6 +18,9 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
@@ -25,12 +28,12 @@
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
     "check:surfaces": "node scripts/a2ui/validate-surfaces.mjs",
-    "check": "npm run check:surfaces && npm run lint && npm run typecheck && npm run build"
+    "check": "npm run check:surfaces && npm run lint && npm run typecheck && npm test && npm run build"
   }
 }
 ```
 
-> 测试体系已按 2026-09-07 重建决策整体清空，新测试+CI 体系将依据 `docs/research/` 的调研报告另立任务重建；在此之前 `npm run check` 是唯一上线门禁。
+> 测试体系已于 2026-09-08 按 `docs/research/2026-09-ci-test-survey.md` 方案重建：Vitest 4.1 + 顶层 `tests/unit/`（镜像 src 结构，`src/` 内不放任何测试文件），配置在 `vitest.config.ts`（`@` 别名、node 环境、`tests/setup.ts` stub env）。CI（`.github/workflows/ci.yml`）与 `npm run check` 均已包含 `npm test`。写新测试时一律放 `tests/unit/**`。
 
 如果某个阶段工具尚未安装，不要伪造通过结果；记录为“当前 Phase 尚未具备运行条件”。
 

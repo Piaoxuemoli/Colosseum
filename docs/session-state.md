@@ -5,11 +5,19 @@
 
 ## Active Context
 
-- 当前阶段：**R0 重建已完成（2026-09-08）**。仓库已转为「需求体系（docs/prd/）与实现体系（src/ + docs/specs/）严格隔离」的结构；现有实现被定位为「现存残留，非基线」，后续按 PRD roadmap 逐任务重构。
-- 需求权威：`docs/prd/PRD.md`（v0.1 草案，含 OD-1~7 开放决策待所有者拍板）＋ `docs/prd/roadmap.md`（唯一排期权威）＋ `docs/prd/design-system.md`（前端重建的视觉/交互需求）。
-- 导航入口：`AGENTS.md` → `docs/INDEX.md`。任何 agent 进入仓库先走这条路径。
-- 下一步：roadmap **R1 质量地基**——① 用户吊销泄露的旧 API key（见下）；② 按调研报告建 GitHub Actions（`docs/research/2026-09-ci-test-survey.md` §6.3 有现成 ci.yml 草案）；③ 按同报告 §6.2 顶层 `tests/` 布局分阶段恢复单测。
-- 大修跟踪：`docs/repair/2026-09-audit.md`（22 项编号问题；01/05/17/18 已修，06/07/08 随 R0 修复，02 key 轮换 / 03 CI / 04 测试为 P0 待办）。
+- 当前阶段：**R1 质量地基已完成（2026-09-08，R1-3 key 轮换为用户线下动作待办）**。CI 与测试体系已生效；下一步 = roadmap **R2 核心体验补全**（密钥状态 UX、主持人种子、历史/复盘增强、结算可信化、两游戏真实 LLM 验收）。
+- 游戏重写需求已齐备：`docs/prd/games/` 四份 PRD（poker/werewolf × engine/frontend，PFR/WFR 编号体系）+ `docs/prd/design/lobby-home.md`，规则口径溯源 `docs/research/2026-09-{poker-implementation,werewolf-rules}-survey.md`。**旧引擎已知三项 P1 规则缺陷（审计 23/24/25：德扑 all-in run-out 断裂、狼人杀死因泄露、女巫不知刀口）——判定为重写动机，不在旧引擎打补丁。**
+- 需求权威：`docs/prd/PRD.md`（v0.1.1，含 OD-1~7 待拍板）＋ `roadmap.md`（唯一排期）＋ `design-system.md` + `design/` + `games/`。
+- 导航入口：`AGENTS.md` → `docs/INDEX.md`。
+- 大修跟踪：`docs/repair/2026-09-audit.md`（01-36；R0/R1 已修 13 项，待用户 1 项，登记降级 2 项，其余待修/待决策）。
+
+## R1 落点（2026-09-08）
+
+- 测试体系：Vitest 4.1 + 顶层 `tests/unit/`，19 文件 / 367 测试全绿（poker 115、werewolf 184、平台/解析器/store 68）；`npm test` 接入 `check` 与 CI。
+- CI：`.github/workflows/ci.yml`（lint / typecheck / test+surfaces / build 四并行 job，Node 22，npm 缓存，PR 并发取消）。**推送后需在 GitHub 上确认首轮 run 全绿。**
+- 游戏调研 ×2 → 游戏 PRD ×4 + 大厅 PRD ×1；审计增补 23-36 号（§八）。
+- 单测期间新发现并登记的旧引擎缺陷：审计 23-34（含 match-view-store 显示类小 bug 32/33，测试按现状断言 + NOTE，修复时同步翻转断言）。
+- 待用户：① 吊销泄露 key（审计 02）；② 逐步拍板 PRD OD-1~7 与各游戏 PRD 的开放决策（WOD-1~7 / OD-P1~P8 / L-1~3 / PG/W 系）。
 
 ## R0 重建落点（2026-09-07/08 提交链）
 
