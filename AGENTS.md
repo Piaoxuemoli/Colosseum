@@ -55,7 +55,7 @@ Cursor / Claude 内可用 `/execute-plan` 执行高频 plan 流程（读 spec/pl
 | `npm run check:surfaces` | A2UI surfaces 校验 |
 | `npm run check` | 唯一上线门禁（check:surfaces && lint && typecheck && build） |
 | `npm run db:generate` / `db:migrate` / `db:studio` | Drizzle schema 迁移 |
-| `npm run infra:up` / `infra:down` / `infra:logs` | 本地 docker compose（Redis/Postgres） |
+| `npm run infra:up` / `infra:down` / `infra:logs` | 本地 docker compose（Redis） |
 | `npm run bootstrap` | 新设备初始化 |
 | `npm run sync` / `doctor` | 开发前安全同步与环境检查 |
 
