@@ -13,6 +13,9 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
@@ -20,7 +23,7 @@
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
     "check:surfaces": "node scripts/a2ui/validate-surfaces.mjs",
-    "check": "npm run check:surfaces && npm run lint && npm run typecheck && npm run build"
+    "check": "npm run check:surfaces && npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "@a2a-js/sdk": "^0.3.13",
@@ -62,12 +65,14 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^4.1.11",
     "drizzle-kit": "^0.31.10",
     "eslint": "^10.3.0",
     "eslint-config-next": "^16.2.4",
     "postcss": "^8.5.14",
     "tailwindcss": "^4.2.4",
     "typescript": "5.9",
-    "typescript-eslint": "^8.59.2"
+    "typescript-eslint": "^8.59.2",
+    "vitest": "^4.1.11"
   }
 }
