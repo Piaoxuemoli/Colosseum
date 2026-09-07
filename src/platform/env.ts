@@ -12,6 +12,10 @@ const envSchema = z.object({
   TEST_LLM_BASE_URL: z.string().url().optional(),
   TEST_LLM_API_KEY: z.string().optional(),
   TEST_LLM_MODEL: z.string().optional(),
+  M4_MOCK_LLM: z.string().optional(),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).optional(),
+  UPSTASH_REDIS_REST_URL: z.string().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 })
 
 export type Env = z.infer<typeof envSchema>

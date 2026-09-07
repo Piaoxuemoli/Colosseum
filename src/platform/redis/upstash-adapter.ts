@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis'
+import { loadEnv } from '@/platform/env'
 import type { RedisLike } from './adapter'
 
 /**
@@ -8,9 +9,10 @@ import type { RedisLike } from './adapter'
  * RPOP polling (consumer, ~800ms loop).
  */
 export function createUpstashAdapter(): RedisLike {
+  const env = loadEnv()
   const r = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    url: env.UPSTASH_REDIS_REST_URL!,
+    token: env.UPSTASH_REDIS_REST_TOKEN!,
   })
 
   return {

@@ -1,6 +1,7 @@
 import { streamText } from 'ai'
 import type { ProviderKind } from '@/platform/llm/catalog'
 import { createModel } from '@/platform/llm/provider-factory'
+import { loadEnv } from '@/platform/env'
 import { LlmError } from './llm-errors'
 import { LlmStreamParser } from './llm-stream-parser'
 
@@ -32,7 +33,7 @@ export type LlmRuntimeResult = {
 }
 
 export async function runDecision(input: LlmRuntimeInput): Promise<LlmRuntimeResult> {
-  if (process.env.M4_MOCK_LLM === '1') return runMockDecision(input)
+  if (loadEnv().M4_MOCK_LLM === '1') return runMockDecision(input)
 
   const { profile, agent, userPrompt, timeoutMs = 180_000, abortSignal, onThinkingDelta } = input
   const parser = new LlmStreamParser()

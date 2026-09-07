@@ -46,7 +46,6 @@
     "ioredis": "^5.10.1",
     "lucide-react": "^1.14.0",
     "next": "^15.5.15",
-    "postgres": "^3.4.9",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-is": "^19.2.7",

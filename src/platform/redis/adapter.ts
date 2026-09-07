@@ -1,3 +1,5 @@
+import { loadEnv } from '@/platform/env'
+
 /**
  * Minimal Redis-like surface used by Phase 5-2 Vercel fallback callers.
  *
@@ -26,20 +28,20 @@ export interface RedisLike {
 let _instance: RedisLike | null = null
 
 /**
- * Env-based factory. Reads `UPSTASH_REDIS_REST_URL` at first call time; if
- * absent, falls back to the ioredis-backed adapter over `REDIS_URL`. The
- * instance is cached for the lifetime of the process.
+ * Env-based factory. Checks `UPSTASH_REDIS_REST_URL` (via the typed env
+ * schema) at first call time; if absent, falls back to the ioredis-backed
+ * adapter over `REDIS_URL`. The instance is cached for the lifetime of the
+ * process.
  *
- * The node-redis and Upstash adapters are dynamically imported so only the
- * one we actually need is evaluated — in particular, the node adapter loads
- * the full typed env schema (`loadEnv`) and should not be pulled in on a
- * Vercel deploy that never uses it.
+ * Both adapters are dynamically imported so only the one we actually need is
+ * evaluated — in particular, the node adapter pulls in ioredis and should
+ * not be loaded on a Vercel deploy that never uses it.
  *
  * For tests, call `__resetRedisAdapterForTests()` to drop the cache.
  */
 export async function getRedisAdapter(): Promise<RedisLike> {
   if (_instance) return _instance
-  if (process.env.UPSTASH_REDIS_REST_URL) {
+  if (loadEnv().UPSTASH_REDIS_REST_URL) {
     const { createUpstashAdapter } = await import('./upstash-adapter')
     _instance = createUpstashAdapter()
   } else {

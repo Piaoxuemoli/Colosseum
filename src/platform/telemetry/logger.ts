@@ -5,6 +5,11 @@ export type LogFields = Record<string, unknown>
 const LEVEL_RANK: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40 }
 
 function minLevel(): number {
+  // Intentional raw read, exempt from the env.ts schema: this module is also
+  // bundled for the client (ErrorBoundary imports `log`), and env.ts pulls in
+  // node:fs, which cannot be imported from client code. LOG_LEVEL is still
+  // declared in the env schema for server-side validation; unknown values
+  // fall back to 'info' here.
   const raw = (process.env.LOG_LEVEL ?? 'info') as Level
   return LEVEL_RANK[raw] ?? LEVEL_RANK.info
 }

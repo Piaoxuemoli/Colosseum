@@ -2,14 +2,6 @@
 # Colosseum 新仓库 .gitignore
 # ==========================================
 
-# === 来自老项目的敏感文件（old/ 目录下） ===
-# SSH 私钥 / 部署凭证 / 本地 LLM key 等
-old/ops/private/*
-!old/ops/private/README.md
-old/.deploy.env
-old/**/*.local
-old/docs/poker-debug-*.json
-
 # === 构建产物 / 依赖（将来新项目会有） ===
 node_modules/
 dist/
@@ -49,6 +41,14 @@ pnpm-debug.log*
 docs/dev/llm-api-config.local.md
 temp-init/
 .codebuddy/
+
+# === AI 工具本地目录 ===
+.mimosa/
+.zcode/
+
+# === 临时目录（只保留 .gitkeep 占位） ===
+tmp/*
+!tmp/.gitkeep
 
 # === 打包产物 ===
 *.tar

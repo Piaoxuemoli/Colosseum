@@ -1,7 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { loadEnv } from '@/platform/env'
 
 function secretBytes(): Buffer {
-  const s = process.env.MATCH_TOKEN_SECRET
+  const s = loadEnv().MATCH_TOKEN_SECRET
   if (!s) {
     throw new Error('MATCH_TOKEN_SECRET env var is required for HMAC match tokens')
   }

@@ -4,15 +4,10 @@ import tseslint from 'typescript-eslint'
 export default [
   {
     ignores: [
-      'archive/**',
-      'old/**',
       'node_modules/**',
       '.next/**',
       '.next-build/**',
-      'dist/**',
-      'build/**',
       '.remember/**',
-      '**/.pytest_cache/**',
       'next-env.d.ts',
     ],
   },

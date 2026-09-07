@@ -35,7 +35,6 @@ if (!status.stdout) {
 
 const sensitivePatterns = [
   /(^|[/\\])\.env($|\.|[/\\])/,
-  /(^|[/\\])old[/\\]ops[/\\]private[/\\]/,
   /\.(pem|key|p12|pfx)$/i,
   /(token|secret|credential|credentials|cookie).*\.(json|txt|md|env)$/i,
 ]
