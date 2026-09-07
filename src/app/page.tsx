@@ -70,7 +70,7 @@ export default async function Lobby() {
         {rows.length === 0 ? (
           <Empty
             title="暂无对局"
-            description="先创建 API Profile 和 Agent，然后启动一桌 6 人德扑或一局 9 人狼人杀。"
+            description="先创建 API Profile 和 Agent，然后启动一桌 6 人德扑或一局 6 人狼人杀。"
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
