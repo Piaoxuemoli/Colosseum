@@ -13,6 +13,13 @@
  *
  *   2. `fallbackNarrationForPhase` — used by the moderator fallback path
  *      (both here and during real moderator failures).
+ *
+ * FR-4.7-01 narration kill-switch (R2-2): pass `narrationEnabled: false` to
+ * mute ONLY the moderator's 解说性旁白 (the `narration` string, today canned
+ * and later the live LLM moderator A2A call). The event itself still flows
+ * because its `upcomingPhase` / `day` / `deaths` payload is the 流程性宣告
+ * (procedural announcement) required by the rules and consumed by the
+ * spectator store to advance day/phase/deaths — 不可关闭 per PRD.
  */
 
 import type { GameEvent } from '@/platform/core/types'
@@ -36,6 +43,7 @@ export function fallbackNarrationForPhase(phase: WerewolfPhase): string {
 export function moderatorNarrationEvent(
   prev: WerewolfState,
   next: WerewolfState,
+  options?: { narrationEnabled?: boolean },
 ): Omit<GameEvent, 'matchId' | 'seq' | 'id'> | null {
   if (prev.phase === next.phase) return null
   if (next.matchComplete) return null
@@ -47,6 +55,10 @@ export function moderatorNarrationEvent(
     .filter((p) => !p.alive && prevAlive.has(p.agentId))
     .map((p) => ({ agentId: p.agentId, cause: p.deathCause }))
 
+  // FR-4.7-01：关闭旁白时 narration 置 null（前端 store 对非字符串回退 ''），
+  // 流程性字段照发。未来的 LLM 主持人 A2A 调用也应挂在这同一个开关后面。
+  const narrationEnabled = options?.narrationEnabled !== false
+
   return {
     gameType: 'werewolf',
     occurredAt: new Date().toISOString(),
@@ -55,7 +67,7 @@ export function moderatorNarrationEvent(
     payload: {
       upcomingPhase: next.phase,
       day: next.day,
-      narration: fallbackNarrationForPhase(next.phase),
+      narration: narrationEnabled ? fallbackNarrationForPhase(next.phase) : null,
       deaths,
     },
     visibility: 'public',

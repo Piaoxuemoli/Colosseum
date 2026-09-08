@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef } from 'react'
 import { Badge } from '@/frontend/components/ui/badge'
 import { FinishAfterHandButton } from '@/frontend/components/match/FinishAfterHandButton'
+import { MatchKeyStatusBadge } from '@/frontend/components/match/MatchKeyStatusBadge'
 import { RightPanel } from '@/frontend/components/match/RightPanel'
 import { RankingPanel } from '@/frontend/components/match/RankingPanel'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
@@ -211,6 +212,7 @@ export function SpectatorView({
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{werewolfPhase ?? 'waiting'}</Badge>
               <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
+              <MatchKeyStatusBadge matchId={matchId} />
               {matchComplete ? <Badge>对局结束</Badge> : null}
               {status !== 'running' ? (
                 <Link
@@ -250,6 +252,7 @@ export function SpectatorView({
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{phase}</Badge>
             <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
+            <MatchKeyStatusBadge matchId={matchId} />
             {matchComplete ? <Badge>对局结束</Badge> : null}
             <FinishAfterHandButton matchId={matchId} status={status} />
             {status !== 'running' ? (

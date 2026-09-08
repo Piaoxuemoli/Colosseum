@@ -8,8 +8,10 @@ import { Card, CardContent } from '@/frontend/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/frontend/components/ui/select'
 import { Input } from '@/frontend/components/ui/input'
 import { Label } from '@/frontend/components/ui/label'
+import { KeyGatePanel, hasBlockingKey, type KeyGateProfile } from '@/frontend/components/forms/KeyGatePanel'
 import { api } from '@/frontend/lib/client/api'
-import { keyring } from '@/frontend/lib/client/keyring'
+import { keyring, keyringStatus, type KeyStatus } from '@/frontend/lib/client/keyring'
+import { toast } from '@/frontend/lib/client/toast'
 
 /**
  * Werewolf match setup: 6 player agents + 1 moderator agent.
@@ -38,7 +40,8 @@ export function WerewolfMatchSetupForm() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [selected, setSelected] = useState<string[]>([])
   const [moderatorId, setModeratorId] = useState<string>('')
-  const [keyStatus, setKeyStatus] = useState<Record<string, boolean>>({})
+  const [keyStatuses, setKeyStatuses] = useState<Record<string, KeyStatus>>({})
+  const [keysAcknowledged, setKeysAcknowledged] = useState(false)
   const [agentTimeoutMs, setAgentTimeoutMs] = useState(180_000)
   const [minActionIntervalMs, setMinActionIntervalMs] = useState(1_000)
   const [submitting, setSubmitting] = useState(false)
@@ -65,20 +68,49 @@ export function WerewolfMatchSetupForm() {
         .filter((agent): agent is Agent => Boolean(agent)),
     [players, selected],
   )
+  const moderator = useMemo(() => moderators.find((m) => m.id === moderatorId), [moderatorId, moderators])
   // Both players and moderator contribute to the key upload payload.
   const profileIds = useMemo(() => {
     const ids = new Set<string>()
     for (const agent of selectedAgents) ids.add(agent.profileId)
-    const mod = moderators.find((m) => m.id === moderatorId)
-    if (mod) ids.add(mod.profileId)
+    if (moderator) ids.add(moderator.profileId)
     return Array.from(ids)
-  }, [selectedAgents, moderatorId, moderators])
+  }, [selectedAgents, moderator])
 
   useEffect(() => {
-    const next: Record<string, boolean> = {}
-    for (const profileId of profileIds) next[profileId] = keyring.has(profileId)
-    setKeyStatus(next)
+    const entries = keyring.entries()
+    const meta: Record<string, { apiKey?: string; storedAt?: number }> = {}
+    for (const profileId of profileIds) meta[profileId] = entries[profileId] ?? {}
+    setKeyStatuses(keyringStatus(meta, Date.now()))
   }, [profileIds])
+
+  const gateProfiles: KeyGateProfile[] = useMemo(
+    () =>
+      profileIds.map((profileId) => {
+        const profile = profiles.find((candidate) => candidate.id === profileId)
+        const agentsUsing = [...selectedAgents, ...(moderator && moderator.profileId === profileId ? [moderator] : [])]
+        return {
+          profileId,
+          profileName: profile?.displayName ?? profileId,
+          model: profile?.model,
+          agentNames: agentsUsing
+            .filter((agent) => agent.profileId === profileId)
+            .map((agent) => (agent.kind === 'moderator' ? `${agent.displayName}(主持人)` : agent.displayName)),
+          status: keyStatuses[profileId] ?? 'missing',
+        }
+      }),
+    [profileIds, profiles, selectedAgents, moderator, keyStatuses],
+  )
+
+  const blockingKeys = hasBlockingKey(gateProfiles)
+  // 阻断名单一变（改选玩家 / 主持人 / 换 key），此前的「仍要开始」确认作废。
+  const blockingSignature = useMemo(
+    () => gateProfiles.filter((profile) => profile.status === 'missing' || profile.status === 'expired').map((profile) => profile.profileId).sort().join(','),
+    [gateProfiles],
+  )
+  useEffect(() => {
+    setKeysAcknowledged(false)
+  }, [blockingSignature])
 
   function toggleSelect(id: string) {
     setSelected((previous) => {
@@ -88,17 +120,29 @@ export function WerewolfMatchSetupForm() {
     })
   }
 
+  function supplyKey(profileId: string) {
+    const profile = profiles.find((candidate) => candidate.id === profileId)
+    const apiKey = prompt(`为 Profile "${profile?.displayName ?? profileId}" 填入 API Key：`)
+    const trimmed = apiKey?.trim()
+    if (!trimmed) return
+    keyring.set(profileId, trimmed)
+    setKeyStatuses((previous) => ({ ...previous, [profileId]: 'ok' }))
+    toast.success('密钥已保存', `Profile "${profile?.displayName ?? profileId}" 的密钥已存入本浏览器，开局时自动上传。`)
+  }
+
   async function submit() {
     setSubmitting(true)
     setError(null)
     try {
-      // Prompt for any missing keys, one at a time (same UX as poker form).
-      for (const profileId of profileIds) {
-        if (keyring.has(profileId)) continue
-        const profile = profiles.find((candidate) => candidate.id === profileId)
-        const apiKey = prompt(`为 Profile "${profile?.displayName ?? profileId}" 填入 API Key:`)
-        if (!apiKey?.trim()) throw new Error(`缺少 ${profile?.displayName ?? profileId} 的 API Key`)
-        keyring.set(profileId, apiKey.trim())
+      // 未走「仍要开始」确认时，兜底防线：逐个补齐缺失 key（与旧行为一致）。
+      if (!keysAcknowledged) {
+        for (const profileId of profileIds) {
+          if (keyring.has(profileId)) continue
+          const profile = profiles.find((candidate) => candidate.id === profileId)
+          const apiKey = prompt(`为 Profile "${profile?.displayName ?? profileId}" 填入 API Key:`)
+          if (!apiKey?.trim()) throw new Error(`缺少 ${profile?.displayName ?? profileId} 的 API Key`)
+          keyring.set(profileId, apiKey.trim())
+        }
       }
 
       const keyringPayload: Record<string, string> = {}
@@ -123,7 +167,12 @@ export function WerewolfMatchSetupForm() {
     }
   }
 
-  const canSubmit = selected.length === 6 && !!moderatorId && !submitting && !navigating
+  const canSubmit =
+    selected.length === 6 &&
+    !!moderatorId &&
+    !submitting &&
+    !navigating &&
+    (!blockingKeys || keysAcknowledged)
 
   return (
     <div className="space-y-8">
@@ -211,19 +260,12 @@ export function WerewolfMatchSetupForm() {
         {profileIds.length === 0 ? (
           <p className="text-sm text-muted-foreground">选择 Agent 和主持人后会显示本局需要的 Profile key。</p>
         ) : (
-          <div className="space-y-2">
-            {profileIds.map((profileId) => {
-              const profile = profiles.find((candidate) => candidate.id === profileId)
-              const hasKey = keyStatus[profileId] ?? false
-              return (
-                <div key={profileId} className="flex items-center gap-2 text-sm">
-                  <Badge variant={hasKey ? 'default' : 'destructive'}>{hasKey ? 'OK' : '缺 key'}</Badge>
-                  <span>{profile?.displayName ?? profileId}</span>
-                  <span className="text-muted-foreground">{profile?.model}</span>
-                </div>
-              )
-            })}
-          </div>
+          <KeyGatePanel
+            profiles={gateProfiles}
+            acknowledged={keysAcknowledged}
+            onAcknowledge={() => setKeysAcknowledged(true)}
+            onSupplyKey={supplyKey}
+          />
         )}
       </section>
 

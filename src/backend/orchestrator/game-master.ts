@@ -8,6 +8,7 @@ import { findMatchById, listParticipants } from '@/platform/db/queries/matches'
 import { generateImpressionParagraph } from '@/games/poker/memory/summary'
 import type { PokerEpisodicEntry } from '@/games/poker/memory/episodic'
 import type { PokerSemanticProfile } from '@/games/poker/memory/semantic'
+import { isNarrationEnabled } from '@/backend/match/narration-gate'
 import { getGame } from '@/platform/core/registry'
 import { loadEnv } from '@/platform/env'
 import { redis } from '@/platform/redis/client'
@@ -144,6 +145,9 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
       const narrationEvent = moderatorNarrationEvent(
         state as WerewolfState,
         nextState as WerewolfState,
+        // FR-4.7-01 kill-switch (R2-2): matches.config.narrationEnabled ===
+        // false 时仅静音 LLM 主持人解说；流程性宣告仍由事件 payload 携带。
+        { narrationEnabled: isNarrationEnabled(match.config) },
       )
       if (narrationEvent) {
         augmentedEvents.push({

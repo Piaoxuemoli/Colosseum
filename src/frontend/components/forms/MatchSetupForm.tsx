@@ -7,8 +7,10 @@ import { Button } from '@/frontend/components/ui/button'
 import { Card, CardContent } from '@/frontend/components/ui/card'
 import { Input } from '@/frontend/components/ui/input'
 import { Label } from '@/frontend/components/ui/label'
+import { KeyGatePanel, hasBlockingKey, type KeyGateProfile } from '@/frontend/components/forms/KeyGatePanel'
 import { api } from '@/frontend/lib/client/api'
-import { keyring } from '@/frontend/lib/client/keyring'
+import { keyring, keyringStatus, type KeyStatus } from '@/frontend/lib/client/keyring'
+import { toast } from '@/frontend/lib/client/toast'
 
 type Agent = {
   id: string
@@ -24,7 +26,8 @@ export function MatchSetupForm() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [selected, setSelected] = useState<string[]>([])
-  const [keyStatus, setKeyStatus] = useState<Record<string, boolean>>({})
+  const [keyStatuses, setKeyStatuses] = useState<Record<string, KeyStatus>>({})
+  const [keysAcknowledged, setKeysAcknowledged] = useState(false)
   const [smallBlind, setSmallBlind] = useState(2)
   const [bigBlind, setBigBlind] = useState(4)
   const [startingChips, setStartingChips] = useState(200)
@@ -55,10 +58,36 @@ export function MatchSetupForm() {
   )
 
   useEffect(() => {
-    const next: Record<string, boolean> = {}
-    for (const profileId of profileIds) next[profileId] = keyring.has(profileId)
-    setKeyStatus(next)
+    const entries = keyring.entries()
+    const meta: Record<string, { apiKey?: string; storedAt?: number }> = {}
+    for (const profileId of profileIds) meta[profileId] = entries[profileId] ?? {}
+    setKeyStatuses(keyringStatus(meta, Date.now()))
   }, [profileIds])
+
+  const gateProfiles: KeyGateProfile[] = useMemo(
+    () =>
+      profileIds.map((profileId) => {
+        const profile = profiles.find((candidate) => candidate.id === profileId)
+        return {
+          profileId,
+          profileName: profile?.displayName ?? profileId,
+          model: profile?.model,
+          agentNames: selectedAgents.filter((agent) => agent.profileId === profileId).map((agent) => agent.displayName),
+          status: keyStatuses[profileId] ?? 'missing',
+        }
+      }),
+    [profileIds, profiles, selectedAgents, keyStatuses],
+  )
+
+  const blockingKeys = hasBlockingKey(gateProfiles)
+  // 阻断名单一变（改选 Agent / 换 key），此前的「仍要开始」确认作废，需重新确认。
+  const blockingSignature = useMemo(
+    () => gateProfiles.filter((profile) => profile.status === 'missing' || profile.status === 'expired').map((profile) => profile.profileId).sort().join(','),
+    [gateProfiles],
+  )
+  useEffect(() => {
+    setKeysAcknowledged(false)
+  }, [blockingSignature])
 
   function toggleSelect(id: string) {
     setSelected((previous) => {
@@ -68,16 +97,29 @@ export function MatchSetupForm() {
     })
   }
 
+  function supplyKey(profileId: string) {
+    const profile = profiles.find((candidate) => candidate.id === profileId)
+    const apiKey = prompt(`为 Profile "${profile?.displayName ?? profileId}" 填入 API Key：`)
+    const trimmed = apiKey?.trim()
+    if (!trimmed) return
+    keyring.set(profileId, trimmed)
+    setKeyStatuses((previous) => ({ ...previous, [profileId]: 'ok' }))
+    toast.success('密钥已保存', `Profile "${profile?.displayName ?? profileId}" 的密钥已存入本浏览器，开局时自动上传。`)
+  }
+
   async function submit() {
     setSubmitting(true)
     setError(null)
     try {
-      for (const profileId of profileIds) {
-        if (keyring.has(profileId)) continue
-        const profile = profiles.find((candidate) => candidate.id === profileId)
-        const apiKey = prompt(`为 Profile "${profile?.displayName ?? profileId}" 填入 API Key：`)
-        if (!apiKey?.trim()) throw new Error(`缺少 ${profile?.displayName ?? profileId} 的 API Key`)
-        keyring.set(profileId, apiKey.trim())
+      // 未走「仍要开始」确认时，兜底防线：逐个补齐缺失 key（与旧行为一致）。
+      if (!keysAcknowledged) {
+        for (const profileId of profileIds) {
+          if (keyring.has(profileId)) continue
+          const profile = profiles.find((candidate) => candidate.id === profileId)
+          const apiKey = prompt(`为 Profile "${profile?.displayName ?? profileId}" 填入 API Key：`)
+          if (!apiKey?.trim()) throw new Error(`缺少 ${profile?.displayName ?? profileId} 的 API Key`)
+          keyring.set(profileId, apiKey.trim())
+        }
       }
 
       const keyringPayload: Record<string, string> = {}
@@ -101,6 +143,8 @@ export function MatchSetupForm() {
       setSubmitting(false)
     }
   }
+
+  const canSubmit = selected.length === 6 && !submitting && !navigating && (!blockingKeys || keysAcknowledged)
 
   return (
     <div className="space-y-8">
@@ -170,23 +214,17 @@ export function MatchSetupForm() {
         {profileIds.length === 0 ? (
           <p className="text-sm text-muted-foreground">选择 Agent 后会显示本局需要的 Profile key。</p>
         ) : (
-          <div className="space-y-2">
-            {profileIds.map((profileId) => {
-              const profile = profiles.find((candidate) => candidate.id === profileId)
-              const hasKey = keyStatus[profileId] ?? false
-              return (
-                <div key={profileId} className="flex items-center gap-2 text-sm">
-                  <Badge variant={hasKey ? 'default' : 'destructive'}>{hasKey ? 'OK' : '缺 key'}</Badge>
-                  <span>{profile?.displayName ?? profileId}</span>
-                </div>
-              )
-            })}
-          </div>
+          <KeyGatePanel
+            profiles={gateProfiles}
+            acknowledged={keysAcknowledged}
+            onAcknowledge={() => setKeysAcknowledged(true)}
+            onSupplyKey={supplyKey}
+          />
         )}
       </section>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <Button size="lg" onClick={submit} disabled={submitting || navigating || selected.length !== 6}>
+      <Button size="lg" onClick={submit} disabled={!canSubmit}>
         {navigating ? '进入观战...' : submitting ? '创建中...' : '开始对局'}
       </Button>
     </div>

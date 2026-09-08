@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { Badge } from '@/frontend/components/ui/badge'
 import { Button } from '@/frontend/components/ui/button'
+import { KeyStatusBadge } from '@/frontend/components/keys/KeyStatusBadge'
 import { api } from '@/frontend/lib/client/api'
-import { keyring } from '@/frontend/lib/client/keyring'
+import { keyring, type KeyStatus } from '@/frontend/lib/client/keyring'
 import { toast } from '@/frontend/lib/client/toast'
 
 type TestState =
@@ -25,12 +26,12 @@ export function ProfileRowActions({
   model: string
 }) {
   const router = useRouter()
-  const [hasKey, setHasKey] = useState(false)
+  const [keyHealth, setKeyHealth] = useState<KeyStatus>('missing')
   const [loading, setLoading] = useState(false)
   const [testState, setTestState] = useState<TestState>({ kind: 'idle' })
 
   useEffect(() => {
-    setHasKey(keyring.has(profileId))
+    setKeyHealth(keyring.status()[profileId] ?? 'missing')
   }, [profileId])
 
   async function remove() {
@@ -89,7 +90,7 @@ export function ProfileRowActions({
     const nextKey = prompt('输入新的 API Key')
     if (!nextKey?.trim()) return
     keyring.set(profileId, nextKey.trim())
-    setHasKey(true)
+    setKeyHealth('ok')
     setTestState({ kind: 'idle' })
   }
 
@@ -118,8 +119,11 @@ export function ProfileRowActions({
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={hasKey ? 'default' : 'outline'}>{hasKey ? 'Key 已配置' : '缺 Key'}</Badge>
-        <Button size="sm" variant="outline" onClick={test} disabled={testState.kind === 'testing' || !hasKey}>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">密钥</span>
+          <KeyStatusBadge status={keyHealth} />
+        </span>
+        <Button size="sm" variant="outline" onClick={test} disabled={testState.kind === 'testing' || keyHealth === 'missing'}>
           {testState.kind === 'testing' ? (
             <>
               <Loader2 size={12} className="mr-1 animate-spin" />

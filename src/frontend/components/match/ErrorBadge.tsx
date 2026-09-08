@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Bot, Clock, RotateCcw } from 'lucide-react'
+import { AlertTriangle, Bot, Clock, KeyRound, RotateCcw } from 'lucide-react'
 import { Badge } from '@/frontend/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/frontend/components/ui/popover'
+import { requestOpenKeyStatus, isKeyRelatedError } from '@/frontend/lib/client/key-status-events'
 
 type ErrorItem = {
   id: string
@@ -27,7 +28,11 @@ const ERROR_LABELS: Record<string, { title: string; hint: string }> = {
   },
   'llm-api-key-missing': {
     title: 'API Key 缺失',
-    hint: '本局没有可用密钥，Agent 改用规则 Bot。',
+    hint: '本局没有可用密钥，Agent 改用规则 Bot。重新上传后后续回合即可恢复 LLM 调用。',
+  },
+  'llm-api_error': {
+    title: 'LLM 接口调用失败',
+    hint: '供应商侧返回错误（鉴权失败 / 额度耗尽 / 网络异常等）。若 key 已失效，可重新上传后再战。',
   },
   'llm-profile-missing': {
     title: 'Profile 缺失',
@@ -82,6 +87,7 @@ function formatJson(value: unknown): string {
 }
 
 export function ErrorBadge({ matchId }: { matchId: string }) {
+  const [open, setOpen] = useState(false)
   const [errorCount, setErrorCount] = useState(0)
   const [items, setItems] = useState<ErrorItem[]>([])
 
@@ -117,8 +123,14 @@ export function ErrorBadge({ matchId }: { matchId: string }) {
 
   if (errorCount === 0) return null
 
+  /** 密钥类错误的一键修复：唤起顶栏密钥状态浮层（重新上传入口）。 */
+  function openKeyReupload() {
+    setOpen(false)
+    requestOpenKeyStatus()
+  }
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-red-300 transition hover:bg-red-500/10">
           <AlertTriangle size={14} />
@@ -149,6 +161,19 @@ export function ErrorBadge({ matchId }: { matchId: string }) {
                         </span>
                       </div>
                       <div className="mt-1 text-xs leading-5 text-muted-foreground">{errorMeta(code).hint}</div>
+                      {isKeyRelatedError(code) ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openKeyReupload()
+                          }}
+                          className="mt-2 inline-flex h-6 items-center gap-1 rounded-md border border-cyan-300/40 bg-cyan-300/10 px-2 text-[11px] font-semibold text-cyan-100 transition hover:bg-cyan-300/20"
+                        >
+                          <KeyRound size={11} aria-hidden="true" />
+                          重新上传密钥
+                        </button>
+                      ) : null}
                     </div>
                     <Badge variant="destructive">× {list.length}</Badge>
                   </div>
