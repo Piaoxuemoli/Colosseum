@@ -2,7 +2,7 @@ import type {
   WerewolfEpisodicEntry,
   WerewolfWorkingMemory,
 } from './types'
-import type { WerewolfRole, WerewolfState } from '../engine/types'
+import type { WerewolfRole, WerewolfState } from './types'
 
 /**
  * Post-match episodic synthesis. One entry per (match, observer).

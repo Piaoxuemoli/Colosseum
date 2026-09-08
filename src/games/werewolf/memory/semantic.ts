@@ -2,7 +2,7 @@ import type {
   WerewolfEpisodicEntry,
   WerewolfSemanticProfile,
 } from './types'
-import type { WerewolfRole } from '../engine/types'
+import type { WerewolfRole } from './types'
 
 /**
  * Per-observer long-term profile of other agents. Updates only the target

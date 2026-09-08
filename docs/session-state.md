@@ -5,18 +5,21 @@
 
 ## Active Context
 
-- 当前阶段：**R2 核心体验补全进行中（2026-09-09）**。R2-1 密钥状态 UX ✅、R2-2 主持人种子+旁白开关 ✅；两游戏**引擎 v2 已按新 PRD 重写完成**（德扑 96 测试 / 狼人杀 135 测试，纯逻辑、未接入运行时）——旧引擎仍在驱动线上对局，**下一步主线 = 引擎 v2 接入平台**（plugin/GM/前端消费新事件契约与 audience 过滤），以及 R2-3/2-4（历史复盘增强、结算可信化）、R2-5/2-6（真实 LLM 全链路验收）。
+- 当前阶段：**R2 核心体验补全进行中（2026-09-09）**。R2-1 密钥状态 UX ✅、R2-2 主持人种子+旁白开关 ✅；**引擎 v2 已接入平台且是唯一运行时**（spec `docs/specs/engine2-integration.md`：GM 只驱动 `GameModuleV2`，v1 引擎栈已于 2026-09-09 整体删除——旧 engine 目录、werewolf-hooks、action-validator、v1 bot/context/parser 与 v1 测试；`games/*/plugin.ts` 现为 v2 插件薄再导出）。下一步主线 = R2-3/2-4（历史复盘增强、结算可信化）+ R2-5/2-6（真实 LLM 全链路验收）。
+- **运维备注（部署后必办）**：生产上遗留的旧格式 RUNNING 对局无法被 v2 运行时解读——部署本版后须逐个调 `POST /api/matches/:id/force-end` 强制终结（force-end 不依赖 state 形状，可安全收尾旧局）。
 - 产品开放决策已全部由 AI 产品代理代决（38 项，`docs/prd/` 各文档「已代决」标注，所有者可推翻）。
 - 安全：git 历史已清除泄露 key（force push 完成）；**key 吊销待用户线下处理（豆包/Kimi/DeepSeek/GLM/通义/MiniMax）**。
-- 测试基线：44 文件 / 633 测试全绿；CI 四 job 全绿。
+- 测试基线：31 文件 / 362 测试全绿（2026-09-09 v1 清理后；清理前 49 文件 / 694，删除的 332 个为 v1 引擎/解析器专属测试，v2 覆盖在 engine2/ 与 plugin-v2/GM-v2 测试中）；CI 四 job 全绿。
 - 导航入口：`AGENTS.md` → `docs/INDEX.md`。
 
-## 引擎 v2 接入注意事项（下一步任务的入口知识）
+## 引擎 v2 接入落点（2026-09-09 完成后的入口知识）
 
 - 德扑 v2：`src/games/poker/engine2/`（API barrel 见 index.ts；applyAction 返回 accepted/rejected 二态、事件带 audience、`reduceEvents` 重放、`filterEvents` 四视角投影含 god-view 通道、`decisionContext` 机械量）。
 - 狼人杀 v2：`src/games/werewolf/engine2/`（`createMatch`/`applyAction`/`applyDefaultAction`/`visibleEvents`；板子预设 6 人基础 + 9 人 333；M1 不含警长/守卫/白痴——开启会结构化拒绝）。
-- 两侧事件契约都要求 GM 层按 audience 过滤后再入库/广播（public 入 game_events，god-view 供观战，role-self 仅供对应 agent 的 context builder）；接入时需同步演进 `platform/engine/contracts.ts` 与 GM 的 currentActor/default-action 驱动（v2 的 `applyDefaultAction` 取代旧 bot-fallback 语义的一部分）。
-- 旧引擎与旧测试（tests/unit/games/*/engine/ 旧文件已在新目录外保留）在接入切换完成后整体删除，避免双引擎长期共存。
+- 平台插件面：`games/*/integration/plugin-v2.ts` 实现 `platform/engine/contracts-v2.ts` 的 `GameModuleV2`（方法语法双变注册，无双重断言）；`games/*/poker-plugin|werewolf-plugin.ts` 是其薄再导出（德扑另导出 A2UI 配置面五件套，`.a2ui/` 由 check:surfaces 校验）。
+- GM/agent endpoint 均为 v2 单路径：agent 决策上下文唯一真相 = `visibleEventsFor(fullStream, actorId)`；normalizeAction 失败 → `applyDefaultAction` 兜底。v1 的 botStrategy 三层链、action-validator、werewolf-hooks 已删除；通用 `llm-stream-parser` 内联了狼人 v1 词法的截断救援别名表（v2 normalizeAction 仍接受该词法）。
+- 记忆层留存：`games/*/memory/` 未删——德扑 memory 由 v2 插件的 impressions 钩子活用；狼人 memory 暂无 v2 消费方，其 v1 形状类型已本地化到 `werewolf/memory/types.ts`（接入时由插件层做形状适配）。
+- 前端 v1 事件投影保留（回放历史对局的 legacy 事件 kind）；v2 投影在 `frontend/store/projections/*-v2.ts`，对未知 kind 静默忽略。
 
 ## R1 落点（2026-09-08）
 

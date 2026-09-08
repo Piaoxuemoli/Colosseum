@@ -1,5 +1,28 @@
-import type { Card } from '../engine/card'
-import type { PokerActionRecord, PokerState } from '../engine/poker-types'
+import type { Card } from '../engine2'
+
+// ---------------------------------------------------------------------------
+// v1 形状的 finalState 视图（v1 引擎删除后本地保留）。
+// 该形状由 integration/plugin-v2 的 finalStateForHand 构造（spec §5：
+// 「working memory 从 v2 事件流推导」），字段与 v1 PokerState 的消费子集一致。
+// ---------------------------------------------------------------------------
+
+/** v1 PokerActionRecord 的消费子集（seq/phase/agentId/action）。 */
+type PokerActionRecord = {
+  seq: number
+  phase: string
+  agentId: string
+  action: { type: string; amount?: number; toAmount?: number }
+}
+
+/** v1 PokerState 的消费子集（synthesizeEpisodic 只读这些字段）。 */
+type PokerFinalStateView = {
+  actionHistory?: PokerActionRecord[]
+  players?: Array<{ id: string; chips: number; status: string; holeCards: Card[] }>
+  handNumber?: number
+  startingChips?: number
+  phase?: string
+  handComplete?: boolean
+}
 
 export type PokerEpisodicEntry = {
   handId: string
@@ -22,7 +45,7 @@ export function synthesizeEpisodic(input: {
   targetAgentId: string
   matchId: string
 }): PokerEpisodicEntry | null {
-  const state = input.finalState as Partial<PokerState>
+  const state = input.finalState as Partial<PokerFinalStateView>
   const actionHistory = Array.isArray(state.actionHistory) ? state.actionHistory : []
   const targetActions = actionHistory.filter((record): record is PokerActionRecord => record.agentId === input.targetAgentId)
   if (targetActions.length === 0) return null

@@ -3,7 +3,7 @@ import type {
   DeathRecord,
   WerewolfWorkingMemory,
 } from './types'
-import type { SeerResult, SpeechRecord, VoteRecord, WerewolfRole } from '../engine/types'
+import type { SeerResult, SpeechRecord, VoteRecord, WerewolfRole } from './types'
 
 export function initWorkingMemory(matchId: string, observerAgentId: string): WerewolfWorkingMemory {
   return {

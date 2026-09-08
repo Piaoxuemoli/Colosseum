@@ -1,6 +1,6 @@
 import type { GameEvent } from '@/platform/core/types'
 import type { MemoryContextSnapshot, MemoryModule } from '@/platform/memory/contracts'
-import type { WerewolfState } from '../engine/types'
+import type { WerewolfState } from './types'
 import {
   formatEpisodicSection,
   synthesizeEpisodic,

@@ -4,7 +4,8 @@
  * 仅类型定义，无运行时依赖（遵守 platform/core 边界：前端只 import 这里的类型）。
  *
  * 设计期声明的静态 surface（非运行时 agent 生成）：游戏开发者在
- * `src/games/<game>/.a2ui/surface/*.json` 手写组件树，构建期静态打包进 GameModule。
+ * `src/games/<game>/.a2ui/surface/*.json` 手写组件树，构建期静态打包进游戏包入口
+ * （如 `games/poker/poker-plugin.ts` 的 A2UI 导出；`.a2ui/` 由 check:surfaces 校验）。
  * 详见 spec: docs/specs/2026-06-16-a2ui-config-page-design-claude.md
  */
 

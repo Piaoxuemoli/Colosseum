@@ -1,4 +1,69 @@
-import { normalizeWerewolfActionType } from '@/games/werewolf/engine/werewolf-action-aliases'
+// ---------------------------------------------------------------------------
+// Werewolf action-type normalization（v1 引擎的 werewolf-action-aliases.ts 随
+// v1 引擎删除后内联于此；游戏专属的别名容错主路径在 games/werewolf 的 v2
+// plugin normalizeAction，此处仅服务于「截断响应救援」的最后一步）。
+// 输出 v1 词法（'night/werewolfKill' 等）——v2 GM 的 normalizeAction 别名表
+// 仍接受这些形状（shapeKey 剥前缀归一），语义不变。
+// ---------------------------------------------------------------------------
+
+/** Canonical werewolf action types (v1 lexicon, kept for rescue-path output). */
+const WEREWOLF_ACTION_TYPES = [
+  'night/werewolfKill',
+  'night/seerCheck',
+  'night/witchSave',
+  'night/witchPoison',
+  'day/speak',
+  'day/vote',
+] as const
+
+type WerewolfActionType = (typeof WEREWOLF_ACTION_TYPES)[number]
+
+const CANONICAL_SET: ReadonlySet<string> = new Set(WEREWOLF_ACTION_TYPES)
+
+/**
+ * Maps an LLM-supplied action type to a canonical werewolf action type, or
+ * `null` if the input is not a werewolf action (poker types fall through).
+ * Resolution: exact canonical → normalized shape (strip prefix, unify
+ * separators) → semantic alias table. `skip`/`pass`/`abstain` resolve to
+ * `day/vote` (the only canonical type that permits a null target).
+ */
+function normalizeWerewolfActionType(type: string): WerewolfActionType | null {
+  // 1. exact / already canonical
+  if (CANONICAL_SET.has(type)) return type as WerewolfActionType
+
+  // 2. normalize separators + case, drop the phase prefix if present
+  const stripped = type.replace(/^(night|day)[/_-]/i, '')
+  const key = stripped.replace(/[/_-]/g, '').toLowerCase()
+
+  const byShape: Record<string, WerewolfActionType> = {
+    werewolfkill: 'night/werewolfKill',
+    seercheck: 'night/seerCheck',
+    witchsave: 'night/witchSave',
+    witchpoison: 'night/witchPoison',
+    speak: 'day/speak',
+    vote: 'day/vote',
+  }
+  if (byShape[key]) return byShape[key]
+
+  // 3. semantic synonyms. Keep skip/pass/abstain → vote (only vote allows null target).
+  const byAlias: Record<string, WerewolfActionType> = {
+    kill: 'night/werewolfKill',
+    murder: 'night/werewolfKill',
+    check: 'night/seerCheck',
+    verify: 'night/seerCheck',
+    save: 'night/witchSave',
+    heal: 'night/witchSave',
+    rescue: 'night/witchSave',
+    poison: 'night/witchPoison',
+    skip: 'day/vote',
+    pass: 'day/vote',
+    abstain: 'day/vote',
+    say: 'day/speak',
+    talk: 'day/speak',
+    claim: 'day/speak',
+  }
+  return byAlias[key] ?? null
+}
 
 export type ParserEvent =
   | { kind: 'thinking_delta'; text: string }

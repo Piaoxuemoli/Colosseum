@@ -12,7 +12,8 @@
  *   避免 JSON 反序列化意外把旁白关掉。
  *
  * 注意：关掉的是「解说性旁白」；狼人杀的流程性宣告（阶段切换、死亡公示）
- * 属规则必需，不受本开关影响（见 werewolf-hooks.ts 的 payload 拆分）。
+ * 属规则必需，不受本开关影响——engine2 的 announce 阶段事件（spec
+ * docs/specs/engine2-integration.md §5）即承担该职责。
  */
 
 export type NarrationGateConfig = Record<string, unknown> | null | undefined

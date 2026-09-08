@@ -1,5 +1,5 @@
 // 牌型评估器：best 5 of 7 枚举（调研 §2.2 选型：正确性优先）。
-// 移植自旧引擎 src/games/poker/engine/evaluator.ts（含轮子 A-2-3-4-5 处理），
+// 移植自旧 v1 引擎的评估器（含轮子 A-2-3-4-5 处理），
 // 按 PFR-201 重新组织输出：category / tiebreak（比较键）/ value（编码值）/ best5。
 
 import type { Card } from './cards'
