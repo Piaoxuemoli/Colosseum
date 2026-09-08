@@ -8,6 +8,10 @@ import { ensureGamesRegistered } from '@/platform/instrument'
 import { createAndStartMatch } from '@/backend/orchestrator/match-lifecycle'
 import { MatchCreateValidationError } from '@/backend/orchestrator/match-lifecycle-validation'
 import { ensureWerewolfModerator } from '@/backend/match/ensure-system-moderator'
+import {
+  listMatchesFiltered,
+  parseMatchListFilter,
+} from '@/backend/match/list-matches-filtered'
 import { log } from '@/platform/telemetry/logger'
 
 export const runtime = 'nodejs'
@@ -33,9 +37,37 @@ const createSchema = z.object({
   keyring: z.record(z.string(), z.string()).optional(),
 })
 
-export async function GET(): Promise<Response> {
-  const rows = await db.select().from(matches).orderBy(desc(matches.startedAt)).limit(50)
-  return Response.json({ matches: rows })
+/**
+ * 对局列表（FR-4.6-04 过滤检索）：可选 query 参数 gameType / status / q /
+ * limit——q 匹配对局 id 与参赛 Agent 名。无参数时保持既有行为（最近 50 条）。
+ */
+export async function GET(req: Request): Promise<Response> {
+  const params = new URL(req.url).searchParams
+  let filter
+  try {
+    filter = parseMatchListFilter({
+      gameType: params.get('gameType'),
+      status: params.get('status'),
+      q: params.get('q'),
+      limit: params.get('limit'),
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'invalid filter'
+    return Response.json({ error: 'validation', details: { message } }, { status: 400 })
+  }
+
+  const hasFilter = filter.gameType !== undefined || filter.status !== undefined || filter.q !== undefined
+  if (!hasFilter) {
+    // 既有消费方（无参数）沿用裸行结构，不加参赛者摘要开销。
+    const rows = await db.select().from(matches).orderBy(desc(matches.startedAt)).limit(filter.limit ?? 50)
+    return Response.json({ matches: rows })
+  }
+
+  const items = await listMatchesFiltered(filter)
+  return Response.json({
+    matches: items.map((item) => item.match),
+    participants: Object.fromEntries(items.map((item) => [item.match.id, item.participants])),
+  })
 }
 
 export async function POST(req: Request): Promise<Response> {

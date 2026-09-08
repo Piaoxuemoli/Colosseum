@@ -1,18 +1,21 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Badge } from '@/frontend/components/ui/badge'
 import { RightPanel } from '@/frontend/components/match/RightPanel'
 import { ReplaySummaryPanel } from '@/frontend/components/match/ReplaySummaryPanel'
 import { ReplayControls } from '@/frontend/components/match/ReplayControls'
+import { SettlementTrustSection } from '@/frontend/components/match/SettlementTrustSection'
 import { ViewModeToggle } from '@/frontend/components/match/ViewModeToggle'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
 import type { GameEvent } from '@/platform/core/types'
 import { useMatchViewStore, type PokerUiPlayer } from '@/frontend/store/match-view-store'
 import { useReplayStore } from '@/frontend/store/replay-store'
+import { useThinkingStore } from '@/frontend/store/thinking-store'
+import { thinkingEntryFromEvent } from '@/frontend/lib/client/thinking-events'
 
 type Props = {
   matchId: string
@@ -21,6 +24,7 @@ type Props = {
   events: GameEvent[]
   initialChips: number
   totalEvents: number
+  finalRanking: Record<string, unknown> | null
 }
 
 export function ReplayView({
@@ -30,9 +34,12 @@ export function ReplayView({
   events,
   initialChips,
   totalEvents,
+  finalRanking,
 }: Props) {
   const load = useReplayStore((s) => s.load)
   const reset = useReplayStore((s) => s.reset)
+  const cursor = useReplayStore((s) => s.cursor)
+  const rehydrateThinking = useThinkingStore((s) => s.rehydrate)
 
   const players = useMatchViewStore((s) => s.players)
   const communityCards = useMatchViewStore((s) => s.communityCards)
@@ -55,6 +62,26 @@ export function ReplayView({
       reset()
     }
   }, [events, initialPlayers, load, matchId, reset])
+
+  // FR-4.6-03 思考链回放：思考历史随回放光标重灌——只呈现「已播放到」的
+  // 思考条目（后退 seek 丢弃未来条目），过滤状态（agentFilter）保持。
+  const nameByAgent = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const player of initialPlayers) map.set(player.agentId, player.displayName)
+    return map
+  }, [initialPlayers])
+
+  useEffect(() => {
+    const entries = []
+    for (const event of events.slice(0, cursor)) {
+      const entry = thinkingEntryFromEvent(
+        event,
+        (event.actorAgentId ? nameByAgent.get(event.actorAgentId) : undefined) ?? event.actorAgentId ?? '',
+      )
+      if (entry) entries.push(entry)
+    }
+    rehydrateThinking(entries)
+  }, [cursor, events, nameByAgent, rehydrateThinking])
 
   const werewolfPlayers = players.length > 0 ? players : initialPlayers
 
@@ -107,6 +134,8 @@ export function ReplayView({
         ) : (
           <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />
         )}
+
+        <SettlementTrustSection matchId={matchId} events={events} finalRanking={finalRanking} />
 
         <ReplaySummaryPanel
           gameType={gameType}

@@ -7,11 +7,13 @@ import { FinishAfterHandButton } from '@/frontend/components/match/FinishAfterHa
 import { MatchKeyStatusBadge } from '@/frontend/components/match/MatchKeyStatusBadge'
 import { RightPanel } from '@/frontend/components/match/RightPanel'
 import { RankingPanel } from '@/frontend/components/match/RankingPanel'
+import { SettlementTrustSection } from '@/frontend/components/match/SettlementTrustSection'
 import { ViewModeToggle } from '@/frontend/components/match/ViewModeToggle'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
 import { WerewolfResultPanel } from '@/games/werewolf/ui/WerewolfResultPanel'
 import { useMatchStream } from '@/frontend/lib/client/sse'
+import { thinkingEntryFromEvent } from '@/frontend/lib/client/thinking-events'
 import type { GameEvent } from '@/platform/core/types'
 import { useMatchViewStore, type PokerUiPlayer } from '@/frontend/store/match-view-store'
 import { useThinkingStore } from '@/frontend/store/thinking-store'
@@ -25,31 +27,6 @@ type SseMessage =
   | { kind: 'agent-action-ready'; agentId: string; actionType: string }
   | { kind: 'match-end'; winnerAgentId: string | null }
 
-function thinkingEventEntry(
-  event: GameEvent,
-  displayName: string,
-): { sourceId: string; agentId: string; displayName: string; handNumber: number; day?: number; phase?: string; text: string; at: number } | null {
-  if (event.kind !== 'agent/thinking' || !event.actorAgentId) return null
-  const text = typeof event.payload.text === 'string' ? event.payload.text : ''
-  const handNumber = typeof event.payload.handNumber === 'number' ? event.payload.handNumber : 0
-  // 狼人杀没有「手」概念，GM 持久化 agent/thinking 时 handNumber=0；允许 0 以便
-  // 回放/刷新时恢复狼人思考（扑克 handNumber≥1，不受影响）。
-  if (text.trim().length === 0 || handNumber < 0) return null
-  const at = Date.parse(event.occurredAt)
-  return {
-    sourceId: event.id,
-    agentId: event.actorAgentId,
-    displayName,
-    handNumber,
-    // Werewolf grouping fields (undefined for poker). Read straight from the
-    // persisted payload so playback order never affects the day assignment.
-    day: typeof event.payload.day === 'number' ? event.payload.day : undefined,
-    phase: typeof event.payload.phase === 'string' ? event.payload.phase : undefined,
-    text,
-    at: Number.isFinite(at) ? at : Date.now(),
-  }
-}
-
 export function SpectatorView({
   matchId,
   gameType,
@@ -57,6 +34,7 @@ export function SpectatorView({
   initialEvents,
   initialChips,
   status,
+  finalRanking,
 }: {
   matchId: string
   gameType: 'poker' | 'werewolf'
@@ -64,6 +42,7 @@ export function SpectatorView({
   initialEvents: GameEvent[]
   initialChips: number
   status: string
+  finalRanking: Record<string, unknown> | null
 }) {
   const init = useMatchViewStore((state) => state.init)
   const ingestEvent = useMatchViewStore((state) => state.ingestEvent)
@@ -95,6 +74,7 @@ export function SpectatorView({
   const winnerAgentId = useMatchViewStore((state) => state.winnerAgentId)
   const werewolfDay = useMatchViewStore((state) => state.werewolf.day)
   const werewolfPhase = useMatchViewStore((state) => state.werewolf.phase)
+  const storeEvents = useMatchViewStore((state) => state.events)
 
   const thinkingBuffer = useRef<Record<string, string>>({})
   const thinkingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -120,7 +100,7 @@ export function SpectatorView({
   const ingestViewEvent = useCallback(
     (event: GameEvent) => {
       ingestEvent(event)
-      const entry = thinkingEventEntry(event, nameOf(event.actorAgentId ?? ''))
+      const entry = thinkingEntryFromEvent(event, nameOf(event.actorAgentId ?? ''))
       if (entry) recordThinking(entry)
     },
     [ingestEvent, nameOf, recordThinking],
@@ -230,6 +210,12 @@ export function SpectatorView({
           <div className="min-h-0 flex-1 overflow-hidden">
             <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />
           </div>
+
+          {matchComplete ? (
+            <div className="shrink-0">
+              <SettlementTrustSection matchId={matchId} events={storeEvents} finalRanking={finalRanking} />
+            </div>
+          ) : null}
         </main>
 
         <RightPanel matchId={matchId} gameType={gameType} />
@@ -293,7 +279,7 @@ export function SpectatorView({
       </main>
 
       <RightPanel matchId={matchId} gameType={gameType} startingChips={initialChips} />
-      <RankingPanel initialChips={initialChips} />
+      <RankingPanel matchId={matchId} initialChips={initialChips} finalRanking={finalRanking} />
     </div>
   )
 }

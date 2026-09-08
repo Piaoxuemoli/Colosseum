@@ -7,6 +7,7 @@ import { ErrorBadge } from './ErrorBadge'
 import { ImpressionsPanel } from './ImpressionsPanel'
 import { LiveScoreboard } from './LiveScoreboard'
 import { PokerStatusPanel } from './PokerStatusPanel'
+import { ThinkingAgentFilter } from './ThinkingAgentFilter'
 import { ThinkingLog } from './ThinkingLog'
 import { WerewolfRoster } from '@/games/werewolf/ui/WerewolfRoster'
 import { WerewolfStatusPanel } from '@/games/werewolf/ui/WerewolfStatusPanel'
@@ -85,7 +86,12 @@ function RightPanelBody({
         </TabsContent>
 
         <TabsContent value="thinking" className="mt-2 min-h-0 flex-1 overflow-hidden">
-          {tab === 'thinking' ? (isWerewolf ? <WerewolfThinkingLog /> : <ThinkingLog />) : null}
+          {tab === 'thinking' ? (
+            <div className="flex h-full min-h-0 flex-col gap-2">
+              <ThinkingAgentFilter />
+              <div className="min-h-0 flex-1">{isWerewolf ? <WerewolfThinkingLog /> : <ThinkingLog />}</div>
+            </div>
+          ) : null}
         </TabsContent>
 
         <TabsContent value="impressions" className="mt-2 min-h-0 flex-1 overflow-hidden">

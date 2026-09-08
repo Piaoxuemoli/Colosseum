@@ -28,6 +28,7 @@ export default async function ReplayPage({
       events={bundle.initialEvents}
       initialChips={bundle.initialChips}
       totalEvents={bundle.initialEvents.length}
+      finalRanking={bundle.match.finalRanking ?? null}
     />
   )
 }

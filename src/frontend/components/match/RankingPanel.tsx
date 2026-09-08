@@ -6,14 +6,24 @@ import { Trophy } from 'lucide-react'
 import { Button } from '@/frontend/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/components/ui/dialog'
 import { useMatchViewStore } from '@/frontend/store/match-view-store'
+import { SettlementTrustSection } from './SettlementTrustSection'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
-export function RankingPanel({ initialChips }: { initialChips: number }) {
+export function RankingPanel({
+  matchId,
+  initialChips,
+  finalRanking,
+}: {
+  matchId: string
+  initialChips: number
+  finalRanking: Record<string, unknown> | null
+}) {
   const router = useRouter()
   const status = useMatchViewStore((state) => state.status)
   const players = useMatchViewStore((state) => state.players)
   const handNumber = useMatchViewStore((state) => state.handNumber)
+  const events = useMatchViewStore((state) => state.events)
   const [dismissed, setDismissed] = useState(false)
   const sorted = [...players].sort((a, b) => b.chips - a.chips)
   const open = status === 'settled' && !dismissed
@@ -54,6 +64,8 @@ export function RankingPanel({ initialChips }: { initialChips: number }) {
             )
           })}
         </div>
+
+        <SettlementTrustSection matchId={matchId} events={events} finalRanking={finalRanking} />
 
         <div className="flex justify-end">
           <Button variant="outline" onClick={() => router.push('/')}>

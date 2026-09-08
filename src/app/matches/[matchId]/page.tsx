@@ -17,6 +17,7 @@ export default async function MatchPage({ params }: { params: Promise<{ matchId:
       initialEvents={bundle.initialEvents}
       initialChips={bundle.initialChips}
       status={bundle.match.status}
+      finalRanking={bundle.match.finalRanking ?? null}
     />
   )
 }
