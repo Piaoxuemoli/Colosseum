@@ -5,12 +5,21 @@
 
 ## Active Context
 
-- 当前阶段：**R2 核心体验补全进行中（2026-09-09）**。R2-1 密钥状态 UX ✅、R2-2 主持人种子+旁白开关 ✅；**引擎 v2 已接入平台且是唯一运行时**（spec `docs/specs/engine2-integration.md`：GM 只驱动 `GameModuleV2`，v1 引擎栈已于 2026-09-09 整体删除——旧 engine 目录、werewolf-hooks、action-validator、v1 bot/context/parser 与 v1 测试；`games/*/plugin.ts` 现为 v2 插件薄再导出）。下一步主线 = R2-3/2-4（历史复盘增强、结算可信化）+ R2-5/2-6（真实 LLM 全链路验收）。
+- 当前阶段：**R2 核心体验补全全部完成并归档（2026-09-09）**。下一步 = roadmap **R3 体系升级**（呈现契约抽象 → 新品类冒烟、AI 主持人旁白增强、赛后解说、跨对局画像、用量可见）。
+- **真实 LLM 验收已通过（本地 dev，kimi-k3@ark）**：狼人杀 2 天完整局（74 事件 / 0 错误 / 排名+角色+死因落库，好人胜：狼 1 放逐 + 狼 2 毒杀）+ 德扑含 all-in 自动 run-out 的受控局（3 次强制摊牌 / 边池 / 2 淘汰 / 2 次瞬时错误被三层容错兜底续跑）。驱动脚本 `scripts/dev/local-llm-validation.mjs`（外部 tick 补发 + `--resume` 续管）；**LLM key 只存 .env（gitignored），绝不入库**。
 - **运维备注（部署后必办）**：生产上遗留的旧格式 RUNNING 对局无法被 v2 运行时解读——部署本版后须逐个调 `POST /api/matches/:id/force-end` 强制终结（force-end 不依赖 state 形状，可安全收尾旧局）。
 - 产品开放决策已全部由 AI 产品代理代决（38 项，`docs/prd/` 各文档「已代决」标注，所有者可推翻）。
 - 安全：git 历史已清除泄露 key（force push 完成）；**key 吊销待用户线下处理（豆包/Kimi/DeepSeek/GLM/通义/MiniMax）**。
-- 测试基线：31 文件 / 362 测试全绿（2026-09-09 v1 清理后；清理前 49 文件 / 694，删除的 332 个为 v1 引擎/解析器专属测试，v2 覆盖在 engine2/ 与 plugin-v2/GM-v2 测试中）；CI 四 job 全绿。
+- 测试基线：36 文件 / 408 测试全绿（v2 运行时 362 + R2-3/4 复盘结算 46）；CI 四 job。
 - 导航入口：`AGENTS.md` → `docs/INDEX.md`。
+
+## 本地真实验收的运维经验（重要，勿再踩）
+
+- **`.next-build` 是 dev 与 build 共享的 distDir**：dev server 运行时跑 `npm run build` 会互相清对方的 chunk（`Cannot find module './xxx.js'` → 全站 500）。验收/构建前必须先停 dev server。
+- **dev 模式下 tick 自驱动链不抗编译风暴**：自链 fetch 失败被静默吞掉导致对局停摆；用 `local-llm-validation.mjs`（内置外部补发 tick）或手动 `POST /api/matches/:id/tick` 续推。生产模式（next start）无此问题。
+- 后台起 dev server 不要用 `| head`（管道关闭杀日志且可能留孤儿进程占端口）；用 `> tmp/dev-server.log 2>&1`。
+- Docker Hub 直连不可用：`docker pull docker.m.daocloud.io/library/redis:7-alpine` 再 `docker tag` 成 `redis:7-alpine`。
+- 端口僵尸进程：`netstat -ano | grep :3000` 找 PID → `taskkill //PID <pid> //F`。
 
 ## 引擎 v2 接入落点（2026-09-09 完成后的入口知识）
 
