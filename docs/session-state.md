@@ -13,6 +13,8 @@
 
 ## R1 落点（2026-09-08）
 
+> **⚠️ 2026-09-08 git 历史已重写**：为清除泄露凭据（见下），用 git-filter-repo 从全部历史剥离 `old/src/store/profile-store.ts` 与 `archive/old/src/store/profile-store.ts` 两个路径并 force push（main + 4 tag）。**本文及审计文档中此前的 commit 哈希引用（621168f、1ba955c、d3a6f0e、c20a3f9、c136aff、141aa76、de2179e、2937d9a、aa594f7 等）已随重写失效，仅作时间线索参考。** 6 个 key 前缀已验证全历史 0 命中；GitHub 端旧对象待其 GC 回收（私有仓库 + 用户自行吊销 key 后风险可控；如需立即清除可联系 GitHub Support）。审计 02 的「清史」可选项已完成，key 吊销仍待用户线下执行。
+
 - 测试体系：Vitest 4.1 + 顶层 `tests/unit/`，19 文件 / 367 测试全绿（poker 115、werewolf 184、平台/解析器/store 68）；`npm test` 接入 `check` 与 CI。
 - CI：`.github/workflows/ci.yml`（lint / typecheck / test+surfaces / build 四并行 job，Node 22，npm 缓存，PR 并发取消）。**推送后需在 GitHub 上确认首轮 run 全绿。**
 - 游戏调研 ×2 → 游戏 PRD ×4 + 大厅 PRD ×1；审计增补 23-36 号（§八）。
