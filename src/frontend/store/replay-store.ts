@@ -60,7 +60,10 @@ function replayTo(
     useMatchViewStore.getState().reset()
     return
   }
-  useMatchViewStore.setState(deriveMatchView(events.slice(0, target), seatSetup))
+  // 回放重投影沿用当前观战视角（god/public），v2 投影随同一分派生效
+  // （engine2-integration spec §6：事件流即真相，seek/rewind 天然一致）。
+  const viewMode = useMatchViewStore.getState().viewMode
+  useMatchViewStore.setState(deriveMatchView(events.slice(0, target), seatSetup, viewMode))
 }
 
 export const useReplayStore = create<ReplayState>((set, get) => ({

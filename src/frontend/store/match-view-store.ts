@@ -2,6 +2,17 @@
 
 import { create } from 'zustand'
 import type { GameEvent } from '@/platform/core/types'
+import { isPokerV2Event, isWerewolfV2Event, type ViewMode } from './projections/common'
+import { emptyPokerV2, reducePokerV2Event, type PokerV2Accumulator } from './projections/poker-v2'
+import {
+  emptyWerewolfV2,
+  reduceWerewolfV2Event,
+  type WerewolfV2Accumulator,
+} from './projections/werewolf-v2'
+
+export type { ViewMode } from './projections/common'
+export type { PokerV2Accumulator } from './projections/poker-v2'
+export type { WerewolfV2Accumulator } from './projections/werewolf-v2'
 
 export type CardVisual = { rank: string; suit: string }
 
@@ -99,12 +110,25 @@ export type MatchViewState = {
   rightPanelTab: RightPanelTab
   expandedActionHands: number[]
   expandedThinkingHands: number[]
+  /**
+   * 观战视角（engine2-integration spec §6）：`god` 全量；`public` 按受众
+   * 剥离载荷（底牌/夜间动作/未揭示身份）。切换由 setViewMode 基于已存
+   * events 全量重投影实现，无需重新拉取。
+   */
+  viewMode: ViewMode
+  /** init 时的座位布局快照，供视角切换/回放重投影时复位。 */
+  seatSetup: { matchId: string; players: PokerUiPlayer[] } | null
+  /** engine2 v2 投影内部累积器（扑克）。 */
+  pokerV2: PokerV2Accumulator
+  /** engine2 v2 投影内部累积器（狼人杀）。 */
+  werewolfV2: WerewolfV2Accumulator
   reset(): void
   init(input: { matchId: string; players: PokerUiPlayer[] }): void
   ingestEvent(event: GameEvent): void
   setMatchEnd(winnerAgentId: string | null): void
   recordHandSnapshot(handNumber: number, chips: Record<string, number>): void
   setRightPanelTab(tab: RightPanelTab): void
+  setViewMode(mode: ViewMode): void
   toggleActionHand(handNumber: number): void
   toggleThinkingHand(handNumber: number): void
   ensureActionHandExpanded(handNumber: number): void
@@ -119,6 +143,7 @@ export type MatchViewProjection = Omit<
   | 'setMatchEnd'
   | 'recordHandSnapshot'
   | 'setRightPanelTab'
+  | 'setViewMode'
   | 'toggleActionHand'
   | 'toggleThinkingHand'
   | 'ensureActionHandExpanded'
@@ -160,9 +185,16 @@ const initialState = {
   rightPanelTab: 'status' as RightPanelTab,
   expandedActionHands: [] as number[],
   expandedThinkingHands: [] as number[],
+  viewMode: 'god' as ViewMode,
+  seatSetup: null as { matchId: string; players: PokerUiPlayer[] } | null,
+  pokerV2: emptyPokerV2(),
+  werewolfV2: emptyWerewolfV2(),
 }
 
-function createInitialProjection(input?: { matchId: string; players: PokerUiPlayer[] }): MatchViewProjection {
+function createInitialProjection(
+  input?: { matchId: string; players: PokerUiPlayer[] },
+  viewMode: ViewMode = 'god',
+): MatchViewProjection {
   return {
     ...initialState,
     matchId: input?.matchId ?? initialState.matchId,
@@ -172,6 +204,10 @@ function createInitialProjection(input?: { matchId: string; players: PokerUiPlay
     handNumber: input ? 1 : initialState.handNumber,
     status: input ? 'live' : initialState.status,
     events: [] as RichGameEvent[],
+    viewMode,
+    seatSetup: input ? { matchId: input.matchId, players: input.players } : null,
+    pokerV2: emptyPokerV2(),
+    werewolfV2: emptyWerewolfV2(),
   }
 }
 
@@ -338,6 +374,11 @@ function updatePlayersOnAction(
 }
 
 export function reduceMatchViewEvent(state: MatchViewProjection, event: GameEvent): MatchViewProjection {
+  // engine2 v2 信封（spec §3：`${gameType}:v2:${kind}`）分派到 v2 投影模块；
+  // 旧 kind 保持既有 v1 路径（切换期两种流并存）。
+  if (isPokerV2Event(event)) return reducePokerV2Event(state, event)
+  if (isWerewolfV2Event(event)) return reduceWerewolfV2Event(state, event)
+
   let phase = state.phase
   let handNumber = state.handNumber
   let currentActor = state.currentActor
@@ -555,14 +596,18 @@ export function reduceMatchViewEvent(state: MatchViewProjection, event: GameEven
   }
 }
 
-export function deriveMatchView(events: GameEvent[], input: { matchId: string; players: PokerUiPlayer[] }): MatchViewProjection {
+export function deriveMatchView(
+  events: GameEvent[],
+  input: { matchId: string; players: PokerUiPlayer[] },
+  viewMode: ViewMode = 'god',
+): MatchViewProjection {
   return events.reduce(
     (state, event) => reduceMatchViewEvent(state, event),
-    createInitialProjection(input),
+    createInitialProjection(input, viewMode),
   )
 }
 
-export const useMatchViewStore = create<MatchViewState>((set) => ({
+export const useMatchViewStore = create<MatchViewState>((set, get) => ({
   ...initialState,
 
   reset() {
@@ -570,7 +615,7 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
   },
 
   init(input) {
-    set(createInitialProjection(input))
+    set(createInitialProjection(input, get().viewMode))
   },
 
   ingestEvent(event) {
@@ -589,6 +634,28 @@ export const useMatchViewStore = create<MatchViewState>((set) => ({
 
   setRightPanelTab(tab) {
     set({ rightPanelTab: tab })
+  },
+
+  /**
+   * 视角切换（spec §6）：基于已存事件流全量重投影——单用户私有部署观战端
+   * 全量持有事件（含 restricted），过滤只发生在前端投影层。无需重新拉取。
+   */
+  setViewMode(mode) {
+    const state = get()
+    if (state.viewMode === mode) return
+    const seatSetup = state.seatSetup
+    if (!seatSetup || state.events.length === 0) {
+      set({ viewMode: mode })
+      return
+    }
+    const derived = deriveMatchView(state.events, seatSetup, mode)
+    // 仅重投影数据面；UI 折叠状态（tab/展开手牌）保持。
+    set({
+      ...derived,
+      rightPanelTab: state.rightPanelTab,
+      expandedActionHands: state.expandedActionHands,
+      expandedThinkingHands: state.expandedThinkingHands,
+    })
   },
 
   toggleActionHand(handNumber) {

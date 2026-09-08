@@ -9,32 +9,40 @@ export class MatchCreateValidationError extends Error {
   readonly name = 'MatchCreateValidationError'
 }
 
-export type ValidateWerewolfCreateInput = {
+export type ValidateMatchCreateInput = {
   agentIds: string[]
   moderatorAgentId: string | null
+  /** engine2 配置（狼人杀板子 boardId 参与人数校验）。 */
+  engineConfig?: Record<string, unknown>
+}
+
+/** engine2 狼人杀板子座位数（与 games/werewolf/engine2 预设一致）。 */
+const WEREWOLF_BOARD_SEATS: Record<string, number> = {
+  'base-6': 6,
+  '333-9': 9,
 }
 
 /**
- * Validates inputs for creating a werewolf match.
+ * Validates inputs for creating a werewolf match (v2).
  *
  * Invariants:
- * - exactly 6 player agents
- * - a moderator agent is required (the GM calls it on every phase boundary)
+ * - player count matches the engine2 board preset (base-6 默认 / 333-9)
+ * - a moderator agent is required (seeding flow guarantees one)
  * - player agent ids must be unique
  * - moderator cannot double as a player
  */
-export function validateWerewolfCreate(input: ValidateWerewolfCreateInput): void {
-  if (input.agentIds.length !== 6) {
+export function validateWerewolfCreate(input: ValidateMatchCreateInput): void {
+  const boardId = typeof input.engineConfig?.boardId === 'string' ? input.engineConfig.boardId : 'base-6'
+  const seats = WEREWOLF_BOARD_SEATS[boardId] ?? 6
+  if (input.agentIds.length !== seats) {
     throw new MatchCreateValidationError(
-      `werewolf requires exactly 6 player agents, got ${input.agentIds.length}`,
+      `werewolf board "${boardId}" requires exactly ${seats} player agents, got ${input.agentIds.length}`,
     )
   }
   const dupCheck = new Set<string>()
   for (const id of input.agentIds) {
     if (dupCheck.has(id)) {
-      throw new MatchCreateValidationError(
-        `werewolf player agents contain duplicate id: ${id}`,
-      )
+      throw new MatchCreateValidationError(`werewolf player agents contain duplicate id: ${id}`)
     }
     dupCheck.add(id)
   }
@@ -42,16 +50,30 @@ export function validateWerewolfCreate(input: ValidateWerewolfCreateInput): void
     throw new MatchCreateValidationError('werewolf requires a moderatorAgentId')
   }
   if (dupCheck.has(input.moderatorAgentId)) {
-    throw new MatchCreateValidationError(
-      `werewolf moderator cannot also be a player (${input.moderatorAgentId})`,
-    )
+    throw new MatchCreateValidationError(`werewolf moderator cannot also be a player (${input.moderatorAgentId})`)
   }
 }
 
-/** Game-type aware guard; no-op for games without special validation. */
-export function validateMatchCreate(
-  gameType: GameType,
-  input: ValidateWerewolfCreateInput,
-): void {
+/**
+ * Validates inputs for creating a poker match (v2, engine2 支持 2–9 人).
+ */
+export function validatePokerCreate(input: ValidateMatchCreateInput): void {
+  if (input.agentIds.length < 2 || input.agentIds.length > 9) {
+    throw new MatchCreateValidationError(
+      `poker requires 2-9 player agents (engine2 PFR-102), got ${input.agentIds.length}`,
+    )
+  }
+  const dupCheck = new Set<string>()
+  for (const id of input.agentIds) {
+    if (dupCheck.has(id)) {
+      throw new MatchCreateValidationError(`poker player agents contain duplicate id: ${id}`)
+    }
+    dupCheck.add(id)
+  }
+}
+
+/** Game-type aware guard. */
+export function validateMatchCreate(gameType: GameType, input: ValidateMatchCreateInput): void {
   if (gameType === 'werewolf') validateWerewolfCreate(input)
+  if (gameType === 'poker') validatePokerCreate(input)
 }

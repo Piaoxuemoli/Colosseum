@@ -50,6 +50,9 @@ function actionColorClass(type: string): string {
 
 function describeAction(event: GameEvent, nameOf: (agentId: string | null) => string): { text: string; className: string } {
   if (event.kind !== 'poker/action') {
+    if (event.kind.startsWith('poker:v2:')) {
+      return describePokerV2Event(event, nameOf)
+    }
     return { text: describeSystemEvent(event), className: 'text-slate-300' }
   }
 
@@ -110,6 +113,80 @@ function describeSystemEvent(event: GameEvent): string {
   }
 }
 
+/**
+ * engine2 v2 信封事件的行动日志文案（spec §3：payload = engine2 事件平铺）。
+ * 只呈现 public 受众的事实事件——底牌（self）与种子（delayed-public）不入列。
+ */
+function describePokerV2Event(
+  event: GameEvent,
+  nameOf: (agentId: string | null) => string,
+): { text: string; className: string } {
+  const payload = event.payload as Record<string, unknown>
+  const kind = event.kind.slice('poker:v2:'.length)
+  const action = (payload.action ?? {}) as Record<string, unknown>
+
+  switch (kind) {
+    case 'blinds-posted': {
+      const posts = Array.isArray(payload.posts) ? (payload.posts as Array<Record<string, unknown>>) : []
+      const text = posts
+        .map((post) => {
+          const seatId = typeof post.seatId === 'string' ? post.seatId : null
+          const blind = post.blind === 'sb' ? '小盲' : '大盲'
+          return `${nameOf(seatId)} ${blind}${formatAmount(post.posted)}`
+        })
+        .join('，')
+      return { text: text || '盲注', className: 'text-slate-300' }
+    }
+    case 'action-made': {
+      const type = typeof action.type === 'string' ? action.type : 'act'
+      const actor = nameOf(event.actorAgentId ?? (typeof payload.seatId === 'string' ? payload.seatId : null))
+      const amount = formatAmount(action.to ?? action.paid)
+      const allIn = action.allIn === true
+      if (allIn) return { text: `${actor} 全下${amount}`, className: actionColorClass('allIn') }
+      const className = actionColorClass(type)
+      switch (type) {
+        case 'fold':
+          return { text: `${actor} 弃牌`, className }
+        case 'check':
+          return { text: `${actor} 过牌`, className }
+        case 'call':
+          return { text: `${actor} 跟注${amount}`, className }
+        case 'bet':
+          return { text: `${actor} 下注${amount}`, className }
+        case 'raise':
+          return { text: `${actor} 加注到${amount}`, className }
+        default:
+          return { text: `${actor} ${type}${amount}`, className }
+      }
+    }
+    case 'street-dealt': {
+      const street = payload.street
+      const label = street === 'flop' ? '翻牌' : street === 'turn' ? '转牌' : street === 'river' ? '河牌' : '发牌'
+      const cards = Array.isArray(payload.cards) ? (payload.cards as Array<{ rank: string; suit: string }>) : []
+      return { text: `${label}：${cards.map(formatCard).join(' ')}`, className: 'text-slate-300' }
+    }
+    case 'run-out-started':
+      return { text: '全下 run-out，自动发完公共牌', className: 'text-slate-300' }
+    case 'cards-revealed': {
+      const seatId = typeof payload.seatId === 'string' ? payload.seatId : null
+      const cards = Array.isArray(payload.cards) ? (payload.cards as Array<{ rank: string; suit: string }>) : []
+      return { text: `${nameOf(seatId)} 亮牌 ${cards.map(formatCard).join(' ')}`, className: 'text-amber-200' }
+    }
+    case 'pot-awarded': {
+      const winners = Array.isArray(payload.winners) ? (payload.winners as Array<Record<string, unknown>>) : []
+      const amount = typeof payload.amount === 'number' ? payload.amount : null
+      const amountText = amount !== null ? ` ${amount}` : ''
+      if (winners.length === 0) return { text: `底池分配${amountText}`, className: 'text-slate-300' }
+      const names = winners
+        .map((winner) => (typeof winner.seatId === 'string' ? winner.seatId : null))
+        .filter((id): id is string => id !== null)
+      return { text: `底池分配 +${amountText} → ${names.join(', ')}`, className: 'text-slate-300' }
+    }
+    default:
+      return { text: event.kind, className: 'text-slate-300' }
+  }
+}
+
 function CurrentActionPanel({
   event,
   nameOf,
@@ -157,6 +234,13 @@ export function ActionLog() {
         'poker/deal-river',
         'poker/showdown',
         'poker/pot-award',
+        // engine2 v2 信封（spec §3）——仅 public 事实事件，底牌/种子不入列。
+        'poker:v2:blinds-posted',
+        'poker:v2:action-made',
+        'poker:v2:street-dealt',
+        'poker:v2:run-out-started',
+        'poker:v2:cards-revealed',
+        'poker:v2:pot-awarded',
       ].includes(event.kind),
     )
   }, [events])

@@ -7,6 +7,7 @@ import { Badge } from '@/frontend/components/ui/badge'
 import { RightPanel } from '@/frontend/components/match/RightPanel'
 import { ReplaySummaryPanel } from '@/frontend/components/match/ReplaySummaryPanel'
 import { ReplayControls } from '@/frontend/components/match/ReplayControls'
+import { ViewModeToggle } from '@/frontend/components/match/ViewModeToggle'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
 import type { GameEvent } from '@/platform/core/types'
@@ -86,6 +87,7 @@ export function ReplayView({
             </Badge>
             <Badge variant="secondary">共 {totalEvents} 个事件</Badge>
             {gameType === 'werewolf' ? <Badge>Day {werewolfDay}</Badge> : null}
+            <ViewModeToggle />
           </div>
         </div>
 

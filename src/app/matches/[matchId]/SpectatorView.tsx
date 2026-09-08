@@ -7,6 +7,7 @@ import { FinishAfterHandButton } from '@/frontend/components/match/FinishAfterHa
 import { MatchKeyStatusBadge } from '@/frontend/components/match/MatchKeyStatusBadge'
 import { RightPanel } from '@/frontend/components/match/RightPanel'
 import { RankingPanel } from '@/frontend/components/match/RankingPanel'
+import { ViewModeToggle } from '@/frontend/components/match/ViewModeToggle'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
 import { WerewolfResultPanel } from '@/games/werewolf/ui/WerewolfResultPanel'
@@ -212,6 +213,7 @@ export function SpectatorView({
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{werewolfPhase ?? 'waiting'}</Badge>
               <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
+              <ViewModeToggle />
               <MatchKeyStatusBadge matchId={matchId} />
               {matchComplete ? <Badge>对局结束</Badge> : null}
               {status !== 'running' ? (
@@ -252,6 +254,7 @@ export function SpectatorView({
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{phase}</Badge>
             <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
+            <ViewModeToggle />
             <MatchKeyStatusBadge matchId={matchId} />
             {matchComplete ? <Badge>对局结束</Badge> : null}
             <FinishAfterHandButton matchId={matchId} status={status} />

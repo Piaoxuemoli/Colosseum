@@ -1,32 +1,45 @@
-import type { GameEvent, GameType } from '@/platform/core/types'
+/**
+ * GM v2 驱动循环（spec: docs/specs/engine2-integration.md §5）。
+ *
+ * v2 是唯一运行时：本文件只驱动 GameModuleV2 插件面，不含任何
+ * `gameType === 'xxx'` 分支——跨游戏差异全部在各游戏的 plugin-v2 里。
+ *
+ * 事件信封（spec §3）：engine2 事件落库 kind = `${gameType}:v2:${kind}`，
+ * visibility/restrictedTo 由 audience 派生，payload 保留引擎事件本体（含
+ * audience），seq 沿用引擎事件序；SSE 全量广播（含 restricted）。
+ * agent 决策上下文只允许由 visibleEvents(all, actorId) 重建（spec §1.3）。
+ */
+
+import type { GameEvent, GameType, MatchResult } from '@/platform/core/types'
+import type { V2AgentDecisionData, V2Event } from '@/platform/engine/contracts-v2'
+import { v2RestrictedTo, v2Visibility } from '@/platform/engine/contracts-v2'
 import { requestAgentDecisionToy } from '@/backend/a2a-core/client'
-import { appendEvents, nextSeq } from '@/platform/db/queries/events'
+import { appendEvents, listMatchEvents } from '@/platform/db/queries/events'
 import { recordAgentError } from '@/platform/db/queries/errors'
 import { insertEpisodic, listEpisodic, loadSemantic, upsertSemantic } from '@/platform/db/queries/memory'
 import { findAgentById } from '@/platform/db/queries/agents'
 import { findMatchById, listParticipants } from '@/platform/db/queries/matches'
-import { generateImpressionParagraph } from '@/games/poker/memory/summary'
-import type { PokerEpisodicEntry } from '@/games/poker/memory/episodic'
-import type { PokerSemanticProfile } from '@/games/poker/memory/semantic'
-import { isNarrationEnabled } from '@/backend/match/narration-gate'
-import { getGame } from '@/platform/core/registry'
+import { getGameV2 } from '@/platform/core/registry'
+import { ensureGamesRegistered } from '@/platform/instrument'
 import { loadEnv } from '@/platform/env'
 import { redis } from '@/platform/redis/client'
 import { keys } from '@/platform/redis/keys'
 import { log } from '@/platform/telemetry/logger'
 import { inc, observe } from '@/platform/telemetry/metrics'
 import { newEventId } from '@/platform/core/ids'
-import { coerceToValidAction } from './action-validator'
-import { bucketizeFallbackReason } from './fallback-reasons'
 import { finalizeMatch } from './match-lifecycle'
 import { publishSse } from './sse-broadcast'
-import { moderatorNarrationEvent } from './werewolf-hooks'
-import type { WerewolfState } from '@/games/werewolf/engine/types'
-import type { PokerActionRecord, PokerState } from '@/games/poker/engine/poker-types'
+import { bucketizeFallbackReason } from './fallback-reasons'
 
 export type TickResult = { done: boolean }
 
+/** agent 消息中可见事件窗口（spec §4：最近 N 条，须含当前阶段上下文）。 */
+const AGENT_EVENTS_WINDOW = 200
+
+type V2Plugin = ReturnType<typeof getGameV2>
+
 export async function tickMatch(matchId: string): Promise<TickResult> {
+  ensureGamesRegistered()
   const locked = await redis.set(keys.matchLock(matchId), '1', 'EX', 60, 'NX')
   if (!locked) {
     log.info('tick skipped: locked', { matchId })
@@ -37,16 +50,7 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
   try {
     const forceEndRequested = await redis.get(keys.matchForceEnd(matchId))
     if (forceEndRequested === '1') {
-      const stateRaw = await redis.get(keys.matchState(matchId))
-      if (stateRaw) {
-        const state = JSON.parse(stateRaw) as Record<string, unknown>
-        state.matchComplete = true
-        state.currentActor = null
-        state.stopRequested = true
-        await redis.set(keys.matchState(matchId), JSON.stringify(state), 'EX', 24 * 60 * 60)
-      }
-      await finalizeMatch(matchId)
-      await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
+      await executeForceEnd(matchId)
       await redis.del(keys.matchForceEnd(matchId))
       return { done: true }
     }
@@ -60,43 +64,87 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
       return { done: true }
     }
 
-    let state = JSON.parse(stateRaw) as unknown
-    const game = getGame(match.gameType as GameType)
+    const gameType = match.gameType as GameType
+    const plugin = getGameV2(gameType)
+    let state: unknown = JSON.parse(stateRaw)
+
+    // stopRequested → requestStopAfterCurrentHand（状态不变则照常推进）
     const stopRequested = (await redis.get(keys.matchStopRequested(matchId))) === '1'
-    if (stopRequested && game.requestStopAfterHand) {
-      state = game.requestStopAfterHand(state)
+    if (stopRequested) {
+      const stop = plugin.requestStopAfterCurrentHand(state)
+      if (stop.events.length > 0) {
+        await persistAndPublish(matchId, gameType, stop.events, { isDefault: false })
+      }
+      state = stop.state
     }
 
-    const actorId = game.engine.currentActor(state)
-    const gameType = String(match.gameType)
-
-    if (!actorId) {
-      await finalizeMatch(matchId)
+    const classification = plugin.classify(state)
+    if (classification.kind === 'finished') {
+      await finalizeMatch(matchId, { result: classification.result })
       await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
       inc('tick.count', 1, { gameType, outcome: 'finalize' })
       observe('tick.duration_ms', performance.now() - tickStart, { gameType })
       return { done: true }
     }
 
-    const validActions = game.engine.availableActions(state, actorId)
+    const actorId = classification.actorAgentId
+    const legalActions = plugin.legalActions(state, actorId)
+    const decisionContext = plugin.decisionContext(state, actorId)
+
+    // agent 决策上下文唯一真相：visibleEvents(fullStream, actorId) 最近 N 条
+    const fullStream = (await listMatchEvents(matchId)).map((event) => event.payload)
+    const visibleEvents = plugin.visibleEventsFor(fullStream, actorId).slice(-AGENT_EVENTS_WINDOW)
+
+    const timeoutMs = typeof match.config.agentTimeoutMs === 'number' ? match.config.agentTimeoutMs : undefined
     const agentStart = performance.now()
-    const agentDecision = await requestAgentDecision({
+    const decision = await requestAgentDecision({
       matchId,
       agentId: actorId,
-      state,
-      validActions,
-      timeoutMs: typeof match.config.agentTimeoutMs === 'number' ? match.config.agentTimeoutMs : undefined,
-      fallback: () => game.botStrategy.decide(state, validActions as unknown[]),
+      events: visibleEvents,
+      legalActions,
+      decisionContext,
+      gameInfo: plugin.gameInfo(state),
+      timeoutMs,
     })
     observe('agent.request_ms', performance.now() - agentStart, { gameType })
-    const { action, layer } = coerceToValidAction(agentDecision.action, validActions, state, game.botStrategy, {
-      matchId,
-      agentId: actorId,
-      layerIfPassed: 'parse',
-    })
 
-    if (agentDecision.fallback || layer === 'fallback') {
-      const rawCode = agentDecision.errorCode ?? 'agent-invalid-action'
+    // 校验链（spec §4）：normalizeAction → applyAction；失败 → applyDefaultAction
+    let applied: { ok: true; state: unknown; events: V2Event[] } | null = null
+    let usedDefault = false
+    let rejectionMessage: string | null = null
+
+    if (decision.action !== null && decision.action !== undefined) {
+      const normalized = plugin.normalizeAction(decision.action, state, actorId)
+      if (normalized.ok) {
+        const outcome = plugin.applyAction(state, actorId, normalized.action)
+        if (outcome.ok) {
+          applied = outcome
+        } else {
+          rejectionMessage = `${outcome.rejection.code}: ${outcome.rejection.message}`
+        }
+      } else {
+        rejectionMessage = `${normalized.rejection.code}: ${normalized.rejection.message}`
+      }
+    }
+
+    if (!applied) {
+      const outcome = plugin.applyDefaultAction(state)
+      if (!outcome.ok) {
+        log.error('tick: applyDefaultAction rejected — engine invariant broken', {
+          matchId,
+          gameType,
+          rejection: outcome.rejection,
+        })
+        await finalizeMatch(matchId, {})
+        await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
+        return { done: true }
+      }
+      applied = outcome
+      usedDefault = true
+    }
+
+    if (decision.fallback || usedDefault) {
+      const rawCode = decision.errorCode ?? 'agent-invalid-action'
       inc('agent.fallback', 1, { gameType, reason: bucketizeFallbackReason(rawCode) })
       if (!isAgentEndpointRecordedError(rawCode)) {
         await recordAgentError({
@@ -104,155 +152,50 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
           agentId: actorId,
           layer: 'fallback',
           errorCode: rawCode,
-          recoveryAction: action as Record<string, unknown>,
+          recoveryAction: applied.events[0]?.raw ?? null,
         })
       }
+    } else if (rejectionMessage !== null) {
+      log.warn('tick: agent action rejected, default applied', { matchId, agentId: actorId, rejectionMessage })
     }
 
-    const { nextState, events } = game.engine.applyAction(state, actorId, action)
-    const boundary = game.engine.boundary(state, nextState)
-
-    const augmentedEvents = [...events]
-    const thinkingText = agentDecision.thinkingText.trim()
-    if (thinkingText.length > 0) {
-      augmentedEvents.unshift({
-        id: newEventId(),
-        matchId,
-        gameType: match.gameType as GameType,
-        seq: 0,
-        occurredAt: new Date().toISOString(),
-        kind: 'agent/thinking',
-        actorAgentId: actorId,
-        payload: {
-          handNumber:
-            typeof (state as Partial<PokerState>).handNumber === 'number'
-              ? (state as Partial<PokerState>).handNumber
-              : 0,
-          // Werewolf has no "hand"; carry day + phase so the spectator UI can
-          // group reasoning by「第 N 夜 / 第 N 天」. Read from the pre-action
-          // `state` (the world the agent reasoned about), which is accurate
-          // because `s.day += 1` only happens inside `applyAction`'s phase
-          // transition. Poker leaves these undefined.
-          day: match.gameType === 'werewolf' ? (state as WerewolfState).day : undefined,
-          phase: match.gameType === 'werewolf' ? (state as WerewolfState).phase : undefined,
-          text: thinkingText,
-        },
-        visibility: 'public',
-        restrictedTo: null,
-      })
+    // 事件批量落库 + SSE；thinking 事件由 GM 合成（seq 经插件预留，保持单调）
+    let nextState = applied.state
+    const engineEvents = applied.events
+    const thinkingText = decision.thinkingText.trim()
+    const thinkingEvent =
+      thinkingText.length > 0
+        ? makeThinkingEvent(matchId, gameType, actorId, plugin.stateSummary(state), thinkingText)
+        : null
+    if (thinkingEvent) {
+      const reserved = plugin.reserveEventSeq(nextState)
+      nextState = reserved.state
+      thinkingEvent.seq = reserved.seq
     }
-    if (match.gameType === 'werewolf') {
-      const narrationEvent = moderatorNarrationEvent(
-        state as WerewolfState,
-        nextState as WerewolfState,
-        // FR-4.7-01 kill-switch (R2-2): matches.config.narrationEnabled ===
-        // false 时仅静音 LLM 主持人解说；流程性宣告仍由事件 payload 携带。
-        { narrationEnabled: isNarrationEnabled(match.config) },
-      )
-      if (narrationEvent) {
-        augmentedEvents.push({
-          ...narrationEvent,
-          id: newEventId(),
-          matchId: '',
-          seq: 0,
-        })
+    await persistAndPublish(matchId, gameType, engineEvents, {
+      isDefault: usedDefault,
+      extra: thinkingEvent ? [thinkingEvent] : [],
+    })
+
+    // 游戏专属钩子（印象等）：IO 在 GM
+    plugin.onEventsBatch(nextState, engineEvents)
+    const impressions = plugin.impressions
+    if (impressions) {
+      for (const signal of impressions.fromBatch(nextState, engineEvents, fullStream)) {
+        await persistImpressions(matchId, gameType, signal, impressions.memory)
       }
     }
 
-    // Emit a terminal werewolf/game-end event BEFORE finalize so the SSE
-    // consumer can reveal roles. Without this, the UI result panel never
-    // opens because it waits for ww.winner to be populated by this event.
-    if (game.publicStateEvent) {
-      augmentedEvents.push({
-        ...game.publicStateEvent(nextState),
-        id: newEventId(),
-        matchId: '',
-        seq: 0,
-      })
-    }
+    await redis.set(keys.matchState(matchId), JSON.stringify(nextState), 'EX', 24 * 60 * 60)
 
-    const nextStateMatchComplete = (nextState as { matchComplete?: boolean }).matchComplete === true
-    const isTerminalTransition = boundary === 'match-end' || nextStateMatchComplete
-    if (isTerminalTransition && match.gameType === 'werewolf') {
-      const ws = nextState as WerewolfState
-      augmentedEvents.push({
-        gameType: 'werewolf',
-        occurredAt: new Date().toISOString(),
-        kind: 'werewolf/game-end',
-        actorAgentId: null,
-        payload: {
-          winner: ws.winner,
-          actualRoles: ws.roleAssignments,
-          totalDays: ws.day,
-        },
-        visibility: 'public',
-        restrictedTo: null,
-        id: newEventId(),
-        matchId: '',
-        seq: 0,
-      })
-    }
-
-    let seq = await nextSeq(matchId)
-    async function appendAndPublish(eventsToAppend: GameEvent[]): Promise<GameEvent[]> {
-      const finalEvents = eventsToAppend.map((event) => ({ ...event, matchId, seq: seq++ }))
-      await appendEvents(finalEvents)
-
-      for (const event of finalEvents) {
-        if (event.visibility === 'public') {
-          await publishSse(matchId, { kind: 'event', event })
-        }
-      }
-
-      return finalEvents
-    }
-
-    await appendAndPublish(augmentedEvents)
-
-    if (isTerminalTransition) {
-      await redis.set(keys.matchState(matchId), JSON.stringify(nextState), 'EX', 24 * 60 * 60)
-      await finalizeMatch(matchId)
+    const nextClassification = plugin.classify(nextState)
+    if (nextClassification.kind === 'finished') {
+      await finalizeMatch(matchId, { result: nextClassification.result })
       await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
       inc('tick.count', 1, { gameType, outcome: 'match-end' })
       observe('tick.duration_ms', performance.now() - tickStart, { gameType })
       return { done: true }
     }
-
-    if (boundary === 'hand-end') {
-      await persistHandImpressions(matchId, match.gameType as GameType, nextState, game)
-    }
-
-    if (boundary === 'hand-end' && game.continueAfterBoundary) {
-      const continuation = game.continueAfterBoundary(nextState, 'hand-end')
-      if (continuation) {
-        await appendAndPublish(
-          continuation.events.map((event) => ({
-            ...event,
-            id: newEventId(),
-            matchId: '',
-            seq: 0,
-          })),
-        )
-        await redis.set(keys.matchState(matchId), JSON.stringify(continuation.nextState), 'EX', 24 * 60 * 60)
-
-        const continuationTerminal =
-          game.engine.boundary(nextState, continuation.nextState) === 'match-end' ||
-          (continuation.nextState as { matchComplete?: boolean }).matchComplete === true
-        if (continuationTerminal) {
-          await finalizeMatch(matchId)
-          await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
-          inc('tick.count', 1, { gameType, outcome: 'match-end' })
-          observe('tick.duration_ms', performance.now() - tickStart, { gameType })
-          return { done: true }
-        }
-
-        inc('tick.count', 1, { gameType, outcome: 'continue' })
-        observe('tick.duration_ms', performance.now() - tickStart, { gameType })
-        return { done: false }
-      }
-    }
-
-    await redis.set(keys.matchState(matchId), JSON.stringify(nextState), 'EX', 24 * 60 * 60)
 
     inc('tick.count', 1, { gameType, outcome: 'continue' })
     observe('tick.duration_ms', performance.now() - tickStart, { gameType })
@@ -262,13 +205,141 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
   }
 }
 
-async function persistHandImpressions(
+// ---------------------------------------------------------------------------
+// force-end（spec §5/§7：terminateImmediately + 排名）
+// ---------------------------------------------------------------------------
+
+async function executeForceEnd(matchId: string): Promise<void> {
+  const match = await findMatchById(matchId)
+  if (!match || match.status !== 'running') return
+
+  const gameType = match.gameType as GameType
+  const plugin = getGameV2(gameType)
+  const stateRaw = await redis.get(keys.matchState(matchId))
+  if (!stateRaw) {
+    // 遗留旧格式对局兜底：无 state 也能终结（spec §1）
+    await finalizeMatch(matchId, {})
+    await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
+    return
+  }
+
+  let state: unknown
+  try {
+    state = JSON.parse(stateRaw)
+  } catch {
+    state = null
+  }
+
+  let result: MatchResult | undefined
+  if (state !== null) {
+    try {
+      const terminated = plugin.terminateImmediately(state)
+      if (terminated.ok) {
+        await persistAndPublish(matchId, gameType, terminated.events, { isDefault: false })
+        await redis.set(keys.matchState(matchId), JSON.stringify(terminated.state), 'EX', 24 * 60 * 60)
+        const classification = plugin.classify(terminated.state)
+        if (classification.kind === 'finished') result = classification.result
+      }
+    } catch (err) {
+      // 旧格式 state 可能无法被 v2 插件解读：跳过 terminate，直接 finalize 兜底
+      log.warn('force-end: terminateImmediately failed on stored state', { matchId, err: String(err) })
+    }
+  }
+
+  await finalizeMatch(matchId, result ? { result } : {})
+  await publishSse(matchId, { kind: 'match-end', winnerAgentId: null })
+}
+
+// ---------------------------------------------------------------------------
+// 事件信封（spec §3）
+// ---------------------------------------------------------------------------
+
+function v2EventRow(input: {
+  matchId: string
+  gameType: GameType
+  event: V2Event
+  occurredAt: string
+  isDefault: boolean
+}): GameEvent {
+  const payload = input.isDefault
+    ? { ...input.event.raw, isDefault: true }
+    : { ...input.event.raw }
+  return {
+    id: newEventId(),
+    matchId: input.matchId,
+    gameType: input.gameType,
+    seq: input.event.seq,
+    occurredAt: input.occurredAt,
+    kind: `${input.gameType}:v2:${input.event.kind}`,
+    actorAgentId: input.event.actorAgentId,
+    payload,
+    visibility: v2Visibility(input.event.audience),
+    restrictedTo: v2RestrictedTo(input.event.audience),
+  }
+}
+
+function makeThinkingEvent(
   matchId: string,
   gameType: GameType,
-  finalState: unknown,
-  game: ReturnType<typeof getGame>,
+  actorId: string,
+  summary: { handNumber: number; day: number; phase: string },
+  text: string,
+): GameEvent {
+  return {
+    id: newEventId(),
+    matchId,
+    gameType,
+    seq: 0, // 由调用方经 plugin.reserveEventSeq 填入预留序号
+    occurredAt: new Date().toISOString(),
+    kind: 'agent/thinking',
+    actorAgentId: actorId,
+    payload: {
+      handNumber: summary.handNumber,
+      day: summary.day,
+      phase: summary.phase,
+      text,
+    },
+    visibility: 'public',
+    restrictedTo: null,
+  }
+}
+
+/**
+ * 事件批量落库 + SSE 全量广播（含 restricted，payload 保留 audience——
+ * 单用户私有部署，观战端=所有者，过滤在前端；agent 端永不消费 SSE）。
+ */
+async function persistAndPublish(
+  matchId: string,
+  gameType: GameType,
+  events: readonly V2Event[],
+  options: { isDefault: boolean; extra?: GameEvent[] },
+): Promise<GameEvent[]> {
+  const occurredAt = new Date().toISOString()
+  const rows = events.map((event) =>
+    v2EventRow({ matchId, gameType, event, occurredAt, isDefault: options.isDefault }),
+  )
+  const all = [...(options.extra ?? []), ...rows]
+  if (all.length > 0) await appendEvents(all)
+  for (const event of all) {
+    await publishSse(matchId, { kind: 'event', event })
+  }
+  return all
+}
+
+// ---------------------------------------------------------------------------
+// 印象持久化（IO 在 GM；游戏语义在插件）
+// ---------------------------------------------------------------------------
+
+async function persistImpressions(
+  matchId: string,
+  gameType: GameType,
+  signal: {
+    handNumber: number
+    workingLog: Array<{ seq: number; kind: string; actorAgentId: string | null; payload: Record<string, unknown> }>
+    finalStateFor: (targetAgentId: string) => unknown
+  },
+  memory: NonNullable<V2Plugin['impressions']>['memory'],
 ): Promise<void> {
-  if (gameType !== 'poker') return
   const participants = await listParticipants(matchId)
   const agentNames = new Map<string, string>()
   await Promise.all(
@@ -277,28 +348,31 @@ async function persistHandImpressions(
       agentNames.set(participant.agentId, agent?.displayName ?? participant.agentId)
     }),
   )
-  const working = buildPokerWorkingMemory(finalState)
+  const working = {
+    matchActionsLog: signal.workingLog,
+    currentHandNumber: signal.handNumber,
+  }
 
   for (const observer of participants) {
     for (const target of participants) {
       if (observer.agentId === target.agentId) continue
-      const episodic = game.memory.synthesizeEpisodic({
+      const episodic = memory.synthesizeEpisodic({
         working,
-        finalState,
+        finalState: signal.finalStateFor(target.agentId),
         observerAgentId: observer.agentId,
         targetAgentId: target.agentId,
         matchId,
       })
-      if (!episodic || typeof episodic !== 'object') continue
+      if (episodic === null || episodic === undefined) continue
 
-      const episodicJson = game.memory.serialize.episodic(episodic)
+      const entryJson = memory.serializeEpisodic(episodic)
       await insertEpisodic({
         observerAgentId: observer.agentId,
         targetAgentId: target.agentId,
         matchId,
         gameType,
-        entryJson: episodicJson,
-        tags: Array.isArray(episodicJson.tags) ? episodicJson.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+        entryJson,
+        tags: Array.isArray(entryJson.tags) ? entryJson.tags.filter((tag): tag is string => typeof tag === 'string') : [],
       })
 
       const existing = await loadSemantic({
@@ -306,8 +380,8 @@ async function persistHandImpressions(
         targetAgentId: target.agentId,
         gameType,
       })
-      const current = existing ? (game.memory.deserialize.semantic(existing.profileJson) as PokerSemanticProfile) : null
-      const semantic = game.memory.updateSemantic(current, episodic) as PokerSemanticProfile
+      const current = existing ? memory.deserializeSemantic(existing.profileJson) : null
+      const semantic = memory.updateSemantic(current, episodic)
 
       const recentEpisodes = await listEpisodic({
         observerAgentId: observer.agentId,
@@ -315,20 +389,17 @@ async function persistHandImpressions(
         gameType,
         limit: 5,
       })
-      semantic.note = generateImpressionParagraph({
-        targetName: agentNames.get(target.agentId) ?? target.agentId,
+      const note = memory.renderNote({
         observerName: agentNames.get(observer.agentId) ?? observer.agentId,
-        profile: semantic,
-        recentEpisodes: recentEpisodes.map((row) => row.entryJson as PokerEpisodicEntry),
+        targetName: agentNames.get(target.agentId) ?? target.agentId,
+        semantic,
+        recentEpisodes: recentEpisodes.map((row) => row.entryJson),
       })
 
-      const profileJson = game.memory.serialize.semantic(semantic)
+      const profileJson = { ...memory.serializeSemantic(semantic), note }
       const observed =
-        typeof profileJson.handCount === 'number'
-          ? profileJson.handCount
-          : typeof profileJson.gamesObserved === 'number'
-            ? profileJson.gamesObserved
-            : (existing?.gamesObserved ?? 0) + 1
+        memory.handCountOf(profileJson) ??
+        (typeof existing?.gamesObserved === 'number' ? existing.gamesObserved + 1 : 1)
 
       await upsertSemantic({
         observerAgentId: observer.agentId,
@@ -341,22 +412,9 @@ async function persistHandImpressions(
   }
 }
 
-function buildPokerWorkingMemory(state: unknown): {
-  matchActionsLog: Array<{ seq: number; kind: string; actorAgentId: string | null; payload: Record<string, unknown> }>
-  currentHandNumber: number
-} {
-  const pokerState = state as Partial<PokerState>
-  const actionHistory = Array.isArray(pokerState.actionHistory) ? pokerState.actionHistory : []
-  return {
-    matchActionsLog: actionHistory.map((record: PokerActionRecord) => ({
-      seq: record.seq,
-      kind: 'poker/action',
-      actorAgentId: record.agentId,
-      payload: record.action as unknown as Record<string, unknown>,
-    })),
-    currentHandNumber: typeof pokerState.handNumber === 'number' ? pokerState.handNumber : 0,
-  }
-}
+// ---------------------------------------------------------------------------
+// Agent 决策请求（v2 消息契约，spec §4）
+// ---------------------------------------------------------------------------
 
 type AgentDecisionResult = {
   action: unknown
@@ -370,14 +428,15 @@ const THINKING_BATCH_MS = 100
 async function requestAgentDecision(input: {
   matchId: string
   agentId: string
-  state: unknown
-  validActions: unknown[]
+  events: Record<string, unknown>[]
+  legalActions: V2AgentDecisionData['legalActions']
+  decisionContext: Record<string, unknown>
+  gameInfo: Record<string, unknown>
   timeoutMs?: number
-  fallback: () => unknown
 }): Promise<AgentDecisionResult> {
   const token = await redis.get(keys.matchToken(input.matchId))
   if (!token) {
-    return { action: input.fallback(), fallback: true, errorCode: 'agent-token-missing', thinkingText: '' }
+    return { action: null, fallback: true, errorCode: 'agent-token-missing', thinkingText: '' }
   }
 
   const thinkingPublishes: Array<Promise<void>> = []
@@ -422,14 +481,25 @@ async function requestAgentDecision(input: {
       timeoutMs: input.timeoutMs,
       message: {
         role: 'user',
-        parts: [{ kind: 'data', data: { state: input.state, validActions: input.validActions } }],
+        parts: [
+          {
+            kind: 'data',
+            data: {
+              engineVersion: 2,
+              events: input.events,
+              legalActions: input.legalActions,
+              decisionContext: input.decisionContext,
+              gameInfo: input.gameInfo,
+            } satisfies V2AgentDecisionData,
+          },
+        ],
       },
       onThinking,
     })
     flushThinking()
     await Promise.allSettled(thinkingPublishes)
-    if (!decision.action) {
-      return { action: input.fallback(), fallback: true, errorCode: 'agent-no-action', thinkingText }
+    if (decision.action === null || decision.action === undefined) {
+      return { action: null, fallback: true, errorCode: 'agent-no-action', thinkingText }
     }
     return {
       action: decision.action,
@@ -443,12 +513,12 @@ async function requestAgentDecision(input: {
   } catch (err) {
     flushThinking()
     await Promise.allSettled(thinkingPublishes)
-    log.warn('agent endpoint request failed, using bot fallback', {
+    log.warn('agent endpoint request failed, using engine default action', {
       matchId: input.matchId,
       agentId: input.agentId,
       err: String(err),
     })
-    return { action: input.fallback(), fallback: true, errorCode: 'agent-endpoint-failed', thinkingText }
+    return { action: null, fallback: true, errorCode: 'agent-endpoint-failed', thinkingText }
   }
 }
 
@@ -466,6 +536,7 @@ export async function runMatchToCompletion(
   matchId: string,
   options?: { maxTicks?: number; intervalMs?: number },
 ): Promise<void> {
+  ensureGamesRegistered()
   const maxTicks = options?.maxTicks ?? 1_000
   const intervalMs = options?.intervalMs ?? 0
 

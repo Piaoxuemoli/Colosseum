@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { agentKindSchema, gameTypeSchema } from '@/platform/core/types'
-import { hasGame } from '@/platform/core/registry'
+import { hasGameV2 } from '@/platform/core/registry'
 import { createAgent, listAgents } from '@/platform/db/queries/agents'
 import { findProfileById } from '@/platform/db/queries/profiles'
 import { ensureGamesRegistered } from '@/platform/instrument'
@@ -44,7 +44,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!parsed.success) {
     return Response.json({ error: 'validation', details: parsed.error.flatten() }, { status: 400 })
   }
-  if (!hasGame(parsed.data.gameType)) {
+  if (!hasGameV2(parsed.data.gameType)) {
     return Response.json({ error: `unsupported gameType: ${parsed.data.gameType}` }, { status: 400 })
   }
 

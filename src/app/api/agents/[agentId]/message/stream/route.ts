@@ -5,7 +5,6 @@ import { parseRpcRequest, rpcError, RpcErrors } from '@/backend/a2a-core/jsonrpc
 import { getApiKey } from '@/backend/agent/key-cache'
 import { LlmError } from '@/backend/agent/llm-errors'
 import { runDecision } from '@/backend/agent/llm-runtime'
-import { getGame } from '@/platform/core/registry'
 import { gameTypeSchema } from '@/platform/core/types'
 import { findAgentById } from '@/platform/db/queries/agents'
 import { recordAgentError } from '@/platform/db/queries/errors'
@@ -14,10 +13,9 @@ import { loadEnv } from '@/platform/env'
 import { ensureGamesRegistered } from '@/platform/instrument'
 import { findProvider } from '@/platform/llm/catalog'
 import { createModel } from '@/platform/llm/provider-factory'
-import { coerceToValidAction } from '@/backend/orchestrator/action-validator'
+import { getV2ContextBuilder, getV2ResponseParser } from '@/backend/agent/v2-agent-branch'
+import type { V2AgentDecisionData } from '@/platform/engine/contracts-v2'
 import { validateMatchToken } from '@/backend/orchestrator/match-token'
-import { redis } from '@/platform/redis/client'
-import { keys } from '@/platform/redis/keys'
 import { log } from '@/platform/telemetry/logger'
 
 export const runtime = 'nodejs'
@@ -79,12 +77,6 @@ function unwrapBody(raw: unknown): {
     return { shape: 'jsonrpc', rpcId: rpc.value.id, inner: rpc.value.params }
   }
   return { shape: 'direct', rpcId: null, inner: raw }
-}
-
-const emptyMemoryContext = {
-  workingSummary: '',
-  episodicSection: '',
-  semanticSection: '',
 }
 
 type ToyHandlerInput = {
@@ -221,31 +213,69 @@ export async function POST(
   }
 
   const gameType = gameTypeSchema.parse(agent.gameType)
-  const game = getGame(gameType)
-  const stateRaw = await redis.get(keys.matchState(tokenContext.matchId))
-  if (!stateRaw) return Response.json({ error: 'match state missing' }, { status: 410 })
 
-  const state = JSON.parse(stateRaw) as unknown
-  const validActions = game.engine.availableActions(state, agentId)
-  const profile = await findProfileById(agent.profileId).catch(() => undefined)
-  const apiKey = profile ? await getApiKey(tokenContext.matchId, profile.id) : undefined
-  const provider = profile ? findProvider(profile.providerId) : undefined
+  // ── engine2 v2 唯一分支（spec §4）：消息自带全部决策输入，不读 Redis 状态。
+  //    v1 分支（读 state + botStrategy/responseParser 三层链）已随旧引擎删除；
+  //    缺 engineVersion 的消息同样按 v2 处理，缺省字段按空集容错，
+  //    非法动作由 GM 侧 normalizeAction → applyDefaultAction 兜底。──
+  const dataPart = parsed.data.message.parts.find((part) => part.kind === 'data')
+  const decisionData = dataPart?.kind === 'data' ? dataPart.data : undefined
+  return runV2DecisionBranch({
+    agentId,
+    agent: { systemPrompt: agent.systemPrompt, displayName: agent.displayName },
+    gameType,
+    matchId: tokenContext.matchId,
+    data: decisionData ?? {},
+    taskId: parsed.data.message.taskId,
+  })
+}
+
+/**
+ * engine2 v2 决策分支（spec §4）：prompt 只由消息 data（可见事件流 +
+ * 合法动作 + 机械量）构成；解析器输出原始动作对象，GM 侧 normalizeAction
+ * 是最终裁决——本分支不做引擎校验，失败时返回 action=null 交 GM 兜底。
+ */
+async function runV2DecisionBranch(input: {
+  agentId: string
+  agent: { systemPrompt: string; displayName: string }
+  gameType: string
+  matchId: string
+  data: Record<string, unknown>
+  taskId: string
+}): Promise<Response> {
+  const decisionData: V2AgentDecisionData = {
+    engineVersion: 2,
+    events: Array.isArray(input.data.events) ? (input.data.events as Record<string, unknown>[]) : [],
+    legalActions: Array.isArray(input.data.legalActions) ? (input.data.legalActions as V2AgentDecisionData['legalActions']) : [],
+    decisionContext:
+      typeof input.data.decisionContext === 'object' && input.data.decisionContext !== null
+        ? (input.data.decisionContext as Record<string, unknown>)
+        : {},
+    gameInfo:
+      typeof input.data.gameInfo === 'object' && input.data.gameInfo !== null
+        ? (input.data.gameInfo as Record<string, unknown>)
+        : {},
+  }
 
   return createA2AStreamResponse({
-    taskId: parsed.data.message.taskId,
+    taskId: input.taskId,
     async execute(emit) {
       emit.statusUpdate('working')
       try {
+        const agentProfile = await findAgentById(input.agentId).catch(() => undefined)
+        const profile = agentProfile ? await findProfileById(agentProfile.profileId).catch(() => undefined) : undefined
+        const apiKey = profile ? await getApiKey(input.matchId, profile.id) : undefined
+        const provider = profile ? findProvider(profile.providerId) : undefined
+
         if (!profile || !apiKey) {
-          const action = game.botStrategy.decide(state, validActions as unknown[])
           await recordFallbackError({
-            matchId: tokenContext.matchId,
-            agentId,
+            matchId: input.matchId,
+            agentId: input.agentId,
             errorCode: !profile ? 'llm-profile-missing' : 'llm-api-key-missing',
-            recoveryAction: action,
+            recoveryAction: null,
           })
           emit.artifactUpdate({
-            parts: [{ kind: 'text', text: `[${agent.displayName}] 缺少 LLM 配置，使用规则兜底。` }],
+            parts: [{ kind: 'text', text: `[${input.agent.displayName}] 缺少 LLM 配置，交由引擎默认动作兜底。` }],
             delta: true,
           })
           emit.artifactUpdate({
@@ -253,7 +283,7 @@ export async function POST(
               {
                 kind: 'data',
                 data: {
-                  action,
+                  action: null,
                   thinking: 'bot fallback',
                   fallback: true,
                   errorKind: !profile ? 'llm-profile-missing' : 'llm-api-key-missing',
@@ -266,11 +296,10 @@ export async function POST(
           return
         }
 
-        const prompt = game.playerContextBuilder.build({
-          agent: { id: agentId, systemPrompt: agent.systemPrompt },
-          gameState: state,
-          validActions,
-          memoryContext: emptyMemoryContext,
+        const builder = getV2ContextBuilder(input.gameType)
+        const prompt = builder.build({
+          agent: { id: input.agentId, systemPrompt: input.agent.systemPrompt },
+          data: decisionData,
         })
         const result = await runDecision({
           profile: {
@@ -287,29 +316,19 @@ export async function POST(
           },
         })
 
-        // Use the game-specific parser for normalization (bet↔raise, synonyms, etc.).
-        const parsed = game.responseParser.parse(result.rawResponse, validActions)
-
-        // If the generic stream parser already extracted a valid action but the
-        // game parser fell back (e.g., bare JSON without <action> tags), don't
-        // throw away the valid action.
-        const candidateAction =
-          parsed.fallbackUsed && isActionLike(result.action) ? result.action : parsed.action
-        const parserFallback = parsed.fallbackUsed && !isActionLike(result.action)
-
-        const validated = coerceToValidAction(candidateAction, validActions, state, game.botStrategy, {
-          matchId: tokenContext.matchId,
-          agentId,
-          layerIfPassed: 'parse',
-        })
-        const isFallback = parserFallback || validated.layer === 'fallback'
+        const parser = getV2ResponseParser(input.gameType)
+        const parsed = parser.parse(result.rawResponse)
+        // 通用流解析器可能已提取合法 <action> JSON——解析器失败时不丢弃它
+        const candidate =
+          parsed.action ?? (isActionLike(result.action) ? (result.action as Record<string, unknown>) : null)
+        const isFallback = candidate === null
         if (isFallback) {
           await recordFallbackError({
-            matchId: tokenContext.matchId,
-            agentId,
+            matchId: input.matchId,
+            agentId: input.agentId,
             errorCode: 'llm-invalid-action',
             rawResponse: result.rawResponse,
-            recoveryAction: validated.action,
+            recoveryAction: null,
           })
         }
         emit.artifactUpdate({
@@ -317,8 +336,8 @@ export async function POST(
             {
               kind: 'data',
               data: {
-                action: validated.action,
-                thinking: result.thinkingText,
+                action: candidate,
+                thinking: result.thinkingText || parsed.thinking,
                 fallback: isFallback,
                 ...(isFallback ? { errorKind: 'llm-invalid-action' } : {}),
               },
@@ -329,26 +348,30 @@ export async function POST(
         emit.statusUpdate('completed')
       } catch (err) {
         const errorKind = llmErrorKind(err) ?? 'api_error'
-        const action = game.botStrategy.decide(state, validActions as unknown[])
         await recordFallbackError({
-          matchId: tokenContext.matchId,
-          agentId,
+          matchId: input.matchId,
+          agentId: input.agentId,
           errorCode: `llm-${errorKind}`,
           rawResponse: rawResponseFromError(err),
-          recoveryAction: action,
+          recoveryAction: null,
         })
-        log.warn('agent endpoint used bot fallback after LLM failure', {
-          agentId,
-          matchId: tokenContext.matchId,
+        log.warn('agent endpoint v2 branch: LLM failure, engine default will be applied by GM', {
+          agentId: input.agentId,
+          matchId: input.matchId,
           errorKind,
           err: String(err),
         })
         emit.artifactUpdate({
-          parts: [{ kind: 'text', text: `[${agent.displayName}] LLM 失败，使用规则兜底。` }],
+          parts: [{ kind: 'text', text: `[${input.agent.displayName}] LLM 失败，交由引擎默认动作兜底。` }],
           delta: true,
         })
         emit.artifactUpdate({
-          parts: [{ kind: 'data', data: { action, thinking: 'bot fallback', fallback: true, errorKind: `llm-${errorKind}` } }],
+          parts: [
+            {
+              kind: 'data',
+              data: { action: null, thinking: 'bot fallback', fallback: true, errorKind: `llm-${errorKind}` },
+            },
+          ],
           delta: false,
         })
         emit.statusUpdate('completed')
