@@ -5,11 +5,18 @@
 
 ## Active Context
 
-- 当前阶段：**R1 质量地基已完成（2026-09-08，R1-3 key 轮换为用户线下动作待办）**。CI 与测试体系已生效；下一步 = roadmap **R2 核心体验补全**（密钥状态 UX、主持人种子、历史/复盘增强、结算可信化、两游戏真实 LLM 验收）。
-- 游戏重写需求已齐备：`docs/prd/games/` 四份 PRD（poker/werewolf × engine/frontend，PFR/WFR 编号体系）+ `docs/prd/design/lobby-home.md`，规则口径溯源 `docs/research/2026-09-{poker-implementation,werewolf-rules}-survey.md`。**旧引擎已知三项 P1 规则缺陷（审计 23/24/25：德扑 all-in run-out 断裂、狼人杀死因泄露、女巫不知刀口）——判定为重写动机，不在旧引擎打补丁。**
-- 需求权威：`docs/prd/PRD.md`（v0.1.1，含 OD-1~7 待拍板）＋ `roadmap.md`（唯一排期）＋ `design-system.md` + `design/` + `games/`。
+- 当前阶段：**R2 核心体验补全进行中（2026-09-09）**。R2-1 密钥状态 UX ✅、R2-2 主持人种子+旁白开关 ✅；两游戏**引擎 v2 已按新 PRD 重写完成**（德扑 96 测试 / 狼人杀 135 测试，纯逻辑、未接入运行时）——旧引擎仍在驱动线上对局，**下一步主线 = 引擎 v2 接入平台**（plugin/GM/前端消费新事件契约与 audience 过滤），以及 R2-3/2-4（历史复盘增强、结算可信化）、R2-5/2-6（真实 LLM 全链路验收）。
+- 产品开放决策已全部由 AI 产品代理代决（38 项，`docs/prd/` 各文档「已代决」标注，所有者可推翻）。
+- 安全：git 历史已清除泄露 key（force push 完成）；**key 吊销待用户线下处理（豆包/Kimi/DeepSeek/GLM/通义/MiniMax）**。
+- 测试基线：44 文件 / 633 测试全绿；CI 四 job 全绿。
 - 导航入口：`AGENTS.md` → `docs/INDEX.md`。
-- 大修跟踪：`docs/repair/2026-09-audit.md`（01-36；R0/R1 已修 13 项，待用户 1 项，登记降级 2 项，其余待修/待决策）。
+
+## 引擎 v2 接入注意事项（下一步任务的入口知识）
+
+- 德扑 v2：`src/games/poker/engine2/`（API barrel 见 index.ts；applyAction 返回 accepted/rejected 二态、事件带 audience、`reduceEvents` 重放、`filterEvents` 四视角投影含 god-view 通道、`decisionContext` 机械量）。
+- 狼人杀 v2：`src/games/werewolf/engine2/`（`createMatch`/`applyAction`/`applyDefaultAction`/`visibleEvents`；板子预设 6 人基础 + 9 人 333；M1 不含警长/守卫/白痴——开启会结构化拒绝）。
+- 两侧事件契约都要求 GM 层按 audience 过滤后再入库/广播（public 入 game_events，god-view 供观战，role-self 仅供对应 agent 的 context builder）；接入时需同步演进 `platform/engine/contracts.ts` 与 GM 的 currentActor/default-action 驱动（v2 的 `applyDefaultAction` 取代旧 bot-fallback 语义的一部分）。
+- 旧引擎与旧测试（tests/unit/games/*/engine/ 旧文件已在新目录外保留）在接入切换完成后整体删除，避免双引擎长期共存。
 
 ## R1 落点（2026-09-08）
 
