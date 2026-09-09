@@ -11,6 +11,8 @@ metadata:
 
 本 Skill 覆盖 Colosseum 的两条部署路径：
 
+> **2026-09-09 起的标准发版入口**：`npm run release`（一键：门禁→打包→上传→远程部署→健康门禁→失败自动回滚）；回滚 `npm run release:rollback`。链路与 CI/CD 规划见 `docs/deploy/release-pipeline.md`；服务器侧脚本 `ops/deploy/remote-deploy.sh`。本 Skill 余下内容为底层细节与运维手册，适用于首次部署与排查。
+
 1. **主路径**：云服务器 + Docker Compose + SQLite + Redis + Caddy（推荐，当前生产环境）。
 2. **备用路径**：Vercel + Supabase + Upstash（无自有服务器时的 fallback）。
 

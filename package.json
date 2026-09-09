@@ -22,6 +22,8 @@
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
+    "release": "node scripts/deploy/release.mjs",
+    "release:rollback": "node scripts/deploy/release.mjs --rollback",
     "check:surfaces": "node scripts/a2ui/validate-surfaces.mjs",
     "check": "npm run check:surfaces && npm run lint && npm run typecheck && npm test && npm run build"
   },

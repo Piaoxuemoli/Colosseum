@@ -31,8 +31,6 @@ services:
       - BASE_URL=${BASE_URL}
       - MATCH_TOKEN_SECRET=${MATCH_TOKEN_SECRET}
       - LOG_LEVEL=info
-      - SYSTEM_MODERATOR_BASE_URL=${SYSTEM_MODERATOR_BASE_URL}
-      - SYSTEM_MODERATOR_MODEL=${SYSTEM_MODERATOR_MODEL}
     volumes:
       - arena_data:/data
     depends_on:

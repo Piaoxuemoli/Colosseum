@@ -41,6 +41,8 @@ pnpm-debug.log*
 docs/dev/llm-api-config.local.md
 temp-init/
 .codebuddy/
+ops/private/
+tmp/deploy-key*
 
 # === AI 工具本地目录 ===
 .mimosa/

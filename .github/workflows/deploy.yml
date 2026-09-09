@@ -1,0 +1,85 @@
+# Colosseum CD —— 手动发版到生产 CVM（43.156.230.108）
+# 触发：Actions 页面手动 Run workflow（输入 confirm=yes 防误触）。
+# 前置：仓库 Settings → Secrets and variables → Actions 配置
+#   DEPLOY_SSH_HOST  生产主机（43.156.230.108）
+#   DEPLOY_SSH_USER  SSH 用户（root）
+#   DEPLOY_SSH_KEY   SSH 私钥（hermesqoobee.pem 的内容，PEM 全文）
+# 未配置 secrets 时本 workflow 会给出明确指引后退出，不会盲跑。
+# 规划中的演进（见 docs/deploy/release-pipeline.md）：tag 触发 + environment 保护。
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: '输入 yes 确认发版（当前 main@HEAD）'
+        required: true
+        default: 'no'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Guard
+        env:
+          CONFIRM: ${{ github.event.inputs.confirm }}
+          HAVE_HOST: ${{ secrets.DEPLOY_SSH_HOST != '' }}
+          HAVE_KEY: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+        run: |
+          if [ "$CONFIRM" != "yes" ]; then
+            echo "::error::未确认（confirm=yes 才会发版）"; exit 1
+          fi
+          if [ "$HAVE_HOST" != "true" ] || [ "$HAVE_KEY" != "true" ]; then
+            echo "::error::缺少 DEPLOY_SSH_HOST / DEPLOY_SSH_KEY secrets。到 Settings → Secrets and variables → Actions 配置后重试。"; exit 1
+          fi
+
+      - uses: actions/checkout@v6
+
+      - name: Ensure CI green on this commit
+        run: |
+          sha="${{ github.sha }}"
+          for i in 1 2 3 4 5 6; do
+            conclusion=$(curl -sf "https://api.github.com/repos/${{ github.repository }}/commits/${sha}/check-runs" \
+              | jq -r '.check_runs // [] | map(select(.name != "Deploy")) | if length == 0 then "pending" else (map(.conclusion // "pending") | if (index("failure") != null or index("cancelled") != null) then "failure" elif (index("success") != null and (map(.conclusion) | all(. == "success"))) then "success" else "pending" end) end')
+            echo "check-runs -> $conclusion"
+            [ "$conclusion" = "success" ] && exit 0
+            [ "$conclusion" = "failure" ] && { echo "::error::CI 未通过，拒绝发版"; exit 1; }
+            sleep 20
+          done
+          echo "::error::等待 CI 超时（请确认 ci.yml 已在此 commit 完成且全绿）"; exit 1
+
+      - name: Pack release bundle
+        run: |
+          sha="$(git rev-parse --short=8 HEAD)"
+          git archive --format=tar.gz -o "colosseum-${sha}.tar.gz" HEAD
+          echo "RELEASE_NAME=colosseum-${sha}.tar.gz" >> "$GITHUB_ENV"
+          echo "RELEASE_SHA=${sha}" >> "$GITHUB_ENV"
+
+      - name: Upload and deploy over SSH
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER || 'root' }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          RELEASE_DIR: /opt/colosseum-releases
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "mkdir -p $RELEASE_DIR"
+          scp -i ~/.ssh/deploy_key "$RELEASE_NAME" "$SSH_USER@$SSH_HOST:$RELEASE_DIR/$RELEASE_NAME"
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+            "RELEASE_FILE=$RELEASE_NAME RELEASE_SHA=$RELEASE_SHA bash -s" < ops/deploy/remote-deploy.sh
+
+      - name: Post-deploy smoke
+        run: |
+          curl -sf --retry 5 --retry-delay 5 --max-time 20 "http://${{ secrets.DEPLOY_SSH_HOST }}/api/health"
+          echo "production health OK"
