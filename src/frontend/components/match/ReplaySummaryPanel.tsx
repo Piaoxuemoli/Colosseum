@@ -16,7 +16,7 @@ export function ReplaySummaryPanel({
   events,
   initialChips,
 }: {
-  gameType: 'poker' | 'werewolf'
+  gameType: string
   players: PokerUiPlayer[]
   events: GameEvent[]
   initialChips: number

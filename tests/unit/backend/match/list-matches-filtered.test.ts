@@ -6,6 +6,7 @@ import {
   MatchListFilterError,
   matchListRowMatches,
   parseMatchListFilter,
+  phaseSummaryFromEvent,
 } from '@/backend/match/list-matches-filtered'
 
 describe('parseMatchListFilter — URL 参数映射', () => {
@@ -13,6 +14,12 @@ describe('parseMatchListFilter — URL 参数映射', () => {
     expect(
       parseMatchListFilter({ gameType: 'poker', status: 'completed', q: ' alice ', limit: '20' }),
     ).toEqual({ gameType: 'poker', status: 'completed', q: 'alice', limit: 20 })
+  })
+
+  it('accepts every documented gameType (poker / werewolf / avalon)', () => {
+    expect(parseMatchListFilter({ gameType: 'avalon' }).gameType).toBe('avalon')
+    expect(parseMatchListFilter({ gameType: 'werewolf' }).gameType).toBe('werewolf')
+    expect(parseMatchListFilter({ gameType: 'poker' }).gameType).toBe('poker')
   })
 
   it('treats null / empty / whitespace params as "no filter"', () => {
@@ -81,5 +88,28 @@ describe('matchListRowMatches — 行过滤谓词', () => {
         q: 'alice',
       }),
     ).toBe(false)
+  })
+})
+
+describe('phaseSummaryFromEvent — 直播卡片阶段摘要（lobby PRD 2.2）', () => {
+  it('derives from an avalon/werewolf phaseEntered envelope (day at top level)', () => {
+    const event = { seq: 12, day: 3, kind: 'phaseEntered', audience: { kind: 'public' }, actorId: null, payload: { phase: 'teamVote' } }
+    expect(phaseSummaryFromEvent('avalon', event)).toEqual({ handNumber: 0, day: 3, phase: 'teamVote' })
+  })
+
+  it('derives from a poker hand-started envelope (handNumber in payload)', () => {
+    const event = { seq: 40, day: 2, kind: 'hand-started', payload: { handNumber: 2 } }
+    expect(phaseSummaryFromEvent('poker', event)).toEqual({ handNumber: 2, day: 2, phase: '' })
+  })
+
+  it('accepts a JSON string payload (game_events text column form)', () => {
+    const raw = JSON.stringify({ seq: 5, day: 1, kind: 'phaseEntered', payload: { phase: 'night.wolves' } })
+    expect(phaseSummaryFromEvent('werewolf', raw)).toEqual({ handNumber: 0, day: 1, phase: 'night.wolves' })
+  })
+
+  it('returns null for non-phase events / unparseable input', () => {
+    expect(phaseSummaryFromEvent('avalon', { seq: 1, kind: 'statementIssued', payload: { text: 'x' } })).toBeNull()
+    expect(phaseSummaryFromEvent('avalon', 'not-json')).toBeNull()
+    expect(phaseSummaryFromEvent('avalon', null)).toBeNull()
   })
 })

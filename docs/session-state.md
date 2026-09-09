@@ -5,7 +5,12 @@
 
 ## Active Context
 
-- 当前阶段：**R3 完成归档 + 发版链路建成并完成首次真实发版（2026-09-09 晚）**。生产 `http://43.156.230.108/` 已运行 `188555a`（engine v2 运行时 + R2/R3 全部功能 + llm_usage 迁移生效）。下一阶段 R4（各条目依赖 OD 拍板）。
+- 当前阶段：**R4-1 阿瓦隆全量化完成 + 首页重构完成（2026-09-09/10）**。R4 剩余：R4-4 分享链接（硬前置 key 吊销）、R4-3 ELO、R4-2/5/6 按需。
+- **R4-1 交付（OD-1 落地：社交推理同品类扩板）**：需求 `docs/prd/games/avalon-engine.md`（5 轮 3 胜/连坐 5 次拒/刺杀环节/公开记名表决/讨论阶段/8 角色池/9 预设板 5–10 人，AVR-OD-1..7 代决）+ `avalon-frontend.md`（专属投影，AF-OD-1..3）。实现 = 引擎全量重写（`games/avalon/engine2` 3002 行 + 集成 + narration 触发注册，84 测试）+ 前端（`avalon-v2` 投影 + 10 组件 + 组局预设选择器，46 测试）+ **agent endpoint v2 装配**（`games/avalon/agent/context-builder-v2 + response-parser-v2` + `backend/agent/v2-agent-branch.ts` 条目注册——此缺口是冒烟版遗留：R3-2 只验证过 GM 兜底驱动，真实 LLM 链路首次走通时抓到 `no v2 context builder for gameType: avalon`，全部动作曾被兜底代打）。真实 LLM 双局验收（kimi-k3@ark）：basic-5 = 刺杀命中梅林 evil 翻盘（167 事件/4 默认/5 瞬时错误）；basic-6 = 指认落空 good 胜（178 事件/11 默认/9 瞬时错误/发言 22/26 非空）——**对称覆盖刺杀两分支**，双局自然终局。基线 646 测试 / 55 文件全绿。
+- **首页重构（lobby PRD v0.1.2 首次实施）**：五区结构（顶部 slogan+运行中数锚点 / 直播区六要素卡片[呼吸点+阶段进度] / 快速开始 S0/S1/S2/S2′ 状态感知 / 最近对局 / 次级导航），删死信息三统计卡，修 avalon 误显示为狼人杀的品类 bug，过滤条补三品类；直播卡片阶段进度自 `game_events` 最近一条 phaseEntered/hand-started 派生（`list-matches-filtered.ts` 的 `phaseSummaryFromEvent`，matches 表无 stateJson——引擎态在 Redis，终局才落库）。取舍：直播区 SSE 实时与分批加载后置（server 渲染快照）。
+- **本地 dev.db 新坑**：journal 空导致 `drizzle-kit migrate` 在 Git Bash 管道下静默不应用（spinner 截断无输出）——直接 better-sqlite3 执行 0002 SQL 补 llm_usage 表；生产 entrypoint 的 migrate 不受影响。
+- 生产 `http://43.156.230.108/`：运行 `188555a`（R3 版本）；R4-1 + 首页重构待发版。
+- 前一阶段（R3 + 发版链路）成果见 git 历史与本文件下文。
 - **发版链路（已建成，双通道）**：`npm run release`（门禁→git archive→scp→远程部署[全量换树+镜像新鲜度守卫+健康门禁+失败自动回滚]）；GitHub Actions `deploy.yml` 手动 CD（需配 DEPLOY_SSH_HOST/USER/KEY secrets，详见 `docs/deploy/release-pipeline.md`）。回滚 `npm run release:rollback`。
 - **首次发版踩坑实录（已全部修复，勿再踩）**：① tar 解包不删旧文件→服务器残留 6 月的 archive/ 死代码→Docker 构建编译死代码失败（dexie）；② `build | tail` 管道吞退出码（sh 无 pipefail）→旧镜像假阳性上线；③ git archive 不带执行位→backup.sh 自 5 月起 cron 全灭。对应修复：全量换树+.env 回迁、构建日志不接管道+镜像 Created 时间守卫、git 100755。
 - 部署后运维：旧 running 局为 0（无需 force-end）；备份已修（服务器 chmod + 手动验证 + 仓库 100755）；/、/stats、/matches/new 全 200；TLS 仍等域名过审（audit 11 剩余项）。
@@ -91,7 +96,7 @@
 ## Resume Checklist
 
 1. 读 `AGENTS.md` → `docs/INDEX.md` → 本文件。
-2. 当前阶段 R4（依赖 OD 拍板，均已被 AI 产品代理代决可径直接受）：**默认推进顺序 = R4-1 第三游戏全量化（阿瓦隆从冒烟升级为全量验收）→ R4-4 分享链接（硬前置：key 吊销确认）→ R4-3 ELO**。也可等用户点名。
+2. 当前阶段 R4（R4-1 已完成）：**默认推进顺序 = R4-4 分享链接（硬前置：key 吊销确认）→ R4-3 ELO（前置：公平性口径）**。也可等用户点名。
 3. 每任务按 `docs/rules/spec-plan-workflow.md`：读对应 PRD FR → 出 plan → 实施 → 验证。
 4. 验证 = `npm run check`（check:surfaces + lint + typecheck + **test** + build）。
 5. 完成后更新本文件与 roadmap checkbox；发版 `npm run release`。

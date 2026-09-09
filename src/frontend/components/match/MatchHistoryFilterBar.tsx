@@ -8,6 +8,7 @@ const GAME_TABS = [
   { value: '', label: '全部游戏' },
   { value: 'poker', label: '德州扑克' },
   { value: 'werewolf', label: '狼人杀' },
+  { value: 'avalon', label: '阿瓦隆' },
 ] as const
 
 const STATUS_OPTIONS = [

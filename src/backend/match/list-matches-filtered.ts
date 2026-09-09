@@ -5,7 +5,7 @@
 // 拆成纯函数，供 API route、大厅页与单元测试共用。
 
 import { and, asc, desc, eq, exists, inArray, like, or } from 'drizzle-orm'
-import { agents, matches, matchParticipants } from '@/platform/db/schema.sqlite'
+import { agents, gameEvents, matches, matchParticipants } from '@/platform/db/schema.sqlite'
 import { db } from '@/platform/db/client'
 import type { MatchRow } from '@/platform/db/queries/matches'
 
@@ -18,13 +18,19 @@ export const MATCH_LIST_STATUSES = [
 ] as const
 export type MatchListStatus = (typeof MATCH_LIST_STATUSES)[number]
 
+export const MATCH_LIST_GAME_TYPES = ['poker', 'werewolf', 'avalon'] as const
+export type MatchListGameType = (typeof MATCH_LIST_GAME_TYPES)[number]
+
 export type MatchListFilter = {
-  gameType?: 'poker' | 'werewolf'
+  gameType?: MatchListGameType
   status?: MatchListStatus
-  /** 关键词：匹配对局 id 或参赛 Agent 展示名（大小写不敏感）。 */
+  /** 关键词：匹配对局 id 或参赛 Agent 名（大小写不敏感）。 */
   q?: string
   limit?: number
 }
+
+/** 直播卡片阶段进度文案的数据源（自最近阶段事件派生的机械量）。 */
+export type PhaseSummary = { handNumber: number; day: number; phase: string }
 
 export type MatchListItem = {
   match: MatchRow
@@ -34,6 +40,8 @@ export type MatchListItem = {
     avatarEmoji: string | null
     seatIndex: number
   }>
+  /** running 对局的阶段摘要（自事件流最近一条 phaseEntered / hand-started 派生；其余状态为 null）。 */
+  phaseSummary: PhaseSummary | null
 }
 
 export type MatchListFilterInput = {
@@ -54,10 +62,10 @@ export function parseMatchListFilter(input: MatchListFilterInput): MatchListFilt
 
   const gameType = typeof input.gameType === 'string' ? input.gameType.trim() : ''
   if (gameType) {
-    if (gameType !== 'poker' && gameType !== 'werewolf') {
-      throw new MatchListFilterError(`gameType 仅支持 poker / werewolf，收到：${gameType}`)
+    if (!(MATCH_LIST_GAME_TYPES as readonly string[]).includes(gameType)) {
+      throw new MatchListFilterError(`gameType 仅支持 ${MATCH_LIST_GAME_TYPES.join(' / ')}，收到：${gameType}`)
     }
-    filter.gameType = gameType
+    filter.gameType = gameType as MatchListGameType
   }
 
   const status = typeof input.status === 'string' ? input.status.trim() : ''
@@ -106,6 +114,70 @@ export function matchListRowMatches(
     if (!hit) return false
   }
   return true
+}
+
+/**
+ * 单条阶段事件（game_events 行的完整事件 JSON）→ PhaseSummary。
+ * 支持两种锚：poker 的 hand-started（handNumber）与 werewolf/avalon 的
+ * phaseEntered（day + phase）。解析失败返回 null。
+ */
+export function phaseSummaryFromEvent(
+  gameType: string,
+  eventJson: unknown,
+): PhaseSummary | null {
+  if (typeof eventJson === 'string') {
+    try {
+      eventJson = JSON.parse(eventJson)
+    } catch {
+      return null
+    }
+  }
+  if (typeof eventJson !== 'object' || eventJson === null) return null
+  const event = eventJson as { kind?: unknown; day?: unknown; payload?: unknown }
+  const payload =
+    typeof event.payload === 'object' && event.payload !== null ? (event.payload as Record<string, unknown>) : {}
+  const kind = typeof event.kind === 'string' ? event.kind : ''
+  if (kind.endsWith('hand-started')) {
+    const hand = typeof payload.handNumber === 'number' ? payload.handNumber : 0
+    return { handNumber: hand, day: hand, phase: typeof payload.phase === 'string' ? payload.phase : '' }
+  }
+  if (kind.endsWith('phaseEntered')) {
+    const day = typeof event.day === 'number' ? event.day : 0
+    const phase = typeof payload.phase === 'string' ? payload.phase : ''
+    return { handNumber: 0, day, phase }
+  }
+  void gameType
+  return null
+}
+
+/**
+ * running 对局的阶段摘要：取该对局事件流中最近一条 phaseEntered /
+ * hand-started（poker）。单机规模下整批拉取后在 JS 侧取各组最新。
+ */
+async function phaseSummariesByMatch(runningIds: string[]): Promise<Map<string, PhaseSummary>> {
+  const out = new Map<string, PhaseSummary>()
+  if (runningIds.length === 0) return out
+  const rows = await db
+    .select({ matchId: gameEvents.matchId, seq: gameEvents.seq, kind: gameEvents.kind, payload: gameEvents.payload })
+    .from(gameEvents)
+    .where(
+      and(
+        inArray(gameEvents.matchId, runningIds),
+        or(like(gameEvents.kind, '%:v2:phaseEntered'), like(gameEvents.kind, '%:v2:hand-started')),
+      ),
+    )
+  const latest = new Map<string, { seq: number; gameType: string; payload: unknown }>()
+  for (const row of rows) {
+    const seen = latest.get(row.matchId)
+    if (!seen || row.seq > seen.seq) {
+      latest.set(row.matchId, { seq: row.seq, gameType: '', payload: row.payload })
+    }
+  }
+  for (const [matchId, row] of latest) {
+    const summary = phaseSummaryFromEvent('', row.payload)
+    if (summary) out.set(matchId, summary)
+  }
+  return out
 }
 
 /**
@@ -162,5 +234,11 @@ export async function listMatchesFiltered(filter: MatchListFilter = {}): Promise
     byMatch.set(row.matchId, list)
   }
 
-  return rows.map((match) => ({ match, participants: byMatch.get(match.id) ?? [] }))
+  const phaseSummaries = await phaseSummariesByMatch(rows.filter((row) => row.status === 'running').map((row) => row.id))
+
+  return rows.map((match) => ({
+    match,
+    participants: byMatch.get(match.id) ?? [],
+    phaseSummary: phaseSummaries.get(match.id) ?? null,
+  }))
 }
