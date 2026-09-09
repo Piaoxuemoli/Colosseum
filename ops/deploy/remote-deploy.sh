@@ -122,10 +122,11 @@ BUILD_START="$(date +%s)"
 docker compose build nextjs
 
 # 镜像新鲜度守卫：镜像创建时间必须晚于本次构建开始，防止任何缓存路径假成功。
-IMAGE_CREATED="$(docker inspect -f '{{.Created}}' colosseum:prod 2>/dev/null | cut -c1-19 | tr -d ':-' || echo 0)"
+# docker inspect 的 Created 形如 2026-09-09T14:56:10.xxxZ，cut 出 ISO 前缀直接喂 GNU date。
+IMAGE_CREATED="$(docker inspect -f '{{.Created}}' colosseum:prod 2>/dev/null | cut -c1-19)"
 IMAGE_EPOCH="$(date -u -d "$IMAGE_CREATED" +%s 2>/dev/null || echo 0)"
-if [ "$IMAGE_EPOCH" -lt "$BUILD_START" ]; then
-  log "错误: 镜像未更新（created=$IMAGE_EPOCH < build_start=$BUILD_START），疑似缓存假成功"
+if [ -z "$IMAGE_CREATED" ] || [ "$IMAGE_EPOCH" -lt "$BUILD_START" ]; then
+  log "错误: 镜像未更新（created=${IMAGE_CREATED:-none} epoch=$IMAGE_EPOCH < build_start=$BUILD_START），疑似缓存假成功"
   exit 1
 fi
 log "启动容器（entrypoint 将自动执行 drizzle migrate）..."
