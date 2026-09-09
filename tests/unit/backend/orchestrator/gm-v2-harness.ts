@@ -34,6 +34,10 @@ export class FakeRedis {
     return Object.keys(values).length
   }
 
+  async hget(key: string, field: string): Promise<string | null> {
+    return this.hashes.get(key)?.[field] ?? null
+  }
+
   async expire(): Promise<number> {
     return 1
   }
@@ -107,6 +111,14 @@ function createStore() {
     finalized: [] as Array<{ matchId: string; winnerFaction: string | null; result: Record<string, unknown> }>,
     /** requestAgentDecisionToy 的可配置替身（缺省抛错：不应被调用）。 */
     agentEndpoint: null as null | (() => Promise<Record<string, unknown>>),
+    /** Profile 行替身（moderator 旁白解析用；profileId → 行）。 */
+    profiles: new Map<string, { id: string; displayName: string; providerId: string; baseUrl: string; model: string }>(),
+    /** runNarration 替身：返回旁白文本；null = 模拟 LLM 失败（抛错）。 */
+    narrationLlm: null as null | (() => string),
+    /** runNarration 被调用次数（断言「关闸 = 零调用」）。 */
+    narrationCalls: 0,
+    /** recordLlmUsage 替身收集的用量行。 */
+    usageRows: [] as Array<Record<string, unknown>>,
     matchCounter: 0,
   }
 }
@@ -128,6 +140,10 @@ export function resetStore(): void {
   store.agentErrors = []
   store.finalized = []
   store.agentEndpoint = null
+  store.profiles = new Map()
+  store.narrationLlm = null
+  store.narrationCalls = 0
+  store.usageRows = []
   store.matchCounter = 0
 }
 
@@ -144,6 +160,25 @@ export function seedAgent(agentId: string, gameType: string): void {
     kind: 'player',
     profileId: 'prof_test',
     systemPrompt: `persona of ${agentId}`,
+  })
+}
+
+/** 主持人 Agent + 其 Profile + 服务端 keyring 三件套（R3-3 旁白路径）。 */
+export function seedModerator(agentId: string, profileId = 'prof_test'): void {
+  store.agents.set(agentId, {
+    id: agentId,
+    displayName: '系统主持人',
+    gameType: 'werewolf',
+    kind: 'moderator',
+    profileId,
+    systemPrompt: '你是狼人杀的主持人。',
+  })
+  store.profiles.set(profileId, {
+    id: profileId,
+    displayName: 'Test Profile',
+    providerId: 'provider-x',
+    baseUrl: 'https://llm.test/v1',
+    model: 'test-model',
   })
 }
 

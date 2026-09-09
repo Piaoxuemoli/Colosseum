@@ -85,5 +85,11 @@ export const api = {
   del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
   raw: {
     del: <T>(path: string) => requestRaw<T>(path, { method: 'DELETE' }),
+    /**
+     * FR-4.7-02 赛后解说等需要检查结构化 4xx（如 422 不虚构拒绝）的场景：
+     * 与 del 同形，非 2xx 不抛错、不 toast，交由调用方决定呈现。
+     */
+    post: <T>(path: string, body: unknown) =>
+      requestRaw<T>(path, { method: 'POST', body: JSON.stringify(body) }),
   },
 }

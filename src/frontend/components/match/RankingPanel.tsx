@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trophy } from 'lucide-react'
 import { Button } from '@/frontend/components/ui/button'
@@ -27,6 +27,12 @@ export function RankingPanel({
   const [dismissed, setDismissed] = useState(false)
   const sorted = [...players].sort((a, b) => b.chips - a.chips)
   const open = status === 'settled' && !dismissed
+  // FR-4.7-02 赛后解说：结算弹窗内呈现，选手名供 mvp 徽标显示。
+  const agentNames = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const player of players) map[player.agentId] = player.displayName
+    return map
+  }, [players])
 
   useEffect(() => {
     if (status !== 'settled') setDismissed(false)
@@ -65,7 +71,12 @@ export function RankingPanel({
           })}
         </div>
 
-        <SettlementTrustSection matchId={matchId} events={events} finalRanking={finalRanking} />
+        <SettlementTrustSection
+          matchId={matchId}
+          events={events}
+          finalRanking={finalRanking}
+          agentNames={agentNames}
+        />
 
         <div className="flex justify-end">
           <Button variant="outline" onClick={() => router.push('/')}>

@@ -12,7 +12,7 @@ export default async function MatchPage({ params }: { params: Promise<{ matchId:
   return (
     <SpectatorView
       matchId={matchId}
-      gameType={bundle.match.gameType as 'poker' | 'werewolf'}
+      gameType={bundle.match.gameType}
       initialPlayers={bundle.initialPlayers}
       initialEvents={bundle.initialEvents}
       initialChips={bundle.initialChips}

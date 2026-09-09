@@ -246,3 +246,35 @@ export function thinkingEvent(agentId: string, day: number, phase: string, text:
     restrictedTo: null,
   }
 }
+
+/**
+ * GM 落库的主持人 LLM 旁白事件（FR-4.7-01 / R3-3）：引擎事件本体形态
+ * （seq/day/audience/actorId/kind + payload.text），audience=public。
+ */
+export function moderatorNarrationEvent(
+  text: string,
+  seq: number,
+  day: number,
+  actorId = 'agt_mod',
+  triggeredByKinds: string[] = ['deathsAnnounced'],
+): GameEvent {
+  return {
+    id: `ww_narr_${seq}`,
+    matchId: MATCH_ID,
+    gameType: 'werewolf',
+    seq,
+    occurredAt: new Date(1_723_000_000_000).toISOString(),
+    kind: 'werewolf:v2:moderatorNarration',
+    actorAgentId: actorId,
+    payload: {
+      seq,
+      day,
+      audience: { kind: 'public' },
+      actorId,
+      kind: 'moderatorNarration',
+      payload: { text, source: 'llm', triggeredByKinds },
+    },
+    visibility: 'public',
+    restrictedTo: null,
+  }
+}

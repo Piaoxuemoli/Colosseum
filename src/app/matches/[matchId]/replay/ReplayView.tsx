@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Badge } from '@/frontend/components/ui/badge'
 import { RightPanel } from '@/frontend/components/match/RightPanel'
@@ -39,6 +39,7 @@ export function ReplayView({
   const load = useReplayStore((s) => s.load)
   const reset = useReplayStore((s) => s.reset)
   const cursor = useReplayStore((s) => s.cursor)
+  const seekTo = useReplayStore((s) => s.seekTo)
   const rehydrateThinking = useThinkingStore((s) => s.rehydrate)
 
   const players = useMatchViewStore((s) => s.players)
@@ -84,6 +85,20 @@ export function ReplayView({
   }, [cursor, events, nameByAgent, rehydrateThinking])
 
   const werewolfPlayers = players.length > 0 ? players : initialPlayers
+
+  // FR-4.7-02 赛后解说：亮点引用的 seq → 回放光标跳转（不虚构的对照入口）。
+  const agentNames = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const player of initialPlayers) map[player.agentId] = player.displayName
+    return map
+  }, [initialPlayers])
+  const onSeekToSeq = useCallback(
+    (seq: number) => {
+      const index = events.findIndex((event) => event.seq === seq)
+      if (index >= 0) seekTo(index)
+    },
+    [events, seekTo],
+  )
 
   return (
     <div
@@ -135,7 +150,13 @@ export function ReplayView({
           <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />
         )}
 
-        <SettlementTrustSection matchId={matchId} events={events} finalRanking={finalRanking} />
+        <SettlementTrustSection
+          matchId={matchId}
+          events={events}
+          finalRanking={finalRanking}
+          agentNames={agentNames}
+          onSeekToSeq={onSeekToSeq}
+        />
 
         <ReplaySummaryPanel
           gameType={gameType}

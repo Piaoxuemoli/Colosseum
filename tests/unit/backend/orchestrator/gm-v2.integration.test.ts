@@ -6,7 +6,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { eventsOf, resetStore, seedAgent, store } from './gm-v2-harness'
+import { eventsOf, resetStore, seedAgent, seedModerator, store } from './gm-v2-harness'
 import type { StoredAgentError, StoredEpisodic, StoredEvent } from './gm-v2-harness'
 
 vi.mock('@/platform/redis/client', async () => {
@@ -159,6 +159,37 @@ vi.mock('@/backend/a2a-core/client', async () => {
       throw new Error('not used in v2 GM')
     },
   }
+})
+
+// R3-3 主持人旁白路径的三处替身：LLM 调用 / 用量流水 / Profile 查询。
+vi.mock('@/backend/agent/llm-runtime', async () => {
+  const helpers = await import('./gm-v2-harness')
+  return {
+    runNarration: async () => {
+      helpers.store.narrationCalls += 1
+      if (helpers.store.narrationLlm) {
+        const text = helpers.store.narrationLlm()
+        return { text, rawResponse: text, usage: { promptTokens: null, completionTokens: null, totalTokens: null } }
+      }
+      throw new Error('narration LLM unavailable')
+    },
+  }
+})
+
+vi.mock('@/backend/agent/usage-capture', async () => {
+  const helpers = await import('./gm-v2-harness')
+  return {
+    recordLlmUsage: async (input: Record<string, unknown>) => {
+      helpers.store.usageRows.push(input)
+    },
+    extractUsage: (usage: unknown) => usage,
+    NULL_USAGE: { promptTokens: null, completionTokens: null, totalTokens: null },
+  }
+})
+
+vi.mock('@/platform/db/queries/profiles', async () => {
+  const helpers = await import('./gm-v2-harness')
+  return { findProfileById: async (id: string) => helpers.store.profiles.get(id) }
 })
 
 import { keys } from '@/platform/redis/keys'
@@ -375,6 +406,88 @@ describe('GM v2 — poker：默认动作兜底驱动到终局', () => {
     expect(ranksUnique(finalized)).toBe(true)
     expect(matchEndPublished(matchId)).toBe(true)
   })
+})
+
+describe('GM v2 — werewolf 主持人 LLM 旁白（FR-4.7-01 / R3-3）', () => {
+  const NARRATION_TEXT = '夜色未起波澜，今日尚无人离席。'
+
+  async function createNarrationMatch(config?: Record<string, unknown>): Promise<string> {
+    seedModerator('agt_mod')
+    const { matchId } = await createAndStartMatch({
+      gameType: 'werewolf',
+      agentIds: WEREWOLF_AGENTS,
+      moderatorAgentId: 'agt_mod',
+      engineConfig: { boardId: 'base-6' },
+      ...(config ? { config } : {}),
+    })
+    deleteToken(matchId)
+    // 主持人 Profile 的服务端 keyring（运行中对局可用的唯一 key 来源）。
+    await store.redis.hset(keys.matchKeyring(matchId), { prof_test: 'sk-test' })
+    return matchId
+  }
+
+  it('关键公开边界后落 werewolf:v2:moderatorNarration 公共事件（seq 经引擎预留）', async () => {
+    store.narrationLlm = () => NARRATION_TEXT
+    const matchId = await createNarrationMatch()
+
+    await runMatchToCompletion(matchId, { maxTicks: 5_000 })
+
+    // 对局照常终局
+    const finalized = finalizedOf(matchId)
+    expect(finalized).toBeDefined()
+
+    const events = eventsOf(matchId)
+    const narrations = events.filter((event) => event.kind === 'werewolf:v2:moderatorNarration')
+    // 全默认推进：每天平安夜公告 + 终局揭示 → 多条旁白
+    expect(narrations.length).toBeGreaterThan(0)
+    for (const event of narrations) {
+      expect(event.visibility).toBe('public')
+      expect(event.restrictedTo).toBeNull()
+      expect(event.actorAgentId).toBe('agt_mod')
+      const body = event.payload as { audience?: unknown; day?: unknown; payload?: Record<string, unknown> }
+      expect(body.audience).toEqual({ kind: 'public' })
+      expect(typeof body.day).toBe('number')
+      expect(body.payload?.text).toBe(NARRATION_TEXT)
+      expect(body.payload?.source).toBe('llm')
+      expect(Array.isArray(body.payload?.triggeredByKinds)).toBe(true)
+      for (const kind of body.payload?.triggeredByKinds as string[]) {
+        expect(['deathsAnnounced', 'voteResult', 'gameEnded']).toContain(kind)
+      }
+    }
+
+    // seq 全局单调无碰撞（旁白预留序号与引擎事件共存）
+    const seqs = events.map((event) => event.seq)
+    expect(new Set(seqs).size).toBe(seqs.length)
+    expect([...seqs].sort((a, b) => a - b)).toEqual(seqs)
+
+    // 用量流水（FR-4.8-03）：purpose = moderator-narration
+    expect(store.usageRows.some((row) => row.purpose === 'moderator-narration')).toBe(true)
+    expect(store.narrationCalls).toBe(narrations.length)
+  }, 120_000)
+
+  it('narrationEnabled=false → 完全不打 LLM（零调用、零旁白事件，对局照常终局）', async () => {
+    store.narrationLlm = () => NARRATION_TEXT
+    const matchId = await createNarrationMatch({ narrationEnabled: false })
+
+    await runMatchToCompletion(matchId, { maxTicks: 5_000 })
+
+    expect(store.narrationCalls).toBe(0)
+    expect(eventsOf(matchId).some((event) => event.kind === 'werewolf:v2:moderatorNarration')).toBe(false)
+    expect(finalizedOf(matchId)).toBeDefined()
+    // 流程性宣告不受开关影响（FR-4.7-01：流程宣告不可关）
+    expect(eventsOf(matchId).some((event) => event.kind === 'werewolf:v2:deathsAnnounced')).toBe(true)
+  }, 120_000)
+
+  it('LLM 失败 → 无旁白事件，tick 照常推进到终局（旁白是增强项）', async () => {
+    store.narrationLlm = null // 替身抛错
+    const matchId = await createNarrationMatch()
+
+    await runMatchToCompletion(matchId, { maxTicks: 5_000 })
+
+    expect(store.narrationCalls).toBeGreaterThan(0)
+    expect(eventsOf(matchId).some((event) => event.kind === 'werewolf:v2:moderatorNarration')).toBe(false)
+    expect(finalizedOf(matchId)).toBeDefined()
+  }, 120_000)
 })
 
 describe('GM v2 — werewolf：默认动作兜底驱动到终局', () => {

@@ -6,10 +6,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { deriveMatchView, useMatchViewStore } from '@/frontend/store/match-view-store'
 import type { MatchViewProjection } from '@/frontend/store/match-view-store'
+import type { GameEvent } from '@/platform/core/types'
 import {
   MATCH_ID,
   WEREWOLF_ROSTER,
   indexOfKind,
+  moderatorNarrationEvent,
   rawEvent,
   scriptedWerewolfMatch,
   thinkingEvent,
@@ -214,5 +216,37 @@ describe('werewolf v2 projection — forward compatibility & thinking payload', 
     expect(stored?.payload.phase).toBe('day.speech')
     expect(stored?.payload.handNumber).toBe(0)
     expect(a.werewolf).toEqual(b.werewolf)
+  })
+})
+
+describe('werewolf v2 projection — moderatorNarration（FR-4.7-01 / R3-3）', () => {
+  const NARRATION = '晨光落下，三号位的座位空了。'
+
+  /** 天亮公告后插入一条 LLM 旁白事件（与生产落库顺序一致：批后追加）。 */
+  function streamWithNarration(): GameEvent[] {
+    const at = indexOfKind(events, 'werewolf:v2:deathsAnnounced', 0)
+    return [
+      ...events.slice(0, at + 1),
+      moderatorNarrationEvent(NARRATION, 700_001, 1),
+      ...events.slice(at + 1),
+    ]
+  }
+
+  it('LLM 旁白进入主持人旁白流，god / public 两视角均可见', () => {
+    for (const viewMode of ['god', 'public'] as const) {
+      const view = deriveMatchView(streamWithNarration(), { matchId: MATCH_ID, players: WEREWOLF_ROSTER }, viewMode)
+      const entry = view.werewolf.moderatorNarration.find((item) => item.narration === NARRATION)
+      expect(entry).toBeDefined()
+      expect(entry?.day).toBe(1)
+    }
+  })
+
+  it('与程序化公告同流呈现：旁白紧邻天亮公告之后', () => {
+    const view = deriveMatchView(streamWithNarration(), { matchId: MATCH_ID, players: WEREWOLF_ROSTER }, 'public')
+    const idx = view.werewolf.moderatorNarration.findIndex((item) => item.narration === NARRATION)
+    expect(idx).toBeGreaterThan(0)
+    expect(view.werewolf.moderatorNarration[idx - 1].narration).toContain('天亮了')
+    // 事件本体仍追加进 events 列表（留存 / 回放同源）
+    expect(view.events.some((event) => event.kind === 'werewolf:v2:moderatorNarration')).toBe(true)
   })
 })
