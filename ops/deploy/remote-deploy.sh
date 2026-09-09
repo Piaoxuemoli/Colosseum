@@ -97,15 +97,37 @@ if [ -d "$APP_DIR" ]; then
   log "上一版本已留存于 $APP_PREV"
 fi
 
-# 解包（tar 直接覆盖源码树；.env / 数据卷均不在树内）
+# 全量换树：tar 解包不会删除仓库中已移除的文件（曾导致服务器残留 archive/
+# 旧目录、Docker 构建把已删源码当活代码编译而失败）。发布包是完整源码树，
+# 直接整树替换；仅回迁服务器本地配置 .env。
+ENV_BACKUP=""
+if [ -f "$APP_DIR/ops/deploy/.env" ]; then
+  ENV_BACKUP="/tmp/colosseum-deploy-env"
+  cp "$APP_DIR/ops/deploy/.env" "$ENV_BACKUP"
+fi
+rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR"
 tar -xzf "$RELEASE_DIR/$RELEASE_FILE" -C "$APP_DIR"
+if [ -n "$ENV_BACKUP" ]; then
+  cp "$ENV_BACKUP" "$APP_DIR/ops/deploy/.env"
+  rm -f "$ENV_BACKUP"
+fi
 echo "RELEASE_SHA=$RELEASE_SHA" > "$APP_DIR/RELEASE"
-log "源码就位: $(grep -c . "$APP_DIR/RELEASE" >/dev/null && echo ok)"
+log "源码树已全量替换（服务器本地 .env 已回迁）"
 
 cd "$APP_DIR/ops/deploy"
-log "构建镜像（首次或依赖变更时需要数分钟）..."
-docker compose build nextjs 2>&1 | tail -3
+log "构建镜像（完整日志输出；首次或依赖变更时需要数分钟）..."
+BUILD_START="$(date +%s)"
+# 不用管道：sh 无 pipefail，`build | tail` 会吞掉非零退出码（已踩坑）。
+docker compose build nextjs
+
+# 镜像新鲜度守卫：镜像创建时间必须晚于本次构建开始，防止任何缓存路径假成功。
+IMAGE_CREATED="$(docker inspect -f '{{.Created}}' colosseum:prod 2>/dev/null | cut -c1-19 | tr -d ':-' || echo 0)"
+IMAGE_EPOCH="$(date -u -d "$IMAGE_CREATED" +%s 2>/dev/null || echo 0)"
+if [ "$IMAGE_EPOCH" -lt "$BUILD_START" ]; then
+  log "错误: 镜像未更新（created=$IMAGE_EPOCH < build_start=$BUILD_START），疑似缓存假成功"
+  exit 1
+fi
 log "启动容器（entrypoint 将自动执行 drizzle migrate）..."
 docker compose up -d nextjs
 docker compose ps nextjs | tail -1
