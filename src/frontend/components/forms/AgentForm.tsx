@@ -13,11 +13,29 @@ import { presetsFor } from '@/backend/agent/prompt-presets'
 
 type Profile = { id: string; displayName: string; model: string }
 
+/**
+ * 简化阿瓦隆（R3-2 冒烟）的玩家人设预设。prompt-presets 属 backend 装配
+ * （不为本品类扩面），故以同形结构在 frontend 本地提供。
+ */
+const AVALON_PLAYER_PRESETS = [
+  {
+    id: 'balanced-knight',
+    label: '圆桌骑士(均衡)',
+    description: '通用阿瓦隆玩家 prompt,身份由发牌决定。',
+    prompt:
+      '你是一位参加 5 人简化阿瓦隆(梅林、派西维尔、忠诚仆从、莫德雷德、爪牙各 1)的玩家。\n\n' +
+      '- 身份由发牌私下告知;3 轮任务制,每轮队长提名 2 人队伍、全员表决、成员秘密抉择。\n' +
+      '- 好人阵营:通过提名与表决的蛛丝马迹找出坏人,让好队伍上车。\n' +
+      '- 坏人阵营:隐藏身份,伺机混入队伍并投失败票,或连续否决好队伍。\n' +
+      '- 所有推理用中文,结构清晰(观点 + 证据 + 立场)。',
+  },
+]
+
 export function AgentForm({
   gameType = 'poker',
   kind = 'player',
 }: {
-  gameType?: 'poker' | 'werewolf'
+  gameType?: 'poker' | 'werewolf' | 'avalon'
   kind?: 'player' | 'moderator'
 }) {
   const router = useRouter()
@@ -30,7 +48,7 @@ export function AgentForm({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const presets = presetsFor(gameType, kind)
+  const presets = gameType === 'avalon' ? AVALON_PLAYER_PRESETS : presetsFor(gameType, kind)
 
   useEffect(() => {
     if (!open) return
@@ -68,7 +86,8 @@ export function AgentForm({
   }
 
   const selectedPreset = presets.find((p) => p.id === presetId)
-  const tagLabel = `${gameType === 'poker' ? '德扑' : '狼人杀'}${kind === 'moderator' ? '·主持人' : ''}`
+  const gameLabel = gameType === 'poker' ? '德扑' : gameType === 'avalon' ? '阿瓦隆' : '狼人杀'
+  const tagLabel = `${gameLabel}${kind === 'moderator' ? '·主持人' : ''}`
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

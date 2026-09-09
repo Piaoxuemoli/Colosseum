@@ -5,6 +5,7 @@ import { parseRpcRequest, rpcError, RpcErrors } from '@/backend/a2a-core/jsonrpc
 import { getApiKey } from '@/backend/agent/key-cache'
 import { LlmError } from '@/backend/agent/llm-errors'
 import { runDecision } from '@/backend/agent/llm-runtime'
+import { recordLlmUsage } from '@/backend/agent/usage-capture'
 import { gameTypeSchema } from '@/platform/core/types'
 import { findAgentById } from '@/platform/db/queries/agents'
 import { recordAgentError } from '@/platform/db/queries/errors'
@@ -261,9 +262,12 @@ async function runV2DecisionBranch(input: {
     taskId: input.taskId,
     async execute(emit) {
       emit.statusUpdate('working')
+      // 供 catch 分支记用量流水（FR-4.8-03）：profile 元信息在 try 内解析。
+      let profileMeta: { profileId: string; model: string } | null = null
       try {
         const agentProfile = await findAgentById(input.agentId).catch(() => undefined)
         const profile = agentProfile ? await findProfileById(agentProfile.profileId).catch(() => undefined) : undefined
+        if (profile) profileMeta = { profileId: profile.id, model: profile.model }
         const apiKey = profile ? await getApiKey(input.matchId, profile.id) : undefined
         const provider = profile ? findProvider(profile.providerId) : undefined
 
@@ -316,6 +320,20 @@ async function runV2DecisionBranch(input: {
           },
         })
 
+        // FR-4.8-03（R3-6）：成功调用落一条用量流水；supply 方未上报时
+        // token 为 null（仅调用次数）。recordLlmUsage 内部吞错，不影响决策流。
+        // Mock 模式没有真实 LLM 调用，不计数。
+        if (loadEnv().M4_MOCK_LLM !== '1') {
+          await recordLlmUsage({
+            matchId: input.matchId,
+            agentId: input.agentId,
+            profileId: profile.id,
+            purpose: 'agent-decision',
+            model: profile.model,
+            usage: result.usage,
+          })
+        }
+
         const parser = getV2ResponseParser(input.gameType)
         const parsed = parser.parse(result.rawResponse)
         // 通用流解析器可能已提取合法 <action> JSON——解析器失败时不丢弃它
@@ -355,6 +373,18 @@ async function runV2DecisionBranch(input: {
           rawResponse: rawResponseFromError(err),
           recoveryAction: null,
         })
+        // FR-4.8-03：失败调用也计数（token 不可得，记 null）——异常兜底与
+        // 用量对账共用一张流水表；同样跳过 mock 模式。
+        if (loadEnv().M4_MOCK_LLM !== '1') {
+          await recordLlmUsage({
+            matchId: input.matchId,
+            agentId: input.agentId,
+            profileId: profileMeta?.profileId ?? null,
+            purpose: 'agent-decision',
+            model: profileMeta?.model ?? null,
+            usage: null,
+          })
+        }
         log.warn('agent endpoint v2 branch: LLM failure, engine default will be applied by GM', {
           agentId: input.agentId,
           matchId: input.matchId,

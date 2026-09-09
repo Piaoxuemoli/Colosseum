@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, Bot, KeyRound, Radio } from 'lucide-react'
+import { Activity, BarChart3, Bot, KeyRound, Radio } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { PendingLink } from '@/frontend/components/navigation/PendingLink'
@@ -10,6 +10,7 @@ const NAV = [
   { href: '/', label: '大厅', icon: Activity },
   { href: '/agents', label: 'Agents', icon: Bot },
   { href: '/profiles', label: 'API Profiles', icon: KeyRound },
+  { href: '/stats', label: '统计', icon: BarChart3 },
 ]
 
 export function Sidebar() {

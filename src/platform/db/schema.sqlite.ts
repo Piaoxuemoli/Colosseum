@@ -90,6 +90,36 @@ export const gameEvents = sqliteTable(
   (table) => [index('game_events_match_seq_idx').on(table.matchId, table.seq)],
 )
 
+/**
+ * LLM 用量流水（FR-4.8-03 / NFR-06，R3-6）。
+ *
+ * 每次真实的 LLM 调用一行（决策 / 主持 / 解说 / 配置测试）。match_id 与
+ * agent_id 可空：非对局调用（如 profile 连通性测试）没有归属对局。不设
+ * 外键——用量是审计流水，主体被清理后仍保留计数。
+ */
+export const llmUsage = sqliteTable(
+  'llm_usage',
+  {
+    id: text('id').primaryKey(),
+    matchId: text('match_id'),
+    agentId: text('agent_id'),
+    profileId: text('profile_id'),
+    purpose: text('purpose').notNull(),
+    promptTokens: integer('prompt_tokens'),
+    completionTokens: integer('completion_tokens'),
+    totalTokens: integer('total_tokens'),
+    model: text('model'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .default(sql`(strftime('%s','now'))`),
+  },
+  (table) => [
+    index('llm_usage_match_idx').on(table.matchId),
+    index('llm_usage_agent_idx').on(table.agentId),
+    index('llm_usage_purpose_idx').on(table.purpose),
+  ],
+)
+
 export const agentErrors = sqliteTable('agent_errors', {
   id: text('id').primaryKey(),
   matchId: text('match_id').notNull(),
