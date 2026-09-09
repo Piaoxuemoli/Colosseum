@@ -282,6 +282,18 @@ export function reduceWerewolfV2Event(state: MatchViewProjection, event: GameEve
       }
       break
     }
+    case 'moderatorNarration': {
+      // FR-4.7-01（R3-3）：LLM 主持人在关键公开边界的解说旁白——audience
+      // public，两视角均可见，与流程性宣告同流呈现（ModeratorPanel 旁白行）。
+      const text = stringOr(payload.text)
+      if (!text) break
+      werewolf = appendNarration(werewolf, {
+        day,
+        phase: werewolf.phase ?? '',
+        narration: text,
+      })
+      break
+    }
     case 'lastWords': {
       const playerId = stringOr(payload.playerId) ?? stringOr(ev.actorId)
       const content = stringOr(payload.content)

@@ -27,6 +27,7 @@ import { keys } from '@/platform/redis/keys'
 import { log } from '@/platform/telemetry/logger'
 import { inc, observe } from '@/platform/telemetry/metrics'
 import { newEventId } from '@/platform/core/ids'
+import { generateModeratorNarration } from '@/backend/match/narration'
 import { finalizeMatch } from './match-lifecycle'
 import { publishSse } from './sse-broadcast'
 import { bucketizeFallbackReason } from './fallback-reasons'
@@ -184,6 +185,24 @@ export async function tickMatch(matchId: string): Promise<TickResult> {
       for (const signal of impressions.fromBatch(nextState, engineEvents, fullStream)) {
         await persistImpressions(matchId, gameType, signal, impressions.memory)
       }
+    }
+
+    // FR-4.7-01（R3-3）主持人 LLM 旁白：关键公开边界后追加
+    // `${gameType}:v2:moderatorNarration` 公共事件（seq 经插件预留，与
+    // agent/thinking 同机制）。增强项——模块内任何失败静默跳过，绝不阻塞 tick。
+    const narration = await generateModeratorNarration({
+      matchId,
+      gameType,
+      matchConfig: match.config,
+      state: nextState,
+      batchEvents: engineEvents,
+      publicContext: fullStream,
+      summary: plugin.stateSummary(nextState),
+      reserveEventSeq: (s) => plugin.reserveEventSeq(s),
+    })
+    if (narration) {
+      nextState = narration.state
+      await persistAndPublish(matchId, gameType, [], { isDefault: false, extra: [narration.event] })
     }
 
     await redis.set(keys.matchState(matchId), JSON.stringify(nextState), 'EX', 24 * 60 * 60)

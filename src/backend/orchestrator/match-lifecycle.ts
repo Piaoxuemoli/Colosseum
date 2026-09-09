@@ -35,8 +35,11 @@ export type CreateMatchInput = {
   engineConfig?: Record<string, unknown>
 }
 
-/** v2 对局在 matches.config 上盖的版本戳（spec §7）。 */
-export type V2MatchConfig = MatchConfig & { engineVersion: 2 }
+/**
+ * v2 对局在 matches.config 上盖的版本戳（spec §7）。moderatorAgentId 为
+ * R3-3 旁白钩子 GM 侧解析主持人用（狼人杀；未提供时不写入该键）。
+ */
+export type V2MatchConfig = MatchConfig & { engineVersion: 2; moderatorAgentId?: string }
 
 export async function createAndStartMatch(input: CreateMatchInput): Promise<{ matchId: string; token: string }> {
   ensureGamesRegistered()
@@ -58,7 +61,12 @@ export async function createAndStartMatch(input: CreateMatchInput): Promise<{ ma
     throw new MatchCreateValidationError(`[${created.rejection.code}] ${created.rejection.message}`)
   }
 
-  const config: V2MatchConfig = { ...defaultMatchConfig(), ...(input.config ?? {}), engineVersion: 2 }
+  const config: V2MatchConfig = {
+    ...defaultMatchConfig(),
+    ...(input.config ?? {}),
+    engineVersion: 2,
+    ...(input.moderatorAgentId ? { moderatorAgentId: input.moderatorAgentId } : {}),
+  }
   const { matchId } = await createMatch({
     gameType: input.gameType,
     config,
