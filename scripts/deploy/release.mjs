@@ -60,6 +60,17 @@ function prepareKey() {
     console.error('        放到 ops/private/deploy.pem，或设 DEPLOY_KEY 环境变量')
     process.exit(1)
   }
+  // 上次运行可能残留了带只读 ACL 的临时 key，先重置再删，避免 EPERM
+  if (existsSync(KEY_TMP)) {
+    if (process.platform === 'win32') {
+      try {
+        execSync(`icacls "${KEY_TMP}" /reset`, { stdio: 'pipe' })
+      } catch {
+        /* reset 失败则直接尝试删除 */
+      }
+    }
+    rmSync(KEY_TMP, { force: true })
+  }
   copyFileSync(KEY_SRC, KEY_TMP)
   if (process.platform === 'win32') {
     // OpenSSH for Windows 要求私钥仅当前用户可读，否则拒绝使用
