@@ -3,7 +3,8 @@ import { z } from 'zod'
 export const visibilitySchema = z.enum(['public', 'role-restricted', 'private'])
 export type Visibility = z.infer<typeof visibilitySchema>
 
-export const gameTypeSchema = z.enum(['poker', 'werewolf'])
+/** 品类接入点（R3-2）：'avalon' = 简化阿瓦隆冒烟板（games/avalon，generic-v2 兜底观战）。 */
+export const gameTypeSchema = z.enum(['poker', 'werewolf', 'avalon'])
 export type GameType = z.infer<typeof gameTypeSchema>
 
 export const gameEventSchema = z.object({
@@ -51,3 +52,16 @@ export type AgentKind = z.infer<typeof agentKindSchema>
 
 export const providerKindSchema = z.enum(['openai-compatible', 'anthropic', 'custom'])
 export type ProviderKind = z.infer<typeof providerKindSchema>
+
+/**
+ * LLM 调用用途（FR-4.8-03：按选手 / 按用途聚合用量）。backend 捕获层
+ * （src/backend/agent/usage-capture.ts）与 platform 查询层
+ * （src/platform/db/queries/stats.ts）共用此口径。
+ */
+export const llmUsagePurposeSchema = z.enum([
+  'agent-decision',
+  'moderator-narration',
+  'commentary',
+  'profile-test',
+])
+export type LlmUsagePurpose = z.infer<typeof llmUsagePurposeSchema>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { AvalonMatchSetupForm } from './AvalonMatchSetupForm'
 import { MatchSetupForm } from './MatchSetupForm'
 import { WerewolfMatchSetupForm } from './WerewolfMatchSetupForm'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/components/ui/tabs'
@@ -39,17 +40,18 @@ function PokerSetup() {
 }
 
 /**
- * Client-side tabs that route the user to either the poker or werewolf
+ * Client-side tabs that route the user to the poker / werewolf / avalon
  * match-setup flow. Lives at `/matches/new`.
  */
-export function NewMatchTabs({ defaultGame = 'poker' }: { defaultGame?: 'poker' | 'werewolf' }) {
-  const [tab, setTab] = useState<'poker' | 'werewolf'>(defaultGame)
+export function NewMatchTabs({ defaultGame = 'poker' }: { defaultGame?: 'poker' | 'werewolf' | 'avalon' }) {
+  const [tab, setTab] = useState<'poker' | 'werewolf' | 'avalon'>(defaultGame)
 
   return (
-    <Tabs value={tab} onValueChange={(value) => setTab(value as 'poker' | 'werewolf')} className="w-full">
-      <TabsList className="mb-6 grid w-full max-w-sm grid-cols-2">
+    <Tabs value={tab} onValueChange={(value) => setTab(value as 'poker' | 'werewolf' | 'avalon')} className="w-full">
+      <TabsList className="mb-6 grid w-full max-w-md grid-cols-3">
         <TabsTrigger value="poker">德州扑克</TabsTrigger>
         <TabsTrigger value="werewolf">狼人杀</TabsTrigger>
+        <TabsTrigger value="avalon">简化阿瓦隆</TabsTrigger>
       </TabsList>
       <TabsContent value="poker">
         <div className="mb-6">
@@ -62,6 +64,14 @@ export function NewMatchTabs({ defaultGame = 'poker' }: { defaultGame?: 'poker' 
           <p className="text-sm text-muted-foreground">选 6 位玩家 Agent + 1 位主持人(Moderator),6 人狼人杀 (2 狼 · 1 预言家 · 1 女巫 · 2 村民)。</p>
         </div>
         <WerewolfMatchSetupForm />
+      </TabsContent>
+      <TabsContent value="avalon">
+        <div className="mb-6">
+          <p className="text-sm text-muted-foreground">
+            选 5 位玩家 Agent,简化阿瓦隆冒烟板 (梅林 · 派西维尔 · 忠诚仆从 · 莫德雷德 · 爪牙,3 轮任务制)。观战走通用兜底视图。
+          </p>
+        </div>
+        <AvalonMatchSetupForm />
       </TabsContent>
     </Tabs>
   )

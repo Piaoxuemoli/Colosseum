@@ -25,6 +25,7 @@ export default async function AgentsPage() {
 
   const pokerRows = rows.filter((row) => row.gameType === 'poker')
   const werewolfRows = rows.filter((row) => row.gameType === 'werewolf')
+  const avalonRows = rows.filter((row) => row.gameType === 'avalon')
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -32,7 +33,7 @@ export default async function AgentsPage() {
         <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">Roster</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Agents</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          为每位参赛者绑定 Profile 和人设 Prompt。支持德扑玩家、狼人杀玩家和狼人杀主持人(moderator)。
+          为每位参赛者绑定 Profile 和人设 Prompt。支持德扑玩家、狼人杀玩家、狼人杀主持人(moderator)和简化阿瓦隆玩家。
         </p>
       </div>
 
@@ -40,6 +41,7 @@ export default async function AgentsPage() {
         pokerCount={pokerRows.length}
         werewolfPlayerCount={werewolfRows.filter((row) => row.kind === 'player').length}
         werewolfModeratorCount={werewolfRows.filter((row) => row.kind === 'moderator').length}
+        avalonCount={avalonRows.filter((row) => row.kind === 'player').length}
         pokerAgents={<AgentList rows={pokerRows} emptyHint="暂无德扑 Agent。先创建 6 位德扑选手。" />}
         werewolfPlayerAgents={
           <AgentList
@@ -53,9 +55,16 @@ export default async function AgentsPage() {
             emptyHint="暂无狼人杀主持人(moderator)。至少需要 1 位。"
           />
         }
+        avalonAgents={
+          <AgentList
+            rows={avalonRows.filter((row) => row.kind === 'player')}
+            emptyHint="暂无阿瓦隆玩家 Agent。需要 5 位。"
+          />
+        }
         newPokerForm={<AgentForm gameType="poker" kind="player" />}
         newWerewolfPlayerForm={<AgentForm gameType="werewolf" kind="player" />}
         newWerewolfModeratorForm={<AgentForm gameType="werewolf" kind="moderator" />}
+        newAvalonForm={<AgentForm gameType="avalon" kind="player" />}
       />
     </div>
   )

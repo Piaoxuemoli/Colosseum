@@ -72,8 +72,28 @@ export function validatePokerCreate(input: ValidateMatchCreateInput): void {
   }
 }
 
+/**
+ * Validates inputs for creating an avalon match (R3-2 冒烟板：固定 5 人).
+ * 阿瓦隆无 moderator 概念——主持人 Agent 不参与也不要求。
+ */
+export function validateAvalonCreate(input: ValidateMatchCreateInput): void {
+  if (input.agentIds.length !== 5) {
+    throw new MatchCreateValidationError(
+      `avalon smoke board requires exactly 5 player agents (R3-2), got ${input.agentIds.length}`,
+    )
+  }
+  const dupCheck = new Set<string>()
+  for (const id of input.agentIds) {
+    if (dupCheck.has(id)) {
+      throw new MatchCreateValidationError(`avalon player agents contain duplicate id: ${id}`)
+    }
+    dupCheck.add(id)
+  }
+}
+
 /** Game-type aware guard. */
 export function validateMatchCreate(gameType: GameType, input: ValidateMatchCreateInput): void {
   if (gameType === 'werewolf') validateWerewolfCreate(input)
   if (gameType === 'poker') validatePokerCreate(input)
+  if (gameType === 'avalon') validateAvalonCreate(input)
 }
