@@ -44,6 +44,7 @@ import type { PokerWorkingMemory } from '../memory/working'
 import { generateImpressionParagraph } from '../memory/summary'
 import type { PokerEpisodicEntry } from '../memory/episodic'
 import type { PokerSemanticProfile } from '../memory/semantic'
+import { pokerPresentation } from './presentation-v2'
 
 const gameType: GameType = 'poker'
 
@@ -510,4 +511,6 @@ export const pokerPluginV2: GameModuleV2<MatchState, PlayerAction> = {
   },
 
   impressions,
+
+  presentation: pokerPresentation,
 }

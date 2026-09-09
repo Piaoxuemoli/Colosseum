@@ -37,6 +37,15 @@ import type {
   WerewolfEngineState,
   WerewolfEvent,
 } from '../engine2'
+import { werewolfPresentation } from './presentation-v2'
+
+// FR-4.7-01 / R3-3：主持人旁白触发判定（纯函数）经插件文件再导出以便发现；
+// platform 契约（GameModuleV2）不新增成员，backend/match/narration.ts 按
+// gameType 直接装配（与 v2-agent-branch 同模式）。
+export {
+  werewolfNarrationTrigger,
+  type WerewolfNarrationTrigger,
+} from './narration'
 
 const gameType: GameType = 'werewolf'
 
@@ -460,6 +469,8 @@ export const werewolfPluginV2: GameModuleV2<WerewolfEngineState, WerewolfAction>
       lastWordsMaxLength: state.board.lastWordsMaxLength,
     }
   },
+
+  presentation: werewolfPresentation,
 }
 
 function toActionSpec(option: ActionOption): V2ActionSpec {

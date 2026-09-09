@@ -11,6 +11,23 @@
  */
 
 import type { GameType, MatchResult } from '@/platform/core/types'
+import type { PresentationModule } from './presentation'
+
+// 品类呈现契约（spec: docs/specs/presentation-contract.md）——与 engine2
+// 运行时契约同层导出，供插件作者与通用前端消费。
+export type {
+  PresentationEventCategory,
+  PresentationEventHint,
+  PresentationSeverity,
+  PresentationPhaseBoundary,
+  PresentationPhaseModel,
+  PresentationPlayerStatus,
+  PresentationSettlement,
+  PresentationSettlementRow,
+  PresentationSituationRow,
+  PresentationSituationView,
+  PresentationModule,
+} from './presentation'
 
 // ---------------------------------------------------------------------------
 // 事件信封（spec §3）
@@ -188,6 +205,12 @@ export interface GameModuleV2<TState, TAction> {
   gameInfo(state: TState): Record<string, unknown>
   /** 印象钩子（仅扑克提供）。 */
   impressions?: V2Impressions
+  /**
+   * 品类呈现契约（spec: docs/specs/presentation-contract.md §2）：四支柱
+   * （态势 / 事件流 hints / 阶段模型 / 结算）的纯派生面。必选——新品类接入
+   * 的一致性门禁（assertPresentationContract）以此为验证对象。
+   */
+  presentation: PresentationModule<TState>
 }
 
 // ---------------------------------------------------------------------------

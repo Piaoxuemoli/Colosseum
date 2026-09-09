@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef } from 'react'
 import { Badge } from '@/frontend/components/ui/badge'
 import { FinishAfterHandButton } from '@/frontend/components/match/FinishAfterHandButton'
+import { GenericSituationPanel } from '@/frontend/components/match/GenericSituationPanel'
 import { MatchKeyStatusBadge } from '@/frontend/components/match/MatchKeyStatusBadge'
 import { RightPanel } from '@/frontend/components/match/RightPanel'
 import { RankingPanel } from '@/frontend/components/match/RankingPanel'
@@ -21,6 +22,13 @@ import { useThinkingStore } from '@/frontend/store/thinking-store'
 const THINKING_BATCH_MS = 80
 const THINKING_CURRENT_STALE_MS = 7000
 
+/** FR-4.7-02 赛后解说：agentId → 显示名（mvp 徽标用）。 */
+function agentNamesOf(players: PokerUiPlayer[]): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const player of players) map[player.agentId] = player.displayName
+  return map
+}
+
 type SseMessage =
   | { kind: 'event'; event: GameEvent }
   | { kind: 'thinking-delta'; agentId: string; delta: string }
@@ -37,7 +45,8 @@ export function SpectatorView({
   finalRanking,
 }: {
   matchId: string
-  gameType: 'poker' | 'werewolf'
+  /** 品类呈现契约（FR-4.5-03）：未知品类回落通用面板，不阻断观战。 */
+  gameType: string
   initialPlayers: PokerUiPlayer[]
   initialEvents: GameEvent[]
   initialChips: number
@@ -74,6 +83,7 @@ export function SpectatorView({
   const winnerAgentId = useMatchViewStore((state) => state.winnerAgentId)
   const werewolfDay = useMatchViewStore((state) => state.werewolf.day)
   const werewolfPhase = useMatchViewStore((state) => state.werewolf.phase)
+  const genericV2 = useMatchViewStore((state) => state.genericV2)
   const storeEvents = useMatchViewStore((state) => state.events)
 
   const thinkingBuffer = useRef<Record<string, string>>({})
@@ -213,13 +223,59 @@ export function SpectatorView({
 
           {matchComplete ? (
             <div className="shrink-0">
-              <SettlementTrustSection matchId={matchId} events={storeEvents} finalRanking={finalRanking} />
+              <SettlementTrustSection
+                matchId={matchId}
+                events={storeEvents}
+                finalRanking={finalRanking}
+                agentNames={agentNamesOf(werewolfPlayers)}
+              />
             </div>
           ) : null}
         </main>
 
-        <RightPanel matchId={matchId} gameType={gameType} />
+        <RightPanel matchId={matchId} gameType="werewolf" />
         <WerewolfResultPanel players={werewolfPlayers} />
+      </div>
+    )
+  }
+
+  if (gameType !== 'poker') {
+    // 品类呈现契约兜底（FR-4.5-03 / presentation-contract spec §4）：
+    // 无专属棋盘的品类回落通用面板（态势名册 + 阶段条带 + 动作流 + 结算）。
+    const genericComplete = genericV2.status === 'settled'
+    return (
+      <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col gap-3 overflow-hidden px-3 py-3 md:px-5 lg:flex-row lg:p-6">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="mb-3 flex shrink-0 flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                Spectator View · 通用呈现
+              </p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white lg:text-3xl">
+                {gameType} · {genericV2.cycle > 0 ? `第 ${genericV2.cycle} 轮` : '等待开局'}
+              </h1>
+              <p className="mt-1 truncate font-mono text-xs text-muted-foreground">{matchId}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{genericV2.phase ?? 'waiting'}</Badge>
+              <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
+              <MatchKeyStatusBadge matchId={matchId} />
+              {genericComplete ? <Badge>对局结束</Badge> : null}
+              {status !== 'running' ? (
+                <Link
+                  href={`/matches/${matchId}/replay`}
+                  className="inline-flex items-center rounded-lg border border-cyan-300/40 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100 hover:bg-cyan-300/20"
+                >
+                  查看回放 →
+                </Link>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <GenericSituationPanel matchId={matchId} />
+          </div>
+        </main>
       </div>
     )
   }
@@ -278,7 +334,7 @@ export function SpectatorView({
         ) : null}
       </main>
 
-      <RightPanel matchId={matchId} gameType={gameType} startingChips={initialChips} />
+      <RightPanel matchId={matchId} gameType="poker" startingChips={initialChips} />
       <RankingPanel matchId={matchId} initialChips={initialChips} finalRanking={finalRanking} />
     </div>
   )

@@ -207,9 +207,15 @@ export default async function Lobby({
       <section className="mt-10" id="recent">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">最近对局</h2>
-          <PendingLink className="text-sm text-cyan-200 transition hover:text-cyan-100 active:text-cyan-50" href="/agents">
-            管理 Agents
-          </PendingLink>
+          <div className="flex items-center gap-4">
+            <PendingLink className="text-sm text-cyan-200 transition hover:text-cyan-100 active:text-cyan-50" href="/agents">
+              管理 Agents
+            </PendingLink>
+            {/* FR-4.6-05 / FR-4.8-03：跨对局统计 + 用量入口。 */}
+            <PendingLink className="text-sm text-cyan-200 transition hover:text-cyan-100 active:text-cyan-50" href="/stats">
+              统计
+            </PendingLink>
+          </div>
         </div>
 
         {/* FR-4.6-04 过滤检索条：URL 状态同步（?gameType=&status=&q=）。 */}

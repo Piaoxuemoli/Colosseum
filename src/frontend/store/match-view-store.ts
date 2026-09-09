@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import type { GameEvent } from '@/platform/core/types'
 import { isPokerV2Event, isWerewolfV2Event, type ViewMode } from './projections/common'
+import { emptyGenericV2, isGenericV2Event, reduceGenericV2Event, type GenericV2Accumulator } from './projections/generic-v2'
 import { emptyPokerV2, reducePokerV2Event, type PokerV2Accumulator } from './projections/poker-v2'
 import {
   emptyWerewolfV2,
@@ -13,6 +14,7 @@ import {
 export type { ViewMode } from './projections/common'
 export type { PokerV2Accumulator } from './projections/poker-v2'
 export type { WerewolfV2Accumulator } from './projections/werewolf-v2'
+export type { GenericV2Accumulator } from './projections/generic-v2'
 
 export type CardVisual = { rank: string; suit: string }
 
@@ -122,6 +124,11 @@ export type MatchViewState = {
   pokerV2: PokerV2Accumulator
   /** engine2 v2 投影内部累积器（狼人杀）。 */
   werewolfV2: WerewolfV2Accumulator
+  /**
+   * 品类呈现契约 · 通用兜底投影累积器（presentation-contract spec §4）：
+   * 非 poker/werewolf 的 `*:v2:` 流归约出通用视图模型（无专属面板品类的回落）。
+   */
+  genericV2: GenericV2Accumulator
   reset(): void
   init(input: { matchId: string; players: PokerUiPlayer[] }): void
   ingestEvent(event: GameEvent): void
@@ -189,6 +196,7 @@ const initialState = {
   seatSetup: null as { matchId: string; players: PokerUiPlayer[] } | null,
   pokerV2: emptyPokerV2(),
   werewolfV2: emptyWerewolfV2(),
+  genericV2: emptyGenericV2(),
 }
 
 function createInitialProjection(
@@ -208,6 +216,7 @@ function createInitialProjection(
     seatSetup: input ? { matchId: input.matchId, players: input.players } : null,
     pokerV2: emptyPokerV2(),
     werewolfV2: emptyWerewolfV2(),
+    genericV2: emptyGenericV2(),
   }
 }
 
@@ -375,9 +384,11 @@ function updatePlayersOnAction(
 
 export function reduceMatchViewEvent(state: MatchViewProjection, event: GameEvent): MatchViewProjection {
   // engine2 v2 信封（spec §3：`${gameType}:v2:${kind}`）分派到 v2 投影模块；
-  // 旧 kind 保持既有 v1 路径（切换期两种流并存）。
+  // 两既有游戏优先走专属投影，其余 `*:v2:` 走通用兜底投影
+  // （presentation-contract spec §4，未知品类回落）；旧 kind 保持既有 v1 路径。
   if (isPokerV2Event(event)) return reducePokerV2Event(state, event)
   if (isWerewolfV2Event(event)) return reduceWerewolfV2Event(state, event)
+  if (isGenericV2Event(event)) return reduceGenericV2Event(state, event)
 
   let phase = state.phase
   let handNumber = state.handNumber
