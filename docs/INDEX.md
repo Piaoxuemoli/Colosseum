@@ -17,7 +17,7 @@
 | 活跃规格 | `docs/specs/` | 仍在生效的子系统设计（如 A2UI 配置页） | 实现对应子系统前 |
 | 模板 | `docs/templates/` | 游戏接入 A2UI 的模板说明 | 新游戏接入时 |
 | 调研 | `docs/research/` | 技术调研报告：CI/测试体系（`2026-09-ci-test-survey.md`）、德扑实现（`2026-09-poker-implementation-survey.md`）、狼人杀规则（`2026-09-werewolf-rules-survey.md`）、A2UI 可行性等 | 立新任务、做技术选型前；游戏 PRD 的规则溯源依据 |
-| 部署 | `docs/deploy/` 与 `ops/` | Vercel fallback、部署流水线、本地开发环境 | 部署、运维、配本地环境 |
+| 部署 | `docs/deploy/` 与 `ops/` | 发版链路与 CI/CD 规划（`release-pipeline.md`，`npm run release`）、Vercel fallback、本地开发环境 | 发版、部署、运维、配本地环境 |
 | 开发 | `docs/dev/` | 开发环境辅助说明（如 LLM API 配置示例） | 本地接 LLM、环境变量配置 |
 | 状态 | `docs/session-state.md` | 长任务状态记录 | 上下文压缩、换 agent、恢复任务时 |
 | 历史 | `docs/legacy/` | 2026-05~06 重写期的 spec 与 plan 归档，只读 | 仅追溯历史决策时 |

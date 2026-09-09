@@ -72,13 +72,13 @@
 - zod 3/4 经 `zod3` npm alias 共存（A2UI 官方库依赖 zod3）。
 - 构建期校验：`npm run check:surfaces`（`scripts/a2ui/validate-surfaces.mjs`）。
 
-## 必须记住的运维事实
+## 必须记住的运维事实（2026-09-09 全面刷新）
 
-- 生产：`http://43.156.230.108/`（裸 IP，域名审核未过→无 TLS；过审后在 `ops/deploy/Caddyfile` 启用域名块自动签证书）。栈 = colosseum:prod(Next) + redis:7 + caddy:2，SQLite 挂 `/data` 卷。部署流程权威入口：`.kimi-code/skills/deployment/SKILL.md`。
-- 生产 `scripts/backup.sh` 曾报 Permission denied（可执行位/挂载权限未排查，cron 备份可能未生效——R1 需验证 `/var/backups/colosseum/` 是否有新快照）。
-- 服务器无 Node，验证用 `docker run --rm -v /opt/colosseum:/app -w /app node:22-alpine …` 容器跑 lint/typecheck/build（R1 建 CI 后此流程退役）。
-- **安全未闭环**：泄露的旧 key（豆包/Kimi/DeepSeek/GLM/通义，见 audit 02）仍在 git 历史与 GitHub 远程；用户吊销前不得公开仓库；如需清史用 `git filter-repo` + force push（需用户确认后执行）。
-- 本地 Node v25 可跑全部门禁；`.nvmrc` 与生产容器钉 22。
+- 生产：`http://43.156.230.108/`（裸 IP，域名审核未过→无 TLS；过审后在 `ops/deploy/Caddyfile` 启用域名块自动签证书）。栈 = colosseum:prod(Next) + redis:7 + caddy:2，SQLite 挂 `/data` 卷。**发版 = `npm run release`**（权威文档 `docs/deploy/release-pipeline.md`；CD 通道需在 GitHub 配 `DEPLOY_SSH_HOST/USER/KEY` secrets——用户尚未配置）。
+- 备份：cron 03:07 正常（backup.sh 执行位已双修：服务器 chmod + git 100755）；发版前另有 pre-deploy 备份；历史断档区间 2026-05-21 ~ 2026-09-09（执行位丢失所致，已修复验证）。
+- **安全未闭环（唯一用户动作）**：泄露的 6 家旧 key（豆包/Kimi/DeepSeek/GLM/通义/MiniMax，见 audit 02）**吊销未完成**。git 历史清除已于 2026-09-08 完成（filter-repo + force push，全历史 0 命中）；吊销完成前仓库保持私有。
+- 本地 Node v25 可跑全部门禁；`.nvmrc`、CI 与生产容器钉 22。
+- 服务器验证流程已退役（CI 取代）；临时上服务器用 root@ + 本地 `~/Downloads/hermesqoobee.pem`（或 `ops/private/deploy.pem`）。
 
 ## SDK / 环境漂移备忘
 
@@ -90,8 +90,8 @@
 
 ## Resume Checklist
 
-1. 读 `AGENTS.md` → `docs/INDEX.md`。
-2. 读 `docs/prd/roadmap.md`，找当前阶段第一个未勾选任务。
-3. 读该任务引用的 PRD FR 编号与 audit 编号，按 `docs/rules/spec-plan-workflow.md` 出 plan 再实施。
-4. 验证用 `npm run check`（check:surfaces + lint + typecheck + build）。
-5. 完成后更新本文件与 roadmap checkbox。
+1. 读 `AGENTS.md` → `docs/INDEX.md` → 本文件。
+2. 当前阶段 R4（依赖 OD 拍板，均已被 AI 产品代理代决可径直接受）：**默认推进顺序 = R4-1 第三游戏全量化（阿瓦隆从冒烟升级为全量验收）→ R4-4 分享链接（硬前置：key 吊销确认）→ R4-3 ELO**。也可等用户点名。
+3. 每任务按 `docs/rules/spec-plan-workflow.md`：读对应 PRD FR → 出 plan → 实施 → 验证。
+4. 验证 = `npm run check`（check:surfaces + lint + typecheck + **test** + build）。
+5. 完成后更新本文件与 roadmap checkbox；发版 `npm run release`。
