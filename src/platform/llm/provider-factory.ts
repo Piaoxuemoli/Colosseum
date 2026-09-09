@@ -34,6 +34,10 @@ export function createModel(input: CreateModelInput): LanguageModel {
       name: providerId,
       baseURL: baseUrl,
       apiKey,
+      // FR-4.8-03（R3-6 用量可见）：流式响应下 OpenAI 兼容端只有带
+      // stream_options.include_usage 才会推送 usage 块；不开则 ai@5 的
+      // result.totalUsage 恒为 undefined，llm_usage 只能记到调用次数。
+      includeUsage: true,
     })
     return provider(model)
   }
