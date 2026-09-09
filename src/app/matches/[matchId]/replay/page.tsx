@@ -23,7 +23,7 @@ export default async function ReplayPage({
   return (
     <ReplayView
       matchId={matchId}
-      gameType={bundle.match.gameType as 'poker' | 'werewolf'}
+      gameType={bundle.match.gameType as 'poker' | 'werewolf' | 'avalon'}
       initialPlayers={bundle.initialPlayers}
       events={bundle.initialEvents}
       initialChips={bundle.initialChips}

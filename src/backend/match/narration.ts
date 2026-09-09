@@ -19,6 +19,7 @@
 import { runNarration } from '@/backend/agent/llm-runtime'
 import { recordLlmUsage } from '@/backend/agent/usage-capture'
 import { getApiKey } from '@/backend/agent/key-cache'
+import { avalonNarrationTrigger } from '@/games/avalon/integration/narration'
 import { werewolfNarrationTrigger, type WerewolfNarrationTrigger } from '@/games/werewolf/integration/narration'
 import { newEventId } from '@/platform/core/ids'
 import type { GameEvent, GameType } from '@/platform/core/types'
@@ -49,6 +50,7 @@ export type NarrationTriggerFn = (
 
 const NARRATION_TRIGGERS: Partial<Record<GameType, NarrationTriggerFn>> = {
   werewolf: werewolfNarrationTrigger as NarrationTriggerFn,
+  avalon: avalonNarrationTrigger as NarrationTriggerFn,
 }
 
 /** 该品类是否有旁白触发器（poker 无 → 调用方零成本直通）。 */
@@ -60,7 +62,7 @@ export function narrationTriggerFor(gameType: string): NarrationTriggerFn | null
 // Prompt 组装（纯函数，导出供测试）
 // ---------------------------------------------------------------------------
 
-const GAME_LABELS: Record<string, string> = { poker: '德州扑克', werewolf: '狼人杀' }
+const GAME_LABELS: Record<string, string> = { poker: '德州扑克', werewolf: '狼人杀', avalon: '阿瓦隆' }
 
 export function buildNarrationPrompt(input: {
   gameType: GameType

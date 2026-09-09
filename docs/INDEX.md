@@ -11,7 +11,7 @@
 | — 路线图 | `docs/prd/roadmap.md` | R1–R4 唯一排期权威 | 找当前该做什么任务 |
 | — 全局设计体系 | `docs/prd/design-system.md` | 视觉/交互需求权威（tokens、布局契约、组件状态） | 任何前端工作之前 |
 | — 页面设计 | `docs/prd/design/` | 各页面设计 PRD（如大厅首页 `lobby-home.md`） | 实现对应页面前 |
-| — 游戏 PRD | `docs/prd/games/` | 各游戏的需求 PRD：`poker-engine.md` / `werewolf-engine.md`（引擎规则）+ `poker-frontend.md` / `werewolf-frontend.md`（观战前端设计） | 实现对应游戏引擎/界面前 |
+| — 游戏 PRD | `docs/prd/games/` | 各游戏的需求 PRD：`poker-engine.md` / `werewolf-engine.md` / `avalon-engine.md`（引擎规则）+ `poker-frontend.md` / `werewolf-frontend.md` / `avalon-frontend.md`（观战前端设计） | 实现对应游戏引擎/界面前 |
 | 大修 | `docs/repair/` | 当前大修的问题清单与状态（编号 01–36） | 接手大修任务、查已知问题 |
 | 规则 | `docs/rules/` | 协作规则 8 篇：架构红线、前后端边界、lint、UI、git、spec/plan 工作流等 | 写代码前按任务类型选读 |
 | 活跃规格 | `docs/specs/` | 仍在生效的子系统设计（如 A2UI 配置页） | 实现对应子系统前 |

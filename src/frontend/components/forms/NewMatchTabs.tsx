@@ -51,7 +51,7 @@ export function NewMatchTabs({ defaultGame = 'poker' }: { defaultGame?: 'poker' 
       <TabsList className="mb-6 grid w-full max-w-md grid-cols-3">
         <TabsTrigger value="poker">德州扑克</TabsTrigger>
         <TabsTrigger value="werewolf">狼人杀</TabsTrigger>
-        <TabsTrigger value="avalon">简化阿瓦隆</TabsTrigger>
+        <TabsTrigger value="avalon">阿瓦隆</TabsTrigger>
       </TabsList>
       <TabsContent value="poker">
         <div className="mb-6">
@@ -68,7 +68,7 @@ export function NewMatchTabs({ defaultGame = 'poker' }: { defaultGame?: 'poker' 
       <TabsContent value="avalon">
         <div className="mb-6">
           <p className="text-sm text-muted-foreground">
-            选 5 位玩家 Agent,简化阿瓦隆冒烟板 (梅林 · 派西维尔 · 忠诚仆从 · 莫德雷德 · 爪牙,3 轮任务制)。观战走通用兜底视图。
+            选板子预设(5–10 人)与等量玩家 Agent,5 轮任务 3 胜制 + 公开记名表决 + 刺杀环节;主持人可选。专属观战视图呈现任务板 / 发言流 / 知识面板。
           </p>
         </div>
         <AvalonMatchSetupForm />

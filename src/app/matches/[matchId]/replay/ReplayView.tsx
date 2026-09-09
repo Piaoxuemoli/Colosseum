@@ -11,6 +11,9 @@ import { SettlementTrustSection } from '@/frontend/components/match/SettlementTr
 import { ViewModeToggle } from '@/frontend/components/match/ViewModeToggle'
 import { PokerBoard } from '@/games/poker/ui/PokerBoard'
 import { WerewolfBoard } from '@/games/werewolf/ui/WerewolfBoard'
+import { AvalonSituationPanel } from '@/frontend/components/match/AvalonSituationPanel'
+import { AvalonRightPanel } from '@/frontend/components/match/AvalonRightPanel'
+import { avalonPhaseZh } from '@/frontend/components/match/avalon-format'
 import type { GameEvent } from '@/platform/core/types'
 import { useMatchViewStore, type PokerUiPlayer } from '@/frontend/store/match-view-store'
 import { useReplayStore } from '@/frontend/store/replay-store'
@@ -19,7 +22,7 @@ import { thinkingEntryFromEvent } from '@/frontend/lib/client/thinking-events'
 
 type Props = {
   matchId: string
-  gameType: 'poker' | 'werewolf'
+  gameType: 'poker' | 'werewolf' | 'avalon'
   initialPlayers: PokerUiPlayer[]
   events: GameEvent[]
   initialChips: number
@@ -54,6 +57,7 @@ export function ReplayView({
   const bigBlindIndex = useMatchViewStore((s) => s.bigBlindIndex)
   const werewolfDay = useMatchViewStore((s) => s.werewolf.day)
   const werewolfPhase = useMatchViewStore((s) => s.werewolf.phase)
+  const avalonPhase = useMatchViewStore((s) => s.avalonV2.phase)
 
   useEffect(() => {
     // `load` resets both stores, re-seats via the saved seatSetup, and
@@ -119,13 +123,13 @@ export function ReplayView({
               <span>Replay</span>
             </div>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-white">
-              {gameType === 'poker' ? '德州扑克 · 回放' : '狼人杀 · 回放'}
+              {gameType === 'poker' ? '德州扑克 · 回放' : gameType === 'avalon' ? '阿瓦隆 · 回放' : '狼人杀 · 回放'}
             </h1>
             <p className="mt-2 font-mono text-xs text-muted-foreground">{matchId}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline">
-              {gameType === 'poker' ? phase : werewolfPhase ?? 'waiting'}
+              {gameType === 'poker' ? phase : gameType === 'avalon' ? avalonPhaseZh(avalonPhase) : werewolfPhase ?? 'waiting'}
             </Badge>
             <Badge variant="secondary">共 {totalEvents} 个事件</Badge>
             {gameType === 'werewolf' ? <Badge>Day {werewolfDay}</Badge> : null}
@@ -146,6 +150,8 @@ export function ReplayView({
             streetPots={streetPots}
             sidePots={sidePots}
           />
+        ) : gameType === 'avalon' ? (
+          <AvalonSituationPanel matchId={matchId} players={players.length > 0 ? players : initialPlayers} />
         ) : (
           <WerewolfBoard players={werewolfPlayers} currentActor={currentActor} />
         )}
@@ -166,7 +172,11 @@ export function ReplayView({
         />
       </main>
 
-      <RightPanel matchId={matchId} gameType={gameType} />
+      {gameType === 'avalon' ? (
+        <AvalonRightPanel matchId={matchId} />
+      ) : (
+        <RightPanel matchId={matchId} gameType={gameType} />
+      )}
       <ReplayControls />
     </div>
   )

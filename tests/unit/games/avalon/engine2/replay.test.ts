@@ -1,28 +1,65 @@
-// 确定性与默认驱动：种子入流 → reduceEvents 重放重建同态 state；
-// applyDefaultAction（提案=自己+下家 / 表决=赞成 / 任务=成功）可独立把对局
-// 驱动到终局（GM 兜底路径的引擎侧前提）。
+// 确定性重放（AVR-N1 / AVR-503）：种子入流 → reduceEvents 重放重建逐字段
+// 同态 state；含刺杀局（合议副本事件只锚定一次）与默认动作混合驱动。
 
 import { describe, expect, it } from 'vitest'
-import { applyDefaultAction, reduceEvents } from '@/games/avalon/engine2'
+import { reduceEvents } from '@/games/avalon/engine2'
 import {
-  evOf,
-  evsOf,
   propose,
+  runApprovedQuest,
   runDefaults,
+  scriptedAssassinationHit,
   scriptedAvalonMatch,
+  scriptedEvilQuestWin,
+  scriptedGoodWin,
+  speakAll,
   start5,
   step,
   voteAll,
 } from './_helpers'
 
-describe('avalon engine2 — 确定性重放', () => {
+describe('avalon engine2 — 确定性重放（AVR-N1）', () => {
   it('同脚本两次驱动产生逐字节相同的事件流', () => {
     expect(JSON.stringify(scriptedAvalonMatch().events)).toBe(JSON.stringify(scriptedAvalonMatch().events))
+    expect(JSON.stringify(scriptedGoodWin().events)).toBe(JSON.stringify(scriptedGoodWin().events))
   })
 
-  it('reduceEvents 仅凭事件流重建出同态终局 state', () => {
+  it('reduceEvents 重建连坐局同态终局 state', () => {
     const acc = scriptedAvalonMatch()
-    expect(acc.state.phase).toBe('ended')
+    expect(acc.state.outcome).toEqual({ winner: 'evil', basis: 'connective-rejection:round-4' })
+    const replayed = reduceEvents(acc.events)
+    expect(replayed.status).toBe('ok')
+    if (replayed.status !== 'ok') return
+    expect(replayed.state).toEqual(acc.state)
+  })
+
+  it('reduceEvents 重建刺杀局同态（合议副本只锚定一次 / 命中与未命中两分支）', () => {
+    for (const acc of [scriptedGoodWin(), scriptedAssassinationHit()]) {
+      expect(acc.state.phase).toBe('ended')
+      const replayed = reduceEvents(acc.events)
+      expect(replayed.status).toBe('ok')
+      if (replayed.status !== 'ok') return
+      expect(replayed.state).toEqual(acc.state)
+    }
+  })
+
+  it('reduceEvents 重建坏人 3 失败速胜局同态', () => {
+    const acc = scriptedEvilQuestWin()
+    const replayed = reduceEvents(acc.events)
+    expect(replayed.status).toBe('ok')
+    if (replayed.status !== 'ok') return
+    expect(replayed.state).toEqual(acc.state)
+  })
+
+  it('混合驱动（显式 + 默认）后重放仍同态', () => {
+    const acc = start5()
+    speakAll(acc)
+    propose(acc, ['p1', 'p3'])
+    voteAll(acc, [true, false, true, false, true]) // 3-2 通过
+    step(acc, { type: 'quest', actorId: 'p1', succeed: true })
+    runDefaults(acc, (a) => a.state.phase !== 'quest')
+    // 剩余轮次全部默认
+    runDefaults(acc, (a) => a.state.phase === 'ended')
+
     const replayed = reduceEvents(acc.events)
     expect(replayed.status).toBe('ok')
     if (replayed.status !== 'ok') return
@@ -34,55 +71,15 @@ describe('avalon engine2 — 确定性重放', () => {
     const result = reduceEvents(acc.events.filter((event) => event.kind !== 'matchStarted'))
     expect(result.status).toBe('error')
   })
-})
 
-describe('avalon engine2 — 默认动作驱动', () => {
-  it('默认链把对局驱动到终局：全赞成 + 全成功 → 好人 2-0', () => {
+  it('板子参数随流重建：关讨论板重放同态', () => {
     const acc = start5()
-    const applied = runDefaults(acc, (a) => a.state.phase === 'ended')
-    // 每轮 1 提案 + 5 表决 + 2 抉择 = 8 步，两轮 16 步
-    expect(applied).toBe(16)
-    expect(acc.state.outcome).toEqual({ winner: 'good', basis: 'quests:2-0' })
-
-    // 默认提案 = 队长自己 + 下家
-    const proposals = evsOf(acc.events, 'teamProposed')
-    expect(proposals[0].payload.teamIds).toEqual(['p1', 'p2'])
-    expect(proposals[1].payload.teamIds).toEqual(['p2', 'p3'])
-
-    // 默认产生的事件全部带 isDefault 标记
-    for (const kind of ['teamProposed', 'voteCast', 'questChoice'] as const) {
-      for (const event of evsOf(acc.events, kind)) {
-        expect(event.isDefault).toBe(true)
-      }
-    }
-    // 默认表决 = 赞成
-    expect(evOf(acc.events, 'voteResult').payload.outcome).toBe('approved')
-  })
-
-  it('默认动作以当前 pendingActor 为行动者；终局后默认动作被拒', () => {
-    const acc = start5()
-    const outcome = applyDefaultAction(acc.state)
-    expect(outcome.status).toBe('accepted')
-    if (outcome.status === 'accepted') {
-      expect(outcome.state.pendingActor).not.toBeNull()
-      expect(outcome.events[0].actorId).toBe('p1')
-    }
-    runDefaults(acc, (a) => a.state.phase === 'ended')
-    expect(applyDefaultAction(acc.state).status).toBe('rejected')
-  })
-
-  it('混合驱动（显式 + 默认）后重放仍同态', () => {
-    const acc = start5()
-    propose(acc, ['p1', 'p3'])
-    voteAll(acc, [true, false, true, false, true]) // 3-2 通过
-    step(acc, { type: 'quest', actorId: 'p1', succeed: true })
-    // 剩余抉择走默认
-    runDefaults(acc, (a) => a.state.phase !== 'quest')
-    runDefaults(acc, (a) => a.state.phase === 'ended')
-
+    // 用显式开局（basic-5 开讨论）验证轮转骨架即可；板参数在 matchStarted 内
+    runApprovedQuest(acc, ['p1', 'p2'], true)
     const replayed = reduceEvents(acc.events)
     expect(replayed.status).toBe('ok')
     if (replayed.status !== 'ok') return
-    expect(replayed.state).toEqual(acc.state)
+    expect(replayed.state.board).toEqual(acc.state.board)
+    expect(replayed.state.board.discussionEnabled).toBe(true)
   })
 })

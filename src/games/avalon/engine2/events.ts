@@ -1,9 +1,9 @@
 // Avalon engine v2 — event construction + audience filtering.
 //
-// 事件流是唯一真相：每个事件携带 audience 标记；`visibleEvents` 对观战与
-// agent 决策上下文施加同一过滤（engine2-integration spec §1.3：agent 上下文
-// 只允许由 visibleEvents 重建）。身份由流内 rolesAssigned 事件推导，过滤器
-// 不依赖外部状态。
+// 事件流是唯一真相（AVR-501）：每个事件携带 audience 标记；`visibleEvents`
+// 对观战与 agent 决策上下文施加同一过滤（engine2-integration spec §1.3：
+// agent 上下文只允许由 visibleEvents 重建）。身份由流内 rolesAssigned 事件
+// 推导，过滤器不依赖外部状态。三口径同源（AVR-205）。
 
 import type { Audience, AvalonAction, AvalonEvent, AvalonEventKind, EventPayloadMap } from './types'
 
@@ -14,7 +14,7 @@ export type EventViewer =
   | { type: 'public-only' }
 
 /**
- * 知识隔离谓词：
+ * 知识隔离谓词（AVR-204 无越权输出）：
  * - public：全员可见；
  * - role-self：仅本人；
  * - delayed-public（随机种子 / 终局揭示）：上帝视角即时可见；选手视角在

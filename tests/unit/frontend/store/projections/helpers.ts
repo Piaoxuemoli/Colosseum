@@ -113,7 +113,7 @@ export function werewolfEnvelope(event: WerewolfEvent, matchId = MATCH_ID): Game
 
 /** 测试用的裸信封（未知 kind 前向兼容、legacy 事件混流等）。 */
 export function rawEvent(
-  gameType: 'poker' | 'werewolf',
+  gameType: 'poker' | 'werewolf' | 'avalon',
   kind: string,
   payload: Record<string, unknown>,
   actorAgentId: string | null = null,

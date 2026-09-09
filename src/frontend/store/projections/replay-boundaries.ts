@@ -7,6 +7,7 @@
 
 import type { GameEvent } from '@/platform/core/types'
 import { asRecord, numberOr, stringOr } from './common'
+import { avalonReplayBoundaries } from './avalon-v2'
 
 /** 一个可跳转的阶段边界。`seekIndex` = 边界事件下标 + 1（seek 后该边界事件已被应用）。 */
 export type ReplayBoundary = {
@@ -19,13 +20,14 @@ export type ReplayBoundary = {
   value: number
 }
 
-export type ReplayBoundaryGame = 'poker' | 'werewolf'
+export type ReplayBoundaryGame = 'poker' | 'werewolf' | 'avalon'
 
 /** 从事件流探测游戏品类（v2 前缀优先，legacy kind 兜底）。 */
 export function detectGameOfEvents(events: GameEvent[]): ReplayBoundaryGame | null {
   for (const event of events) {
     if (event.kind.startsWith('poker:')) return 'poker'
     if (event.kind.startsWith('werewolf:')) return 'werewolf'
+    if (event.kind.startsWith('avalon:')) return 'avalon'
   }
   for (const event of events) {
     if (event.kind.startsWith('poker/')) return 'poker'
@@ -111,6 +113,8 @@ export function computeReplayBoundaries(events: GameEvent[]): ReplayBoundary[] {
   const game = detectGameOfEvents(events)
   if (game === 'poker') return pokerBoundaries(events)
   if (game === 'werewolf') return werewolfBoundaries(events)
+  // 阿瓦隆：任务轮次 + 刺杀环节（avalon-v2 的边界推导与本模块形状对齐）。
+  if (game === 'avalon') return avalonReplayBoundaries(events)
   return []
 }
 

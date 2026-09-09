@@ -1,13 +1,14 @@
 // 品类呈现契约 · 前端通用兜底投影测试（spec: docs/specs/presentation-contract.md §3/§4）。
 //
-// - 未知品类（此处以 avalon 为 fixture）的信封流 → 通用视图模型四支柱；
+// - 未知品类（此处以虚构品类 resistance 为 fixture；avalon 在 R4-1 起已有
+//   专属 avalon-v2 投影，不再是「未知品类」）的信封流 → 通用视图模型四支柱；
 // - 既有两游戏（poker / werewolf）的信封流直接喂通用归约器，验证「通用锚点
 //   约定」的跨品类一致性（契约不是只对未来游戏生效）；
-// - match-view-store 分派：非 poker/werewolf 的 `*:v2:` 走通用投影且不触碰
-//   游戏专属字段。
+// - match-view-store 分派：非 poker/werewolf/avalon 的 `*:v2:` 走通用投影且
+//   不触碰游戏专属字段。
 //
-// 注：gameType 的 zod 枚举当前仅 'poker' | 'werewolf'；第三品类接入（R3-2 /
-// OD-1）时扩展枚举，届时本文件的 fixture cast 移除。
+// 注：gameType 的 zod 枚举当前为 'poker' | 'werewolf' | 'avalon'；resistance
+// 是测试内虚构的未知品类（fixture cast），对应「品类接入前的兜底」场景。
 
 import { describe, expect, it } from 'vitest'
 import type { GameEvent, GameEvent as PlatformGameEvent } from '@/platform/core/types'
@@ -32,9 +33,9 @@ import {
 // fixtures
 // ---------------------------------------------------------------------------
 
-const AVALON_IDS = ['a1', 'a2', 'a3', 'a4', 'a5']
+const RESISTANCE_IDS = ['a1', 'a2', 'a3', 'a4', 'a5']
 
-function avalonEnvelope(
+function resistanceEnvelope(
   seq: number,
   engineKind: string,
   payload: Record<string, unknown>,
@@ -44,11 +45,11 @@ function avalonEnvelope(
   return {
     id: `av_${seq}`,
     matchId: MATCH_ID,
-    // 第三品类落地前的 fixture cast（见文件头注）。
-    gameType: 'avalon' as PlatformGameEvent['gameType'],
+    // 虚构未知品类 fixture cast（见文件头注）。
+    gameType: 'resistance' as PlatformGameEvent['gameType'],
     seq,
     occurredAt: new Date(1_723_000_000_000 + seq).toISOString(),
-    kind: `avalon:v2:${engineKind}`,
+    kind: `resistance:v2:${engineKind}`,
     actorAgentId,
     payload,
     visibility,
@@ -56,18 +57,18 @@ function avalonEnvelope(
   }
 }
 
-function avalonScript(): GameEvent[] {
+function resistanceScript(): GameEvent[] {
   return [
-    avalonEnvelope(1, 'match-started', { playerIds: AVALON_IDS, day: 0 }),
-    avalonEnvelope(2, 'phase-entered', { phase: 'night', day: 1 }),
-    avalonEnvelope(3, 'action-made', { targetId: 'a2' }, 'a1'),
-    avalonEnvelope(4, 'secret-vote', { day: 1 }, 'a2', 'role-restricted'),
-    avalonEnvelope(5, 'forced-action', { isDefault: true, day: 1 }, 'a3'),
-    avalonEnvelope(6, 'phase-entered', { phase: 'day', day: 2 }),
-    avalonEnvelope(7, 'game-ended', {
+    resistanceEnvelope(1, 'match-started', { playerIds: RESISTANCE_IDS, day: 0 }),
+    resistanceEnvelope(2, 'phase-entered', { phase: 'night', day: 1 }),
+    resistanceEnvelope(3, 'action-made', { targetId: 'a2' }, 'a1'),
+    resistanceEnvelope(4, 'secret-vote', { day: 1 }, 'a2', 'role-restricted'),
+    resistanceEnvelope(5, 'forced-action', { isDefault: true, day: 1 }, 'a3'),
+    resistanceEnvelope(6, 'phase-entered', { phase: 'day', day: 2 }),
+    resistanceEnvelope(7, 'game-ended', {
       winner: 'resistance',
       day: 2,
-      reveal: AVALON_IDS.map((playerId, index) => ({
+      reveal: RESISTANCE_IDS.map((playerId, index) => ({
         playerId,
         role: index === 1 ? 'minion' : 'resistance',
       })),
@@ -122,13 +123,13 @@ describe('generic-v2 — 信封识别', () => {
 // ---------------------------------------------------------------------------
 
 describe('generic-v2 — 未知品类四支柱', () => {
-  it('avalon 合成流归约出名册/阶段/日志/结算', () => {
-    const view = reduceAllGeneric(avalonScript())
-    expect(view.gameType).toBe('avalon')
+  it('resistance 合成流归约出名册/阶段/日志/结算', () => {
+    const view = reduceAllGeneric(resistanceScript())
+    expect(view.gameType).toBe('resistance')
     expect(view.status).toBe('settled')
 
     // ① 名册锚（playerIds）+ 活动度。
-    expect(view.roster.map((row) => row.agentId)).toEqual(AVALON_IDS)
+    expect(view.roster.map((row) => row.agentId)).toEqual(RESISTANCE_IDS)
     expect(view.roster.find((row) => row.agentId === 'a1')?.actionCount).toBe(1)
     expect(view.roster.find((row) => row.agentId === 'a4')?.actionCount).toBe(0)
     expect(view.roster.find((row) => row.agentId === 'a5')?.lastActionSeq).toBeNull()
@@ -196,9 +197,9 @@ describe('generic-v2 — 既有两游戏信封满足通用锚点约定', () => {
 // ---------------------------------------------------------------------------
 
 describe('generic-v2 — match-view-store 分派', () => {
-  it('avalon 流进入 genericV2，poker/werewolf 投影零污染', () => {
-    const derived = deriveMatchView(avalonScript(), { matchId: MATCH_ID, players: rosterOf(AVALON_IDS) })
-    expect(derived.genericV2.gameType).toBe('avalon')
+  it('未知品类流进入 genericV2，poker/werewolf/avalon 投影零污染', () => {
+    const derived = deriveMatchView(resistanceScript(), { matchId: MATCH_ID, players: rosterOf(RESISTANCE_IDS) })
+    expect(derived.genericV2.gameType).toBe('resistance')
     expect(derived.genericV2.settlement?.winnerLabel).toBe('resistance')
     expect(derived.events).toHaveLength(7)
     // handNumberAt 以轮次计数分桶。
@@ -206,8 +207,23 @@ describe('generic-v2 — match-view-store 分派', () => {
     // 游戏专属字段零触碰。
     expect(derived.pokerV2.seatIds).toEqual([])
     expect(derived.werewolfV2.roles).toEqual({})
+    expect(derived.avalonV2.seats).toEqual([])
+    expect(derived.avalonV2.roles).toEqual({})
     expect(derived.communityCards).toEqual([])
     expect(derived.pot).toBe(0)
+  })
+
+  it('avalon 流自 R4-1 起走专属投影（AF-OD-3：通用兜底仅作未知品类回落）', () => {
+    // avalon:v2 前缀现由 avalon-v2 专属投影接管；generic 投影不再接手。
+    const avalonKind: GameEvent = {
+      ...resistanceEnvelope(1, 'match-started', { playerIds: RESISTANCE_IDS, day: 0 }),
+      kind: 'avalon:v2:matchStarted',
+      gameType: 'avalon',
+    }
+    const derived = deriveMatchView([avalonKind], { matchId: MATCH_ID, players: rosterOf(RESISTANCE_IDS) })
+    expect(derived.avalonV2.status).toBe('live')
+    expect(derived.genericV2.gameType).toBeNull()
+    expect(derived.genericV2.log).toEqual([])
   })
 
   it('poker 流仍走专属投影（分派优先级不回归）', () => {

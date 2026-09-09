@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef } from 'react'
 import { Badge } from '@/frontend/components/ui/badge'
 import { FinishAfterHandButton } from '@/frontend/components/match/FinishAfterHandButton'
+import { AvalonRightPanel } from '@/frontend/components/match/AvalonRightPanel'
+import { AvalonSituationPanel } from '@/frontend/components/match/AvalonSituationPanel'
+import { AvalonViewModeToggle } from '@/frontend/components/match/AvalonViewModeToggle'
 import { GenericSituationPanel } from '@/frontend/components/match/GenericSituationPanel'
 import { MatchKeyStatusBadge } from '@/frontend/components/match/MatchKeyStatusBadge'
 import { RightPanel } from '@/frontend/components/match/RightPanel'
@@ -56,6 +59,7 @@ export function SpectatorView({
   const init = useMatchViewStore((state) => state.init)
   const ingestEvent = useMatchViewStore((state) => state.ingestEvent)
   const setMatchEnd = useMatchViewStore((state) => state.setMatchEnd)
+  const setRightPanelTab = useMatchViewStore((state) => state.setRightPanelTab)
   const appendThinking = useThinkingStore((state) => state.appendThinking)
   const recordThinking = useThinkingStore((state) => state.recordThinking)
   const finalizeThinking = useThinkingStore((state) => state.finalizeThinking)
@@ -83,6 +87,9 @@ export function SpectatorView({
   const winnerAgentId = useMatchViewStore((state) => state.winnerAgentId)
   const werewolfDay = useMatchViewStore((state) => state.werewolf.day)
   const werewolfPhase = useMatchViewStore((state) => state.werewolf.phase)
+  const avalonRound = useMatchViewStore((state) => state.avalonV2.round)
+  const avalonPhase = useMatchViewStore((state) => state.avalonV2.phase)
+  const avalonMatchComplete = useMatchViewStore((state) => state.avalonV2.ended !== null)
   const genericV2 = useMatchViewStore((state) => state.genericV2)
   const storeEvents = useMatchViewStore((state) => state.events)
 
@@ -96,16 +103,18 @@ export function SpectatorView({
     }
     const buffer = thinkingBuffer.current
     thinkingBuffer.current = {}
-    // Werewolf reasoning groups by day/phase; poker keeps the legacy
-    // handNumber-only path (day undefined).
+    // Werewolf / avalon reasoning groups by day(round)/phase; poker keeps the
+    // legacy handNumber-only path (day undefined).
     const bucket =
       gameType === 'werewolf'
         ? { day: werewolfDay, phase: werewolfPhase ?? undefined }
-        : undefined
+        : gameType === 'avalon'
+          ? { day: avalonRound, phase: avalonPhase ?? undefined }
+          : undefined
     for (const [agentId, delta] of Object.entries(buffer)) {
       if (delta) appendThinking(agentId, nameOf(agentId), handNumber, delta, bucket)
     }
-  }, [appendThinking, gameType, handNumber, nameOf, werewolfDay, werewolfPhase])
+  }, [appendThinking, gameType, handNumber, nameOf, werewolfDay, werewolfPhase, avalonRound, avalonPhase])
 
   const ingestViewEvent = useCallback(
     (event: GameEvent) => {
@@ -132,8 +141,10 @@ export function SpectatorView({
   useEffect(() => {
     resetThinking()
     init({ matchId, players: initialPlayers })
+    // 阿瓦隆右栏默认 tab = 发言流（avalon-frontend PRD §3）。
+    if (gameType === 'avalon') setRightPanelTab('actions')
     for (const event of initialEvents) ingestViewEvent(event)
-  }, [ingestViewEvent, init, initialEvents, initialPlayers, matchId, resetThinking])
+  }, [gameType, ingestViewEvent, init, initialEvents, initialPlayers, matchId, resetThinking, setRightPanelTab])
 
   const onMessage = useCallback(
     (raw: unknown) => {
@@ -235,6 +246,62 @@ export function SpectatorView({
 
         <RightPanel matchId={matchId} gameType="werewolf" />
         <WerewolfResultPanel players={werewolfPlayers} />
+      </div>
+    )
+  }
+
+  if (gameType === 'avalon') {
+    // Avalon 使用 SSR 名册（座位 + displayName；store.players 仅由扑克事件变更）
+    // + 专属观战面板（avalon-frontend PRD §2–§3）。通用兜底（GenericSituationPanel）
+    // 保留为投影失败时的回落路径（AF-OD-3），avalon 专属流优先分派。
+    const avalonPlayers = players.length > 0 ? players : initialPlayers
+    return (
+      <div className="flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col gap-3 overflow-hidden px-3 py-3 md:px-5 lg:flex-row lg:p-6">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="mb-3 flex shrink-0 flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                Spectator View
+              </p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white lg:text-3xl">
+                阿瓦隆 · 第 {avalonRound > 0 ? avalonRound : '—'} 轮
+              </h1>
+              <p className="mt-1 truncate font-mono text-xs text-muted-foreground">{matchId}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{avalonPhase ?? 'waiting'}</Badge>
+              <Badge variant={status === 'running' ? 'default' : 'secondary'}>{status}</Badge>
+              <AvalonViewModeToggle />
+              <MatchKeyStatusBadge matchId={matchId} />
+              {avalonMatchComplete ? <Badge>对局结束</Badge> : null}
+              {status !== 'running' ? (
+                <Link
+                  href={`/matches/${matchId}/replay`}
+                  className="inline-flex items-center rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200 hover:bg-emerald-400/20"
+                >
+                  查看回放 →
+                </Link>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <AvalonSituationPanel matchId={matchId} players={avalonPlayers} />
+          </div>
+
+          {avalonMatchComplete ? (
+            <div className="shrink-0">
+              <SettlementTrustSection
+                matchId={matchId}
+                events={storeEvents}
+                finalRanking={finalRanking}
+                agentNames={agentNamesOf(avalonPlayers)}
+              />
+            </div>
+          ) : null}
+        </main>
+
+        <AvalonRightPanel matchId={matchId} />
       </div>
     )
   }

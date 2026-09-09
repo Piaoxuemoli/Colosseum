@@ -1,3 +1,4 @@
+import { AVALON_PRESETS, AVALON_PRESET_IDS } from '@/games/avalon/engine2'
 import type { GameType } from '@/platform/core/types'
 
 /**
@@ -73,13 +74,21 @@ export function validatePokerCreate(input: ValidateMatchCreateInput): void {
 }
 
 /**
- * Validates inputs for creating an avalon match (R3-2 冒烟板：固定 5 人).
- * 阿瓦隆无 moderator 概念——主持人 Agent 不参与也不要求。
+ * Validates inputs for creating an avalon match (v2 全量规则：板子预设驱动).
+ * 阿瓦隆无 moderator 概念——主持人 Agent 不参与也不要求（旁白可选，AVR-OD-6）。
  */
 export function validateAvalonCreate(input: ValidateMatchCreateInput): void {
-  if (input.agentIds.length !== 5) {
+  const presetId = typeof input.engineConfig?.preset === 'string' ? input.engineConfig.preset : 'basic-5'
+  const preset = AVALON_PRESETS[presetId]
+  if (!preset) {
     throw new MatchCreateValidationError(
-      `avalon smoke board requires exactly 5 player agents (R3-2), got ${input.agentIds.length}`,
+      `avalon board preset "${presetId}" is unknown (available: ${AVALON_PRESET_IDS.join(', ')})`,
+    )
+  }
+  const seats = Object.values(preset.roles).reduce((sum, count) => sum + count, 0)
+  if (input.agentIds.length !== seats) {
+    throw new MatchCreateValidationError(
+      `avalon board "${presetId}" requires exactly ${seats} player agents, got ${input.agentIds.length}`,
     )
   }
   const dupCheck = new Set<string>()

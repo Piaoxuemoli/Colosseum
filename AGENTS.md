@@ -17,7 +17,7 @@ Colosseum 是纯 AI 博弈竞技平台：配置 LLM Profile → 创建对局 →
 │   ├── frontend/    # 页面组件、store、前端工具
 │   ├── backend/     # orchestrator、agent、a2a-core、auth、match
 │   ├── platform/    # core、db、redis、llm、telemetry、memory、engine
-│   └── games/       # 游戏自治包：poker / werewolf（各含 engine、agent、memory、ui）
+│   └── games/       # 游戏自治包：poker / werewolf / avalon（各含 engine、agent、memory、ui 按需）
 ├── docs/            # 唯一权威文档树（入口 docs/INDEX.md）
 ├── ops/             # 部署流水线 + 本地开发环境
 ├── scripts/         # dev-bootstrap / dev-sync / dev-doctor / a2ui 校验等脚本

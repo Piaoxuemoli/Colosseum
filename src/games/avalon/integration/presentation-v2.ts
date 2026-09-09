@@ -1,10 +1,10 @@
 /**
- * 简化阿瓦隆品类呈现契约实现（spec: docs/specs/presentation-contract.md）。
+ * 阿瓦隆品类呈现契约实现（spec: docs/specs/presentation-contract.md）。
  *
  * 四支柱纯派生：态势（座位/身份注记/焦点行动者）/ 事件流 hints（engine2
- * 全部 12 个 kind）/ 阶段模型（任务轮 × 提名-表决-任务）/ 结算（阵营排名 +
- * 全员身份）。纯函数、无 IO；排序语义与 plugin-v2 的 toMatchResult 一致，
- * 不引入第二真相。
+ * 全部 15 个 kind）/ 阶段模型（任务轮 × 讨论-提名-表决-任务-合议-刺杀）/
+ * 结算（阵营排名 + 全员身份 + 胜负依据）。纯函数、无 IO；排序语义与
+ * plugin-v2 的 toMatchResult 一致，不引入第二真相。
  */
 
 import type {
@@ -17,8 +17,8 @@ import type {
   PresentationSituationRow,
   PresentationSituationView,
 } from '@/platform/engine/presentation'
-import { failCount, factionOf, QUEST_COUNT, successCount } from '../engine2'
-import type { AvalonEngineState, AvalonEvent } from '../engine2'
+import { QUEST_COUNT, failCount, factionOf, successCount } from '../engine2'
+import type { AvalonEngineState, AvalonEvent, PhaseId } from '../engine2'
 
 /** DB payload（引擎事件 JSON）→ 阿瓦隆事件的识别 guard（与 plugin-v2 同口径）。 */
 function isAvalonEventPayload(value: unknown): value is AvalonEvent {
@@ -39,16 +39,22 @@ const ROLE_ZH: Record<string, string> = {
   merlin: '梅林',
   percival: '派西维尔',
   loyalServant: '忠诚仆从',
+  assassin: '刺客',
+  morgana: '莫甘娜',
   mordred: '莫德雷德',
+  oberon: '奥伯伦',
   minion: '莫德雷德爪牙',
 }
 
 const FACTION_ZH: Record<string, string> = { good: '好人', evil: '坏人' }
 
-const PHASE_ZH: Record<string, string> = {
+const PHASE_ZH: Record<PhaseId, string> = {
+  discussion: '圆桌讨论',
   proposal: '队伍提名',
   teamVote: '全员表决',
   quest: '任务执行',
+  evilConsultation: '刺杀合议',
+  assassination: '刺杀指认',
   ended: '已终局',
 }
 
@@ -60,7 +66,7 @@ function situationOf(state: AvalonEngineState): PresentationSituationView {
   const players: PresentationSituationRow[] = state.players.map((player) => ({
     agentId: player.playerId,
     seat: player.seat,
-    // 冒烟板无人出局：全员 active。
+    // 阿瓦隆无人出局：全员 active。
     status: 'active',
     resources: [],
     // 身份是上帝视角注记（公开视角渲染应省略；终局揭示后即公共事实）。
@@ -72,13 +78,14 @@ function situationOf(state: AvalonEngineState): PresentationSituationView {
     commons: [
       { label: '任务轮', value: `${Math.max(state.round, 0)}/${QUEST_COUNT}` },
       { label: '任务战绩', value: `${successCount(state)}成功 / ${failCount(state)}失败` },
-      { label: '阶段', value: PHASE_ZH[state.phase] ?? state.phase },
+      { label: '阶段', value: PHASE_ZH[state.phase] },
+      { label: '提案序', value: `${state.attempt}/5` },
     ],
   }
 }
 
 // ---------------------------------------------------------------------------
-// ② 事件流 display hints（engine2 全部 kind）
+// ② 事件流 display hints（engine2 全部 15 个 kind）
 // ---------------------------------------------------------------------------
 
 const AVALON_EVENT_HINTS: Record<string, PresentationEventHint> = {
@@ -88,11 +95,14 @@ const AVALON_EVENT_HINTS: Record<string, PresentationEventHint> = {
   knowledgeRevealed: { category: 'reveal', icon: '🔮', label: '夜间情报', godOnly: true },
   phaseEntered: { category: 'phase', icon: '▶', label: '阶段切换' },
   leaderAssigned: { category: 'system', icon: '🎖', label: '队长指定' },
+  statementIssued: { category: 'speech', icon: '💬', label: '公开发言' },
+  evilConsulted: { category: 'speech', icon: '🕯', label: '刺杀合议', godOnly: true },
   teamProposed: { category: 'action', icon: '🤝', label: '队伍提案' },
-  voteCast: { category: 'vote', icon: '🗳', label: '表决投票', godOnly: true },
+  voteCast: { category: 'vote', icon: '🗳', label: '记名表决' },
   voteResult: { category: 'vote', icon: '📊', label: '表决结果' },
   questChoice: { category: 'action', icon: '⚔', label: '任务抉择', godOnly: true },
   questResult: { category: 'award', icon: '🏆', label: '任务结果' },
+  assassinationDeclared: { category: 'action', icon: '🗡', label: '刺杀指认', severity: 'critical' },
   gameEnded: { category: 'system', icon: '🏁', label: '终局揭示', severity: 'success', godOnly: true },
 }
 
@@ -104,7 +114,15 @@ function eventHints(): Record<string, PresentationEventHint> {
 // ③ 阶段模型（PhaseId 全集；cycle = 任务轮）
 // ---------------------------------------------------------------------------
 
-const AVALON_PHASES = ['proposal', 'teamVote', 'quest', 'ended'] as const
+const AVALON_PHASES: PhaseId[] = [
+  'discussion',
+  'proposal',
+  'teamVote',
+  'quest',
+  'evilConsultation',
+  'assassination',
+  'ended',
+]
 
 function phaseModelOf(
   state: AvalonEngineState,
@@ -150,14 +168,22 @@ function settlementOf(state: AvalonEngineState): PresentationSettlement | null {
       score: factionRank(player) === 0 ? 1 : 0,
       role: ROLE_ZH[player.role] ?? player.role,
     }))
+  const digest: Array<{ label: string; value: string }> = [
+    { label: '胜负依据', value: outcome.basis },
+    { label: '任务战绩', value: `${successCount(state)}成功 / ${failCount(state)}失败` },
+    { label: '总轮数', value: String(state.round) },
+  ]
+  if (state.assassination) {
+    const { assassinId, targetId, hitMerlin } = state.assassination
+    digest.push({
+      label: '刺杀裁决',
+      value: `${assassinId} 指认 ${targetId}${hitMerlin ? '（命中梅林，坏人翻盘）' : '（未命中梅林）'}`,
+    })
+  }
   return {
     winnerLabel: WINNER_ZH[outcome.winner] ?? outcome.winner,
     rows,
-    digest: [
-      { label: '胜负依据', value: outcome.basis },
-      { label: '任务战绩', value: `${successCount(state)}成功 / ${failCount(state)}失败` },
-      { label: '总轮数', value: String(state.round) },
-    ],
+    digest,
   }
 }
 

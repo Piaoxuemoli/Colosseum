@@ -108,6 +108,25 @@ describe('replay-boundaries — 狼人杀（昼夜轮次）', () => {
   })
 })
 
+describe('replay-boundaries — 阿瓦隆（轮次 + 刺杀环节）', () => {
+  it('detects avalon from the v2 prefix and derives quest/assassination boundaries', async () => {
+    const { scriptedAvalonMatch } = await import('./avalon-helpers')
+    const events = scriptedAvalonMatch()
+    expect(detectGameOfEvents(events)).toBe('avalon')
+    const boundaries = computeReplayBoundaries(events)
+    expect(boundaries.length).toBeGreaterThan(0)
+    // 全部边界落在轮次（hand）或刺杀环节（phase）两类锚点上。
+    expect(boundaries.every((boundary) => boundary.kind === 'hand' || boundary.kind === 'phase')).toBe(true)
+    expect(boundaries.some((boundary) => boundary.kind === 'hand')).toBe(true)
+  })
+
+  it('returns no boundaries for a bare avalon stream without round anchors', () => {
+    const events = [rawEvent('avalon', 'avalon:v2:matchStarted', {})]
+    expect(detectGameOfEvents(events)).toBe('avalon')
+    expect(computeReplayBoundaries(events)).toEqual([])
+  })
+})
+
 describe('replay-boundaries — 探测与兜底', () => {
   it('detects the game from v2 prefixes and legacy kinds', () => {
     expect(detectGameOfEvents(pokerEvents)).toBe('poker')

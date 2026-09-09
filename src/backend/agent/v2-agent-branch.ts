@@ -12,6 +12,8 @@ import { PokerContextBuilderV2 } from '@/games/poker/agent/context-builder-v2'
 import { PokerResponseParserV2 } from '@/games/poker/agent/response-parser-v2'
 import { WerewolfContextBuilderV2 } from '@/games/werewolf/agent/context-builder-v2'
 import { WerewolfResponseParserV2 } from '@/games/werewolf/agent/response-parser-v2'
+import { AvalonContextBuilderV2 } from '@/games/avalon/agent/context-builder-v2'
+import { AvalonResponseParserV2 } from '@/games/avalon/agent/response-parser-v2'
 
 export interface V2ContextBuilder {
   build(input: {
@@ -27,12 +29,14 @@ export interface V2ResponseParser {
 export function getV2ContextBuilder(gameType: string): V2ContextBuilder {
   if (gameType === 'poker') return new PokerContextBuilderV2()
   if (gameType === 'werewolf') return new WerewolfContextBuilderV2()
+  if (gameType === 'avalon') return new AvalonContextBuilderV2()
   throw new Error(`no v2 context builder for gameType: ${gameType}`)
 }
 
 export function getV2ResponseParser(gameType: string): V2ResponseParser {
   if (gameType === 'poker') return new PokerResponseParserV2()
   if (gameType === 'werewolf') return new WerewolfResponseParserV2()
+  if (gameType === 'avalon') return new AvalonResponseParserV2()
   throw new Error(`no v2 response parser for gameType: ${gameType}`)
 }
 

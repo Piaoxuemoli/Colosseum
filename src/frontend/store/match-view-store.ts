@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import type { GameEvent } from '@/platform/core/types'
 import { isPokerV2Event, isWerewolfV2Event, type ViewMode } from './projections/common'
+import { emptyAvalonV2, isAvalonV2Event, reduceAvalonV2Event, type AvalonV2Accumulator } from './projections/avalon-v2'
 import { emptyGenericV2, isGenericV2Event, reduceGenericV2Event, type GenericV2Accumulator } from './projections/generic-v2'
 import { emptyPokerV2, reducePokerV2Event, type PokerV2Accumulator } from './projections/poker-v2'
 import {
@@ -15,6 +16,7 @@ export type { ViewMode } from './projections/common'
 export type { PokerV2Accumulator } from './projections/poker-v2'
 export type { WerewolfV2Accumulator } from './projections/werewolf-v2'
 export type { GenericV2Accumulator } from './projections/generic-v2'
+export type { AvalonV2Accumulator } from './projections/avalon-v2'
 
 export type CardVisual = { rank: string; suit: string }
 
@@ -129,6 +131,13 @@ export type MatchViewState = {
    * 非 poker/werewolf 的 `*:v2:` 流归约出通用视图模型（无专属面板品类的回落）。
    */
   genericV2: GenericV2Accumulator
+  /** engine2 v2 投影内部累积器（阿瓦隆，全量真相；视角剥离在 deriveAvalonView）。 */
+  avalonV2: AvalonV2Accumulator
+  /**
+   * 阿瓦隆单玩家视角聚焦（AVR-205 第三视角）：viewMode 仍为 god/public 的
+   * 平台二元开关，本字段叠加出「单玩家」口径（见 avalonPerspectiveOf）。
+   */
+  avalonFocusPlayerId: string | null
   reset(): void
   init(input: { matchId: string; players: PokerUiPlayer[] }): void
   ingestEvent(event: GameEvent): void
@@ -136,6 +145,7 @@ export type MatchViewState = {
   recordHandSnapshot(handNumber: number, chips: Record<string, number>): void
   setRightPanelTab(tab: RightPanelTab): void
   setViewMode(mode: ViewMode): void
+  setAvalonFocusPlayer(playerId: string | null): void
   toggleActionHand(handNumber: number): void
   toggleThinkingHand(handNumber: number): void
   ensureActionHandExpanded(handNumber: number): void
@@ -151,6 +161,7 @@ export type MatchViewProjection = Omit<
   | 'recordHandSnapshot'
   | 'setRightPanelTab'
   | 'setViewMode'
+  | 'setAvalonFocusPlayer'
   | 'toggleActionHand'
   | 'toggleThinkingHand'
   | 'ensureActionHandExpanded'
@@ -197,6 +208,8 @@ const initialState = {
   pokerV2: emptyPokerV2(),
   werewolfV2: emptyWerewolfV2(),
   genericV2: emptyGenericV2(),
+  avalonV2: emptyAvalonV2(),
+  avalonFocusPlayerId: null,
 }
 
 function createInitialProjection(
@@ -217,6 +230,7 @@ function createInitialProjection(
     pokerV2: emptyPokerV2(),
     werewolfV2: emptyWerewolfV2(),
     genericV2: emptyGenericV2(),
+    avalonV2: emptyAvalonV2(),
   }
 }
 
@@ -388,6 +402,23 @@ export function reduceMatchViewEvent(state: MatchViewProjection, event: GameEven
   // （presentation-contract spec §4，未知品类回落）；旧 kind 保持既有 v1 路径。
   if (isPokerV2Event(event)) return reducePokerV2Event(state, event)
   if (isWerewolfV2Event(event)) return reduceWerewolfV2Event(state, event)
+  if (isAvalonV2Event(event)) {
+    // avalon:v2 信封：累积层无视角分支（全量真相），视角剥离在消费侧的
+    // deriveAvalonView 选择器；平台共享字段（status/phase/currentActor/
+    // handNumber）从 accumulator 单向映射。未知 kind 已在投影内静默忽略。
+    const avalonV2 = reduceAvalonV2Event(state.avalonV2, event)
+    const handNumber = Math.max(state.handNumber, avalonV2.round)
+    return {
+      ...state,
+      avalonV2,
+      events: [...state.events, { ...event, handNumberAt: handNumber }],
+      handNumber,
+      phase: avalonV2.phase ?? state.phase,
+      currentActor: avalonV2.pendingActor,
+      status: avalonV2.status,
+      matchComplete: avalonV2.ended !== null,
+    }
+  }
   if (isGenericV2Event(event)) return reduceGenericV2Event(state, event)
 
   let phase = state.phase
@@ -660,13 +691,19 @@ export const useMatchViewStore = create<MatchViewState>((set, get) => ({
       return
     }
     const derived = deriveMatchView(state.events, seatSetup, mode)
-    // 仅重投影数据面；UI 折叠状态（tab/展开手牌）保持。
+    // 仅重投影数据面；UI 折叠状态（tab/展开手牌/阿瓦隆聚焦玩家）保持。
     set({
       ...derived,
       rightPanelTab: state.rightPanelTab,
       expandedActionHands: state.expandedActionHands,
       expandedThinkingHands: state.expandedThinkingHands,
+      avalonFocusPlayerId: state.avalonFocusPlayerId,
     })
+  },
+
+  /** 阿瓦隆单玩家视角聚焦（与 viewMode 组合成三视角，见 avalonPerspectiveOf）。 */
+  setAvalonFocusPlayer(playerId) {
+    set({ avalonFocusPlayerId: playerId })
   },
 
   toggleActionHand(handNumber) {

@@ -1,6 +1,6 @@
-// 本地真实 LLM 全链路验收驱动（R2-5 狼人杀 / R2-6 德扑）。
+// 本地真实 LLM 全链路验收驱动（R2-5 狼人杀 / R2-6 德扑 / R4-1 阿瓦隆）。
 // 密钥不落本文件：从 .env 的 TEST_LLM_* 读取（.env 已被 gitignore）。
-// 用法：node scripts/dev/local-llm-validation.mjs [--werewolf-only | --poker-only]
+// 用法：node scripts/dev/local-llm-validation.mjs [--werewolf-only | --poker-only | --avalon-only]
 import { existsSync, readFileSync } from 'node:fs'
 
 function loadDotEnv(path = '.env') {
@@ -29,8 +29,10 @@ if (!LLM_BASE_URL || !LLM_API_KEY) {
 }
 
 const args = new Set(process.argv.slice(2))
-const RUN_WEREWOLF = !args.has('--poker-only')
-const RUN_POKER = !args.has('--werewolf-only')
+const AVALON_ONLY = args.has('--avalon-only')
+const RUN_WEREWOLF = !args.has('--poker-only') && !AVALON_ONLY
+const RUN_POKER = !args.has('--werewolf-only') && !AVALON_ONLY
+const RUN_AVALON = !args.has('--werewolf-only') && !args.has('--poker-only')
 const RESUME_ID = process.argv.includes('--resume')
   ? process.argv[process.argv.indexOf('--resume') + 1]
   : null
@@ -73,6 +75,15 @@ const PK_PERSONAS = [
   ['验收扑-跟注站', '你是偏跟注的休闲牌手：不爱弃牌，喜欢看到河牌。'],
   ['验收扑-平衡', '你是平衡风格牌手：随机化诈唬频率，注意位置优势。'],
 ]
+// 阿瓦隆（R4-1）：讨论与投票博弈为主的语言对局——人设突出推理/伪装风格差异。
+const AV_PERSONAS = [
+  ['验收隆-直言', '你是直言不讳的玩家：发言简短，观点鲜明，投票跟随自己的判断，从不和稀泥。'],
+  ['验收隆-缜密', '你是逻辑缜密的玩家：复盘每轮任务结果与投票记录，发言喜欢引用具体事实推理。'],
+  ['验收隆-和事佬', '你是温和的玩家：倾向避免冲突，赞成大多数人都同意的队伍，发言打圆场。'],
+  ['验收隆-激进', '你是激进的玩家：敢于直接指认可疑之人，主张小队伍精确打击，反对大队伍。'],
+  ['验收隆-沉默', '你是少言的玩家：发言最短，只给结论不给理由，投票独立不看别人脸色。'],
+  ['验收隆-演说家', '你是富有感染力的演说家：发言长而有条理，善于动员大家统一投票方向。'],
+]
 const MOD_PROMPT =
   '你是狼人杀主持人。用不超过 80 字的中文宣布每个阶段的进程与结果，语气沉稳中立，绝不泄露任何未公开的身份信息，不代任何玩家做决定。'
 
@@ -105,8 +116,10 @@ async function ensureAgents(profileId) {
   for (const [name, persona] of WW_PERSONAS) werewolf.push(await ensure(name, 'werewolf', persona, 'player'))
   const poker = []
   for (const [name, persona] of PK_PERSONAS) poker.push(await ensure(name, 'poker', persona, 'player'))
+  const avalon = []
+  for (const [name, persona] of AV_PERSONAS) avalon.push(await ensure(name, 'avalon', persona, 'player'))
   const moderator = await ensure(MOD_NAME, 'werewolf', MOD_PROMPT, 'moderator')
-  return { werewolf, poker, moderator }
+  return { werewolf, poker, avalon, moderator }
 }
 
 async function pollMatch(matchId, { label, timeoutMs, onTick }) {
@@ -207,6 +220,26 @@ async function runPoker(setup) {
   return { matchId: created.matchId, detail, digest }
 }
 
+// R4-1 阿瓦隆真实 LLM 全链路：基础 5 人板 + 基础 6 人板各一局（PRD 验收清单）。
+async function runAvalon(setup, preset, label, agentCount) {
+  console.log(`\n===== R4-1 阿瓦隆真实 LLM 全链路（${label}）=====`)
+  const created = await api('/api/matches', {
+    method: 'POST',
+    body: JSON.stringify({
+      gameType: 'avalon',
+      agentIds: setup.avalon.slice(0, agentCount).map((a) => a.id),
+      engineConfig: { preset },
+      config: { agentTimeoutMs: 120_000 },
+      keyring: { [setup.profile.id]: LLM_API_KEY },
+    }),
+  })
+  console.log(`match created: ${created.matchId} (preset=${preset})`)
+  const detail = await pollMatch(created.matchId, { label: `av-${preset}`, timeoutMs: 40 * 60_000 })
+  const digest = await errorDigest(created.matchId)
+  console.log(`avalon[${preset}] final status=${detail.match.status} events=${detail.eventCount} errors=${digest.total}`)
+  return { matchId: created.matchId, detail, digest }
+}
+
 const profile = await ensureProfile()
 const setup = await ensureAgents(profile.id)
 setup.profile = profile
@@ -221,6 +254,10 @@ if (RESUME_ID) {
 } else {
   if (RUN_WEREWOLF) results.werewolf = await runWerewolf(setup)
   if (RUN_POKER) results.poker = await runPoker(setup)
+  if (RUN_AVALON) {
+    results['avalon-basic-5'] = await runAvalon(setup, 'basic-5', '基础 5 人板', 5)
+    results['avalon-basic-6'] = await runAvalon(setup, 'basic-6', '基础 6 人板', 6)
+  }
 }
 
 console.log('\n===== 验收摘要 =====')
