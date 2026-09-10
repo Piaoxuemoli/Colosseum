@@ -115,7 +115,19 @@ function precheck() {
     console.error(`[release] 只允许在 main 上发版（当前 ${branch}）`)
     process.exit(1)
   }
-  execSync('git fetch origin main', { cwd: ROOT, stdio: 'pipe' })
+  // fetch 用于刷新 remote-tracking ref；网络波动失败时，若已有 ref 与本地
+  // 一致（push 刚成功过），放行——发版内容与远端一致性的判据是比较本身。
+  try {
+    execSync('git fetch origin main', { cwd: ROOT, stdio: 'pipe' })
+  } catch (err) {
+    const local = execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim()
+    const remote = execSync('git rev-parse origin/main', { cwd: ROOT }).toString().trim()
+    if (local !== remote) {
+      console.error(`[release] git fetch 失败且本地 origin/main 引用与 HEAD 不一致（先 push/pull）：${String(err)}`)
+      process.exit(1)
+    }
+    console.warn('[release] git fetch 失败（网络波动），但 origin/main 引用与 HEAD 一致，继续')
+  }
   const local = execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim()
   const remote = execSync('git rev-parse origin/main', { cwd: ROOT }).toString().trim()
   if (local !== remote) {
