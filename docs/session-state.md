@@ -5,6 +5,7 @@
 
 ## Active Context
 
+- **水墨 UI 重设计已交付设计包，等待所有者批准后才实施（2026-09-10）**：① 设计体系 `docs/prd/design-system.md` v2.0（玄墨基底 #14110D + 墨分五色 + 朱砂唯一强强调 + 三游戏墨韵变奏：德扑青花/狼人夜月/阿瓦隆朱砂 + 花青思考链 + 霞鹜文楷书法层，DS-OD-1..3：自建 shadcn 式组件换 token、LXGW WenKai 自托管子集、宣纸揭示层用 CSS 纹理）；② 重构 PRD `docs/prd/design/ink-ui-redesign.md`（6 类页面规格、交互 7 规则、**A2UI 适配点 A1–A7**、迁移 7 步、验收标准）；③ **HTML 交互稿** `docs/prd/design/mockups/ink-prototype.html`（单文件零依赖，5 屏 4 交互：五画面切换/三印章 tab 变奏晕/昼夜月相切换/视角知识隔离/终局宣纸揭示 StampReveal）。交互稿经 AI 图像评审两轮验收（首轮 5 屏 20+ 缺陷 → 16 处修复：座位卡纸纹肌理、德扑牌桌墨晕水洗、月亮多层月晕、快速开始三步条、组局预览摘要、阿瓦隆提名条/夜记条/本手笔录条、青花印降饱和、票点墨化、印章残边、3×N 座位网格等 → 复审五屏全过）。**实施未开始（所有者明令：先 PRD + 交互稿，不实现）**；下一步 = 所有者过目 → 批准后按 ink-ui-redesign §8 迁移七步实施。字体检索结论：LXGW WenKai（霞鹜文楷，OFL 开源）。
 - 当前阶段：**R4-1 + 首页重构 + R4-3 全部完成并上线（生产 18cdb2c1，2026-09-10）**。R4 剩余：R4-4 分享链接（硬前置：用户确认 key 吊销）、R4-2/5/6 按需。
 - **生产 ELO 已回填**：`POST /api/stats/elo/rebuild`（10 局 poker 历史 → 6 名选手，doubao-seed 1071 领跑）；此后每局 completed 由结算钩子自动更新（幂等对账随时可重跑）。
 - **⚠ 未结案：生产间歇性 heap 泄漏（2026-09-10 发现）**。现象：nextjs 容器部分实例以 ~47MB/min 涨满 OOM（0238ddb5 上线后 18+ 次重启），部分实例数小时平稳 173MB——**间歇双态**。已实验排除：首页流量（本地 prod 压测平稳）、SSE 在线+连断风暴（600 churn 后完全回收）、fd/连接泄漏（fd=22）、Redis 断连重试堆积、GM tick（纯被动）、logger/metrics/registry（全有界）、业务写入（泄漏窗口零写入零事件）。**取证机制已固化随发版**：compose `NODE_OPTIONS=--heapsnapshot-near-heap-limit=2 --max-old-space-size=1600` + Dockerfile `chmod 777 /app`（上一轮「Wrote snapshot」文件消失 = nextjs 用户对 /app 无写权限）+ 服务器 cron 每 10 分钟 docker cp 快照到 /opt（`heapsnapshot-guard`）。**下一波触发时快照自动落地，取 /opt/Heap.*.heapsnapshot 解析即可定位；定位修复后移除三处取证设施**（compose 注释已标）。OOM 期间 docker restart 自动拉起兜底，服务可用性影响 = 偶发瞬断。

@@ -1,0 +1,2642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Colosseum · 水墨交互稿 v1.0</title>
+<!--
+  ============================================================================
+  Colosseum 水墨 UI 交互稿（单文件 · 零外部依赖）
+  ----------------------------------------------------------------------------
+  需求权威：
+    - docs/prd/design-system.md          v2.0（玄墨设计系统：tokens / 母题 / 动效）
+    - docs/prd/design/ink-ui-redesign.md v1.0 §7（交互稿约定：五画面 + 四交互演示）
+  约定：
+    - 字体栈降级系统楷体（'Kaiti SC','STKaiti','KaiTi',serif）；等宽 Consolas。
+    - 纯静态 mock 数据，不请求任何 API / CDN。
+    - 本稿是视觉与交互意图的权威表达，实现以 PRD + design-system v2 为准。
+  ============================================================================
+-->
+<style>
+/* ==========================================================================
+   0. Tokens —— 全部命名与 design-system v2.0 §2.1 严格一致
+   ========================================================================== */
+:root {
+  /* 玄墨基底与墨阶（全站骨架） */
+  --ink-canvas: #14110D;            /* 夜宣 · 页面最底层画布 */
+  --ink-1: #1D1914;                 /* 焦→浓 · 面板、卡片、导航底 */
+  --ink-2: #26211A;                 /* 重 · 悬浮、下拉、弹层 */
+  --ink-3: #332C22;                 /* 淡 · 输入底、hover、日志底 */
+  --ink-line: #4A4234;              /* 清 · 墨线：边框、分隔 */
+  --paper-wash: #F0E9D8;            /* 宣纸晕 · 终局揭示、公告纸面 */
+  /* 墨字（前景） */
+  --ink-text-1: #EAE3D2;            /* 月白偏暖 · 主文字 */
+  --ink-text-2: #A99F8B;            /* 苍白 · 次级文字 */
+  --ink-text-3: #6F6654;            /* 枯墨 · 占位、禁用、历史 */
+  /* 朱砂与语义色 */
+  --cinnabar: #C3272B;              /* 朱砂 · 唯一强强调（hover #D8484C） */
+  --cinnabar-hover: #D8484C;
+  --bamboo: #5E8C6A;                /* 竹青 · 成功、好人阵营、连接正常 */
+  --ochre: #B8862D;                 /* 赭石 · 警示、鎏金点缀 */
+  --indigo-info: #6E7FA3;           /* 黛蓝 · 中性提示、链接 */
+  --azurite: #4A5D8E;               /* 花青（面）· AI 思考链专属 */
+  --azurite-light: #8FA3D9;         /* 花青（光）· 思考光效 */
+  /* 游戏墨韵变奏（场景 token，只用于赛场氛围与游戏专属元素） */
+  --wash-poker: #2E5E8C;            /* 德扑 · 青花（钴青） */
+  --wash-poker-light: #9FC3E8;      /* 德扑 · 青白 */
+  --wash-werewolf: #232B3D;         /* 狼人 · 夜月（墨蓝） */
+  --wash-werewolf-light: #D6ECF0;   /* 狼人 · 月白 */
+  --wash-avalon: #A83232;           /* 阿瓦隆 · 朱砂（朱红；鎏金即 --ochre） */
+  /* 间距与圆角（8px 基准网格） */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
+  /* 字体三层（交互稿零外部依赖：书法层降级系统楷体） */
+  --font-brush: 'Kaiti SC', 'STKaiti', 'KaiTi', serif;
+  --font-ui: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: Consolas, monospace;
+}
+
+/* ==========================================================================
+   1. 基础重置与全局
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+html.no-scroll { overflow: hidden; }
+
+body {
+  margin: 0;
+  padding-top: 56px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-text-1);
+  background:
+    radial-gradient(1100px 520px at 78% -8%, rgba(74, 66, 52, 0.14), transparent 62%),
+    radial-gradient(760px 420px at -6% 30%, rgba(74, 66, 52, 0.08), transparent 58%),
+    var(--ink-canvas);
+  min-height: 100vh;
+}
+
+button {
+  font: inherit; color: inherit; background: none;
+  border: none; cursor: pointer; padding: 0;
+}
+[hidden] { display: none !important; }
+ul, ol { margin: 0; }
+
+/* 焦点环：墨线双环（键盘可达） */
+:focus-visible {
+  outline: 1px solid var(--ink-text-2);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(74, 66, 52, 0.45);
+  border-radius: var(--radius-sm);
+}
+
+.skip-link {
+  position: fixed; top: -48px; left: 16px; z-index: 200;
+  padding: 8px 14px;
+  background: var(--ink-2); border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm); color: var(--ink-text-1);
+  text-decoration: none; transition: top 120ms ease-out;
+}
+.skip-link:focus { top: 64px; }
+
+/* 排版工具类 */
+.brush { font-family: var(--font-brush); }
+.mono { font-family: var(--font-mono); letter-spacing: 0.02em; }
+.t2 { color: var(--ink-text-2); }
+.t3 { color: var(--ink-text-3); }
+
+/* ==========================================================================
+   2. 顶部固定导航（五画面切换）
+    注：生产实现为左侧窄导航 64px（design-system §3.1）；
+    交互稿为评审便利使用顶部固定条，交互规则一致。
+   ========================================================================== */
+.top-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  height: 56px; display: flex; align-items: center; gap: var(--space-5);
+  padding: 0 var(--space-5);
+  background: rgba(29, 25, 20, 0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--ink-line);
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.nav-brand .seal { width: 30px; height: 30px; font-size: 15px; }
+.nav-title { font-family: var(--font-brush); font-size: 19px; font-weight: 600; letter-spacing: 2px; }
+.nav-sub { font-size: 11px; color: var(--ink-text-3); letter-spacing: 2px; }
+.nav-items {
+  display: flex; align-items: center; gap: var(--space-1);
+  margin-left: auto; overflow-x: auto; scrollbar-width: none;
+}
+.nav-items::-webkit-scrollbar { display: none; }
+.nav-item {
+  position: relative; padding: 8px 14px; font-size: 14px;
+  color: var(--ink-text-2); white-space: nowrap;
+  border-radius: var(--radius-sm);
+  transition: color 120ms ease-out, background-color 120ms ease-out;
+}
+.nav-item:hover { color: var(--ink-text-1); background: rgba(74, 66, 52, 0.28); }
+.nav-item.active { color: var(--ink-text-1); }
+/* 激活态：朱砂小方章（代替色条，design-system §3.1） */
+.nav-item.active::before {
+  content: ''; display: inline-block; width: 8px; height: 8px;
+  margin-right: 8px; background: var(--cinnabar);
+  border-radius: 2px; transform: rotate(-2deg);
+  box-shadow: inset 0 0 0 1px rgba(240, 233, 216, 0.3);
+  vertical-align: 1px;
+}
+/* 激活态底部笔锋下划线 */
+.nav-item.active::after {
+  content: ''; position: absolute; left: 12px; right: 12px; bottom: 2px;
+  height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--ink-line) 30%, var(--ink-line) 70%, transparent);
+}
+
+/* ==========================================================================
+   3. 画面容器与墨晕展开（240ms ease-out）
+   ========================================================================== */
+.screen { display: none; padding: var(--space-6) 0 var(--space-8); }
+.screen.active { display: block; animation: wash-in 240ms ease-out both; }
+.container { max-width: 1120px; margin: 0 auto; padding: 0 var(--space-5); }
+.container-wide { max-width: 1340px; margin: 0 auto; padding: 0 var(--space-5); }
+.page-head { margin-bottom: var(--space-5); }
+.page-head h1 {
+  margin: 0 0 4px; font-family: var(--font-brush); font-size: 26px;
+  font-weight: 600; letter-spacing: 4px;
+}
+.page-sub { margin: 0; font-size: 13px; color: var(--ink-text-2); letter-spacing: 2px; }
+
+/* ==========================================================================
+   4. 水墨母题（design-system §2.5 / §4.2）
+   ========================================================================== */
+
+/* ---- 印章 SealBadge：方形、圆角 4px、语义底色、反白书法字、微旋 -2°，
+        inset box-shadow + 内层偏旋边框模拟印泥不均匀感 ---- */
+.seal {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--cinnabar); color: var(--paper-wash);
+  font-family: var(--font-brush); font-weight: 700; font-size: 22px;
+  line-height: 1; letter-spacing: 1px; transform: rotate(-2deg);
+  border-radius: 5px 4px 6px 4px; /* 残边：四角不均，印泥蚀边感 */
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 233, 216, 0.30),
+    inset 2px 2px 5px rgba(0, 0, 0, 0.30),
+    inset -2px -1px 4px rgba(0, 0, 0, 0.22);
+  user-select: none;
+}
+/* 内圈细框：偏旋 + 不均圆角，模拟印泥不匀与蚀边 */
+.seal::after {
+  content: ''; position: absolute; inset: 3px;
+  border: 1px solid currentColor; border-radius: 3px 2px 4px 2px;
+  opacity: 0.38; transform: rotate(0.8deg);
+  pointer-events: none;
+}
+/* 尺寸变体 */
+.seal-xs { width: 22px; height: 22px; font-size: 11px; border-radius: 3px; }
+.seal-xs::after { inset: 2px; }
+.seal-sm { width: 34px; height: 34px; font-size: 16px; }
+.seal-lg { width: 56px; height: 56px; font-size: 27px; }
+.seal-huge { width: 128px; height: 128px; font-size: 62px; } /* 终局大章 120px+ */
+/* 语义变体 */
+/* 青花印底色降饱和：避免与朱砂争辉（design-system §7 微调许可） */
+.seal-poker { background: #416088; }
+.seal-wolf { background: var(--wash-werewolf); color: var(--wash-werewolf-light); }
+.seal-avalon { background: var(--wash-avalon); }
+.seal-bamboo { background: var(--bamboo); }
+.seal-gold { background: var(--ochre); }
+/* 墨线章（未选中态） */
+.seal-outline { background: transparent; color: var(--ink-text-1); box-shadow: inset 0 0 0 1px var(--ink-line); }
+
+/* ---- InkPanel：墨线卡片容器（册页式：近直角 + 微纸纹底） ---- */
+.ink-panel {
+  position: relative;
+  background-color: var(--ink-1);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(240, 233, 216, 0.012) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(240, 233, 216, 0.008) 0 1px, transparent 1px 4px);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm);
+}
+/* 微纸纹（复用，供列表等容器） */
+.paper-grain {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(240, 233, 216, 0.012) 0 1px, transparent 1px 3px);
+}
+
+/* ---- 双钩边框（重要面板内外双线 / 画框式） ---- */
+.frame-double {
+  position: relative;
+  background-color: var(--ink-1);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm);
+}
+.frame-double::before {
+  content: ''; position: absolute; inset: 3px;
+  border: 1px solid rgba(74, 66, 52, 0.62); border-radius: 2px;
+  pointer-events: none;
+}
+
+/* ---- 笔触分隔：高度 2px，两端渐透明 ---- */
+.ink-divider {
+  height: 2px; border: none; margin: 0;
+  background: linear-gradient(90deg, transparent, var(--ink-line) 18%, var(--ink-line) 82%, transparent);
+}
+.ink-divider.tight {
+  flex: 1; margin: 0 var(--space-2);
+  background: linear-gradient(90deg, var(--ink-line), rgba(74, 66, 52, 0) 95%);
+}
+
+/* ---- 墨滴呼吸（进行中指示：半径 ±6%，2.4s 循环） ---- */
+.ink-dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, var(--cinnabar-hover), var(--cinnabar) 68%);
+  box-shadow: 0 0 6px rgba(195, 39, 43, 0.5);
+  animation: ink-breath 2.4s ease-in-out infinite;
+}
+.ink-dot.bamboo {
+  background: radial-gradient(circle at 38% 34%, #7FAE8B, var(--bamboo) 68%);
+  box-shadow: 0 0 6px rgba(94, 140, 106, 0.5);
+}
+.ink-dot.azure {
+  background: radial-gradient(circle at 38% 34%, var(--azurite-light), var(--azurite) 68%);
+  box-shadow: 0 0 6px rgba(74, 93, 142, 0.55);
+}
+
+/* ---- 竖排题字（装饰性短句 ≤8 字） ---- */
+.vertical-caption {
+  writing-mode: vertical-rl; font-family: var(--font-brush);
+  font-size: 15px; letter-spacing: 0.5em;
+  color: var(--ink-text-2); margin: 0;
+}
+
+/* ---- 头像：圆形墨框 + 单字 ---- */
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%;
+  border: 1px solid var(--ink-line); background: var(--ink-2);
+  color: var(--ink-text-1); font-family: var(--font-brush); font-size: 15px;
+}
+.avatar-sm { width: 28px; height: 28px; font-size: 13px; }
+
+/* ==========================================================================
+   5. 按钮与输入（design-system §4.1）
+   ========================================================================== */
+
+/* 朱砂大印：主 CTA（每屏最多一个） */
+.seal-btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 104px; height: 104px; border-radius: var(--radius-sm);
+  background: var(--cinnabar); color: var(--paper-wash);
+  transform: rotate(-2deg);
+  box-shadow:
+    inset 0 0 0 2px rgba(240, 233, 216, 0.24),
+    inset 3px 3px 9px rgba(0, 0, 0, 0.32),
+    inset -3px -2px 6px rgba(0, 0, 0, 0.24),
+    0 4px 16px rgba(195, 39, 43, 0.28);
+  transition: background-color 120ms ease-out, transform 120ms ease-out;
+}
+.seal-btn::after {
+  content: ''; position: absolute; inset: 6px;
+  border: 1px solid currentColor; border-radius: 2px;
+  opacity: 0.35; transform: rotate(0.6deg);
+  pointer-events: none;
+}
+.seal-btn:hover { background: var(--cinnabar-hover); transform: rotate(-2deg) scale(1.03); }
+.seal-btn:active { transform: rotate(-2deg) scale(0.98); }
+/* 大印内两字竖排 */
+.seal-btn-text {
+  font-family: var(--font-brush); font-size: 30px; font-weight: 700;
+  writing-mode: vertical-rl; letter-spacing: 0.35em; line-height: 1;
+}
+
+/* 次按钮：墨线描边 */
+.btn-line {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 5px 14px; font-size: 13px; color: var(--ink-text-1);
+  border: 1px solid var(--ink-line); border-radius: var(--radius-sm);
+  background: transparent; white-space: nowrap;
+  transition: border-color 120ms ease-out, background-color 120ms ease-out;
+}
+.btn-line:hover { border-color: var(--ink-text-2); background: rgba(74, 66, 52, 0.22); }
+
+/* 幽灵按钮：纯文字 + 笔锋下划线 hover */
+.btn-ghost {
+  position: relative; padding: 6px 10px;
+  font-family: var(--font-brush); font-size: 15px;
+  color: var(--cinnabar); letter-spacing: 2px;
+}
+.btn-ghost::after {
+  content: ''; position: absolute; left: 50%; right: 50%; bottom: 2px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cinnabar), transparent);
+  transition: left 120ms ease-out, right 120ms ease-out;
+}
+.btn-ghost:hover::after { left: 12%; right: 12%; }
+
+/* 文字链接（黛蓝） */
+.link {
+  color: var(--indigo-info); font-size: 14px; padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease-out, color 120ms ease-out;
+}
+.link:hover { color: var(--azurite-light); border-bottom-color: var(--indigo-info); }
+
+/* 输入：--ink-3 底 + 墨线聚焦环 */
+.ink-input {
+  width: 100%; padding: 8px 12px;
+  font-family: var(--font-ui); font-size: 14px; color: var(--ink-text-1);
+  background: var(--ink-3); border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm);
+  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+.ink-input::placeholder { color: var(--ink-text-3); }
+.ink-input:focus {
+  outline: none; border-color: var(--ink-text-2);
+  box-shadow: 0 0 0 1px var(--ink-line), 0 0 0 4px rgba(74, 66, 52, 0.35);
+}
+.ink-input.mono { font-family: var(--font-mono); }
+
+/* ==========================================================================
+   6. 画面一 · 大厅（疏朗留白，行高放宽）
+   ========================================================================== */
+.lobby-hero {
+  display: flex; align-items: flex-end; gap: var(--space-5);
+  padding: var(--space-7) 0 var(--space-6);
+  border-bottom: 1px solid rgba(74, 66, 52, 0.4);
+}
+.hero-title {
+  margin: 0; font-family: var(--font-brush); font-size: 58px;
+  font-weight: 600; line-height: 1.3; letter-spacing: 10px;
+}
+.hero-sub { margin: 2px 0 0; font-size: 12px; color: var(--ink-text-3); letter-spacing: 4px; }
+.hero-slogan {
+  margin: 0 0 10px; font-family: var(--font-brush);
+  font-size: 19px; color: var(--ink-text-2); letter-spacing: 3px;
+}
+.hero-right { margin-left: auto; display: flex; align-items: flex-end; gap: var(--space-5); }
+.hero-live {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: 8px 14px; border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm); font-size: 13px; color: var(--ink-text-2);
+}
+.hero-caption { height: 128px; }
+.lobby-section { margin: var(--space-7) 0; }
+.section-head { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.section-head h2 {
+  margin: 0; font-family: var(--font-brush); font-size: 23px;
+  font-weight: 600; letter-spacing: 4px;
+}
+.section-head .seal-row { display: flex; align-items: center; gap: var(--space-2); }
+
+/* 今日擂台：册页式卡片 */
+.live-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-4); }
+.ink-card { padding: 18px; overflow: hidden; transition: border-color 120ms ease-out, transform 120ms ease-out; }
+/* hover 墨晕 */
+.ink-card::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(300px 170px at 50% 0%, rgba(240, 233, 216, 0.055), transparent 70%);
+  opacity: 0; transition: opacity 120ms ease-out; pointer-events: none;
+}
+.ink-card:hover { border-color: rgba(169, 159, 139, 0.62); transform: translateY(-1px); }
+.ink-card:hover::after { opacity: 1; }
+.card-top { display: flex; align-items: flex-start; gap: var(--space-3); }
+.card-title-group { flex: 1; min-width: 0; }
+.card-title-group h3 {
+  margin: 0 0 4px; font-family: var(--font-brush);
+  font-size: 17px; font-weight: 600; letter-spacing: 0.5px; line-height: 1.45;
+}
+.card-stage { margin: 0; font-size: 12px; color: var(--ink-text-2); }
+.card-avatars {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-top: var(--space-4); padding-top: var(--space-3);
+  border-top: 1px solid rgba(74, 66, 52, 0.35);
+}
+.card-avatars .more { margin-left: 2px; font-size: 11px; color: var(--ink-text-3); }
+
+/* 快速开始：画框式 */
+.quick-start { display: flex; align-items: center; gap: var(--space-6); padding: var(--space-5) var(--space-6); }
+.qs-body { flex: 1; }
+.qs-body h3 { margin: 0 0 8px; font-family: var(--font-brush); font-size: 20px; font-weight: 600; letter-spacing: 3px; }
+.qs-status { margin: 0 0 6px; font-size: 14px; color: var(--ink-text-2); }
+.qs-status .mono { color: var(--bamboo); }
+.qs-hint { margin: 0; font-size: 13px; color: var(--ink-text-3); }
+.quick-start .vertical-caption { height: 118px; color: var(--ink-text-2); }
+/* 三步入局：墨点串联 */
+.qs-steps {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-top: var(--space-3); padding-top: var(--space-3);
+  border-top: 1px solid rgba(74, 66, 52, 0.35);
+}
+.qs-step { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-text-2); white-space: nowrap; }
+.qs-step .no { font-family: var(--font-mono); font-size: 11px; color: var(--ink-text-3); }
+.qs-step .brush { color: var(--ink-text-1); }
+.qs-arrow { color: var(--ink-text-3); font-size: 11px; }
+
+/* 最近对局：行高 44px */
+.match-list {
+  list-style: none; margin: 0; padding: 0;
+  border: 1px solid var(--ink-line); border-radius: var(--radius-sm);
+  background-color: var(--ink-1); overflow: hidden;
+}
+.match-row {
+  display: flex; align-items: center; gap: 14px;
+  height: 44px; padding: 0 var(--space-3);
+  border-bottom: 1px solid rgba(74, 66, 52, 0.32);
+  transition: background-color 120ms ease-out;
+}
+.match-row:last-child { border-bottom: none; }
+.match-row:hover { background: rgba(51, 44, 34, 0.4); }
+.match-name {
+  font-family: var(--font-brush); font-size: 15px; letter-spacing: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.match-time { width: 96px; flex-shrink: 0; font-size: 12px; color: var(--ink-text-3); }
+.match-result {
+  margin-left: auto; display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--ink-text-2); white-space: nowrap;
+}
+.match-result .brush { font-size: 15px; color: var(--ink-text-1); }
+.btn-xs { padding: 3px 10px; font-size: 12px; }
+
+/* 大厅页脚：笔触分隔 + 次级链接 */
+.lobby-footer { margin-top: var(--space-7); padding-top: var(--space-5); }
+.lobby-footer .links {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--space-5); margin-top: var(--space-4);
+}
+.footnote { margin: var(--space-3) 0 0; font-size: 11px; color: var(--ink-text-3); letter-spacing: 1px; }
+
+/* ==========================================================================
+   7. 画面二 · 组局（/matches/new）
+   ========================================================================== */
+.config-grid {
+  display: grid; grid-template-columns: minmax(0, 1fr) 350px;
+  gap: var(--space-5); align-items: start;
+}
+.form-block { margin-bottom: var(--space-5); }
+.block-title {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin: 0 0 var(--space-3); font-size: 13px; font-weight: 600;
+  letter-spacing: 6px; color: var(--ink-text-2);
+}
+.block-title .mono { font-size: 12px; letter-spacing: 0; color: var(--ink-text-3); }
+
+/* 三枚印章 tab */
+.game-tabs { display: flex; gap: var(--space-3); }
+.game-tab {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+  padding: 12px 18px 10px; border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: border-color 120ms ease-out, background-color 120ms ease-out;
+}
+.game-tab:hover { border-color: var(--ink-line); background: rgba(51, 44, 34, 0.3); }
+.game-tab .seal-tab {
+  width: 48px; height: 48px; font-size: 23px;
+  background: transparent; color: var(--ink-text-1);
+  box-shadow: inset 0 0 0 1px var(--ink-line);
+  transition: background-color 120ms ease-out, transform 120ms ease-out, box-shadow 120ms ease-out;
+}
+.game-tab-label { font-size: 13px; color: var(--ink-text-2); letter-spacing: 2px; }
+/* 选中：朱砂底反白轻旋 */
+.game-tab.selected { border-color: rgba(195, 39, 43, 0.55); background: rgba(195, 39, 43, 0.06); }
+.game-tab.selected .seal-tab {
+  background: var(--cinnabar); color: var(--paper-wash);
+  box-shadow: inset 0 0 0 1px rgba(240, 233, 216, 0.30), inset 2px 2px 5px rgba(0, 0, 0, 0.3);
+  transform: rotate(-4deg);
+}
+.game-tab.selected .game-tab-label { color: var(--ink-text-1); }
+
+/* 预设：画框小卡 */
+.preset-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--space-3); }
+.preset-card {
+  position: relative; display: flex; flex-direction: column; gap: 6px;
+  padding: 14px 16px; text-align: left;
+  background: var(--ink-1); border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm);
+  transition: border-color 120ms ease-out;
+}
+.preset-card:hover { border-color: var(--ink-text-3); }
+.preset-name { font-family: var(--font-brush); font-size: 17px; letter-spacing: 2px; }
+.preset-desc { font-size: 12px; color: var(--ink-text-2); }
+/* 选中：双钩 + 朱砂角标 */
+.preset-card.selected { border-color: rgba(195, 39, 43, 0.6); }
+.preset-card.selected::before {
+  content: ''; position: absolute; inset: 3px;
+  border: 1px solid rgba(195, 39, 43, 0.45); border-radius: 2px;
+  pointer-events: none;
+}
+.preset-card.selected::after {
+  content: '选'; position: absolute; top: 0; right: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px;
+  background: var(--cinnabar); color: var(--paper-wash);
+  font-family: var(--font-brush); font-size: 12px;
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+/* 参数 */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-3); }
+.field-row { display: flex; gap: var(--space-3); }
+.field-row .field { flex: 1; }
+.field-label { font-size: 13px; font-weight: 500; letter-spacing: 1px; color: var(--ink-text-2); }
+
+/* Agent 席位：画框小卡 */
+.seat-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.seat-pick {
+  position: relative; display: flex; align-items: center; gap: var(--space-2);
+  padding: 8px 30px 8px 10px;
+  background: var(--ink-1); border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm);
+  transition: border-color 120ms ease-out;
+}
+.seat-pick::before {
+  content: ''; position: absolute; inset: 3px;
+  border: 1px solid rgba(74, 66, 52, 0.5); border-radius: 2px;
+  pointer-events: none;
+}
+.seat-pick:hover { border-color: rgba(169, 159, 139, 0.6); }
+.seat-pick .seat-name { font-family: var(--font-brush); font-size: 15px; }
+.seat-remove {
+  position: absolute; top: 2px; right: 3px; width: 18px; height: 18px;
+  font-size: 14px; line-height: 1; color: var(--ink-text-3);
+  border-radius: 3px; transition: color 120ms ease-out;
+}
+.seat-remove:hover { color: var(--cinnabar); }
+.seat-add {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 128px; padding: 8px 14px;
+  border: 1px dashed var(--ink-line); border-radius: var(--radius-sm);
+  color: var(--ink-text-2); font-size: 13px; letter-spacing: 2px;
+  transition: border-color 120ms ease-out, color 120ms ease-out;
+}
+.seat-add:hover { border-color: var(--ink-text-3); color: var(--ink-text-1); }
+.seat-add[disabled] { opacity: 0.5; cursor: not-allowed; }
+.seat-empty-note {
+  width: 100%; padding: var(--space-3);
+  border: 1px dashed var(--ink-line); border-radius: var(--radius-sm);
+  color: var(--ink-text-3); font-size: 13px; text-align: center;
+}
+
+/* KeyGate 面板（四态之一示例：全部健康 = 竹青章） */
+.keygate { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); }
+.keygate-title { margin: 0 0 2px; font-size: 14px; }
+.keygate-title .mono { color: var(--bamboo); }
+.key-list {
+  list-style: none; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px 18px; margin: 8px 0 0; padding: 0;
+  font-size: 12px; color: var(--ink-text-2);
+}
+.key-dot {
+  display: inline-block; width: 6px; height: 6px; margin-right: 8px;
+  border-radius: 50%; background: var(--bamboo); vertical-align: 1px;
+}
+.keygate-time { margin: 8px 0 0; font-size: 11px; color: var(--ink-text-3); }
+
+/* 右侧预览卡：画框式 + 变奏晕（随品类换色） */
+.config-preview {
+  position: relative; overflow: hidden; min-height: 430px;
+  padding: var(--space-5); display: flex; flex-direction: column;
+  gap: var(--space-4);
+}
+.preview-wash { position: absolute; inset: 0; pointer-events: none; transition: background 300ms ease-in-out; }
+#screen-config[data-game="avalon"] .preview-wash {
+  background: radial-gradient(340px 250px at 72% 16%, rgba(168, 50, 50, 0.16), transparent 72%);
+}
+#screen-config[data-game="poker"] .preview-wash {
+  background: radial-gradient(340px 250px at 72% 16%, rgba(46, 94, 140, 0.22), transparent 72%);
+}
+#screen-config[data-game="werewolf"] .preview-wash {
+  background:
+    radial-gradient(120px 120px at 82% 12%, rgba(214, 236, 240, 0.07), transparent 70%),
+    radial-gradient(360px 280px at 60% 40%, rgba(35, 43, 61, 0.6), transparent 75%);
+}
+.preview-caption { position: absolute; top: var(--space-5); right: 20px; height: 190px; color: var(--ink-text-2); }
+.preview-meta { position: relative; margin: 0; }
+.preview-meta h3 {
+  margin: 0 0 6px; font-family: var(--font-brush);
+  font-size: 19px; font-weight: 600; letter-spacing: 3px;
+}
+.preview-meta p { margin: 0; font-size: 12px; color: var(--ink-text-2); }
+/* 配置摘要（册页行） */
+.preview-summary {
+  position: relative; list-style: none; margin: 0; padding: 0;
+}
+.preview-summary li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3);
+  padding: 8px 2px; font-size: 13px; color: var(--ink-text-2);
+  border-bottom: 1px dashed rgba(74, 66, 52, 0.45);
+}
+.preview-summary li:last-child { border-bottom: none; }
+.preview-summary .ps-key { letter-spacing: 1px; }
+.preview-summary .ps-val { color: var(--ink-text-1); text-align: right; }
+.preview-summary .ps-val.brush { font-size: 15px; }
+/* 落章区 */
+.preview-stamp-zone {
+  margin-top: auto; position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: 128px;
+  border: 1px dashed rgba(74, 66, 52, 0.55); border-radius: var(--radius-sm);
+}
+.stamp-zone-hint { font-size: 12px; color: var(--ink-text-3); letter-spacing: 3px; }
+.preview-stamp-note { margin: 0; font-size: 11px; color: var(--cinnabar); }
+
+/* 组局页脚：朱砂大印 */
+.config-foot {
+  display: flex; align-items: center; gap: var(--space-5);
+  margin-top: var(--space-6); padding-top: var(--space-5);
+  border-top: 1px solid rgba(74, 66, 52, 0.4);
+}
+.config-foot-hint { margin: 0; font-size: 13px; color: var(--ink-text-3); }
+
+/* ==========================================================================
+   8. 观战通用骨架（赛场 / 右栏 / 底部回放条；密度紧凑）
+   ========================================================================== */
+.spectate-grid {
+  display: grid; grid-template-columns: minmax(0, 1fr) 382px;
+  gap: var(--space-4); align-items: start;
+}
+.arena {
+  position: relative; overflow: hidden; padding: var(--space-4);
+  background: var(--ink-1); border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm);
+}
+.arena-head {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid rgba(74, 66, 52, 0.45);
+  margin-bottom: var(--space-4);
+}
+.arena-title { display: flex; align-items: center; gap: var(--space-3); }
+.arena-title h1 {
+  margin: 0; font-family: var(--font-brush); font-size: 27px;
+  font-weight: 600; letter-spacing: 4px; line-height: 1.2;
+}
+.arena-round {
+  padding: 3px 9px; font-size: 12px; color: var(--ink-text-2);
+  border: 1px solid var(--ink-line); border-radius: 3px; white-space: nowrap;
+}
+/* 阶段条 */
+.stage-bar { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.stage {
+  position: relative; padding: 5px 12px; font-size: 13px;
+  color: var(--ink-text-3); letter-spacing: 2px; white-space: nowrap;
+  transition: color 120ms ease-out;
+}
+.stage.done { color: var(--ink-text-2); }
+.stage.current { color: var(--ink-text-1); }
+/* 当前阶段下划线（各变奏换色 / 青花渐变） */
+.stage.current::after {
+  content: ''; position: absolute; left: 8px; right: 8px; bottom: -2px;
+  height: 2px; border-radius: 2px; background: var(--ink-text-2);
+}
+.stage-avalon .stage.current::after { background: var(--wash-avalon); }
+.stage-avalon .stage.current { background: rgba(168, 50, 50, 0.12); }
+.stage-poker .stage.current::after { background: linear-gradient(90deg, var(--wash-poker), var(--wash-poker-light)); }
+.stage-poker .stage.current { background: rgba(46, 94, 140, 0.14); }
+
+/* 右栏面板 */
+.side-panel {
+  position: sticky; top: 72px; max-height: calc(100vh - 96px);
+  overflow: auto; padding: var(--space-3);
+  background: var(--ink-1); border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm);
+}
+.side-panel > h4 {
+  margin: 0 0 var(--space-2); font-size: 13px; font-weight: 600;
+  letter-spacing: 4px; color: var(--ink-text-2);
+}
+.panel-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--ink-line); margin-bottom: var(--space-3); }
+.panel-tab {
+  position: relative; padding: 8px 10px; font-size: 13px;
+  color: var(--ink-text-3); letter-spacing: 1px;
+  transition: color 120ms ease-out;
+}
+.panel-tab:hover { color: var(--ink-text-1); }
+.panel-tab.active { color: var(--ink-text-1); }
+.panel-tab.active::after {
+  content: ''; position: absolute; left: 6px; right: 6px; bottom: -1px;
+  height: 2px; background: var(--ink-text-2);
+}
+/* 思考 Tab 激活 = 花青（design-system §2.1） */
+.panel-tab.tab-think.active { color: var(--azurite-light); }
+.panel-tab.tab-think.active::after { background: var(--azurite-light); }
+.panel-body { padding: 2px; }
+
+/* 回放控制条（一笔墨锋 + 阶段锚点小墨点） */
+.replay-bar {
+  position: relative; z-index: 1; display: flex; align-items: center;
+  gap: var(--space-3); margin-top: var(--space-4); padding-top: var(--space-3);
+  border-top: 1px solid rgba(74, 66, 52, 0.45);
+}
+.replay-time, .replay-pct { font-size: 12px; color: var(--ink-text-3); white-space: nowrap; }
+.replay-track { position: relative; flex: 1; height: 2px; border-radius: 1px; background: rgba(74, 66, 52, 0.45); }
+.replay-stroke {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 62%;
+  border-radius: 1px;
+  background: linear-gradient(90deg, rgba(234, 227, 210, 0), var(--ink-text-2));
+}
+.replay-anchor {
+  position: absolute; top: 50%; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ink-3); border: 1px solid var(--ink-line);
+  transform: translate(-50%, -50%);
+}
+.replay-anchor.passed { background: var(--ink-text-2); }
+
+/* 通用座位卡：纸纹肌理 + 顶部微光晕（避免平涂塑料感） */
+.seat-card {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background-color: var(--ink-2);
+  background-image:
+    radial-gradient(ellipse 120% 70% at 18% -18%, rgba(240, 233, 216, 0.045), transparent 62%),
+    radial-gradient(ellipse 90% 60% at 88% 118%, rgba(0, 0, 0, 0.22), transparent 64%),
+    repeating-linear-gradient(0deg, rgba(240, 233, 216, 0.014) 0 1px, transparent 1px 3px);
+  border: 1px solid var(--ink-line); border-radius: var(--radius-sm);
+  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+.seat-card:hover { border-color: rgba(169, 159, 139, 0.6); }
+.seat-name {
+  margin: 0; font-family: var(--font-brush);
+  font-size: 15px; letter-spacing: 1px; line-height: 1.4;
+}
+.seat-sub { margin: 0; font-size: 11px; color: var(--ink-text-3); }
+.seat-main { min-width: 0; }
+
+/* 思考中：花青晕呼吸（azurite 专属语义） */
+.think-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-left: auto; font-size: 12px; color: var(--azurite-light);
+  white-space: nowrap;
+}
+.think-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, var(--azurite-light), var(--azurite) 70%);
+  animation: ink-breath 2.4s ease-in-out infinite;
+}
+
+/* 思考链气泡（花青晕） */
+.think-bubble {
+  padding: var(--space-3); margin-bottom: var(--space-3);
+  background: linear-gradient(180deg, rgba(74, 93, 142, 0.17), rgba(74, 93, 142, 0.08));
+  border: 1px solid rgba(143, 163, 217, 0.4);
+  border-radius: var(--radius-md);
+}
+.think-bubble.live { animation: azurite-breath 2.4s ease-in-out infinite; }
+.think-head {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin: 0 0 6px; font-size: 12px; color: var(--ink-text-2);
+}
+.think-state { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--azurite-light); }
+.think-summary {
+  margin: 0; font-family: var(--font-brush); font-size: 15px;
+  line-height: 1.75; color: var(--ink-text-1);
+}
+/* 等宽原文折叠 */
+.think-raw { margin-top: var(--space-2); }
+.think-raw summary {
+  cursor: pointer; font-family: var(--font-mono);
+  font-size: 12px; color: var(--azurite-light); user-select: none;
+}
+.think-raw summary:hover { color: var(--ink-text-1); }
+.think-raw pre {
+  margin: var(--space-2) 0 0; padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.6;
+  color: var(--ink-text-2); background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(74, 66, 52, 0.4); border-radius: var(--radius-sm);
+  white-space: pre-wrap; overflow-x: auto;
+}
+
+/* 发言条目（书法体 + 引号） */
+.speech-entry { padding: 10px 12px; margin-bottom: var(--space-3); border-left: 2px solid var(--ink-line); }
+.speech-meta { margin: 0 0 4px; font-size: 12px; color: var(--ink-text-3); }
+.speech {
+  margin: 0; font-family: var(--font-brush); font-size: 15px;
+  line-height: 1.75; color: var(--ink-text-1);
+}
+.speech .q { color: var(--cinnabar); }
+/* 密谋条目：深色晕底 + 朱砂引号 + 遮蔽态 */
+.speech-entry.secret {
+  background: linear-gradient(90deg, rgba(168, 50, 50, 0.10), rgba(20, 17, 13, 0.45));
+  border-left-color: var(--wash-avalon);
+}
+.secret-tag {
+  display: inline-block; margin-left: 6px; padding: 1px 6px;
+  font-size: 11px; color: var(--wash-avalon);
+  border: 1px solid rgba(168, 50, 50, 0.55); border-radius: 3px;
+}
+.speech-mask { display: flex; flex-direction: column; gap: 6px; padding-top: 2px; }
+.mask-bar {
+  display: block; height: 10px; border-radius: 2px;
+  background: rgba(234, 227, 210, 0.09); filter: blur(1px);
+}
+.mask-bar.short { width: 58%; }
+.mask-bar.mid { width: 79%; }
+.mask-note { margin: 2px 0 0; font-size: 12px; color: var(--ink-text-3); letter-spacing: 2px; }
+
+/* 状态列表 / 名册 */
+.stat-list { list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--ink-text-2); }
+.stat-list li {
+  display: flex; justify-content: space-between; gap: var(--space-2);
+  padding: 8px 2px; border-bottom: 1px solid rgba(74, 66, 52, 0.3);
+}
+.stat-list li:last-child { border-bottom: none; }
+.stat-list .mono { color: var(--ink-text-1); }
+.roster-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 2px; border-bottom: 1px solid rgba(74, 66, 52, 0.3);
+}
+.roster-row:last-child { border-bottom: none; }
+.roster-no { width: 34px; font-size: 12px; color: var(--ink-text-3); }
+.roster-name { flex: 1; font-family: var(--font-brush); font-size: 15px; }
+.roster-elo { font-size: 13px; color: var(--ink-text-2); }
+
+/* ==========================================================================
+   9. 画面三 · 观战阿瓦隆（朱砂变奏：信息密度高）
+   ========================================================================== */
+/* 左上角战旗式朱砂晕 */
+.arena-avalon::before {
+  content: ''; position: absolute; top: -70px; left: -90px;
+  width: 420px; height: 320px;
+  background:
+    linear-gradient(115deg, rgba(168, 50, 50, 0.15), rgba(168, 50, 50, 0.05) 55%, transparent 72%),
+    radial-gradient(closest-side at 30% 30%, rgba(168, 50, 50, 0.12), transparent 75%);
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+/* 任务板：册页式 5 槽 */
+.mission-board {
+  position: relative; z-index: 1; display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px; margin-bottom: var(--space-4);
+}
+.mission-slot {
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 5px;
+  min-height: 102px; padding: 10px 6px;
+  background: var(--ink-2); border: 1px solid var(--ink-line);
+  border-radius: var(--radius-sm);
+  transition: border-color 120ms ease-out;
+}
+.mission-slot:hover { border-color: rgba(169, 159, 139, 0.55); }
+.slot-round { font-family: var(--font-brush); font-size: 21px; line-height: 1; color: var(--ink-text-1); }
+.slot-size { font-size: 11px; color: var(--ink-text-2); }
+.mission-slot.settled.success { border-color: rgba(94, 140, 106, 0.55); }
+.mission-slot.settled.fail { border-color: rgba(195, 39, 43, 0.55); }
+/* 当前任务槽：朱砂高亮 + 呼吸点 + 晕染外发光 */
+.mission-slot.current {
+  border-color: rgba(196, 66, 66, 0.85); background: rgba(168, 50, 50, 0.10);
+  box-shadow: 0 0 0 1px rgba(168, 50, 50, 0.35), 0 0 22px rgba(168, 50, 50, 0.16);
+}
+.mission-slot.current .slot-round { color: #DE7B78; text-shadow: 0 0 14px rgba(195, 39, 43, 0.35); }
+.slot-state { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-text-2); }
+/* 双失败轮：鎏金边（提对比，暗底可辨） */
+.mission-slot.double-fail {
+  border-color: rgba(201, 156, 78, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(201, 156, 78, 0.55);
+}
+.slot-tag { font-size: 10px; color: #C99C4E; letter-spacing: 2px; }
+.mission-foot {
+  position: relative; z-index: 1; display: flex; align-items: center;
+  gap: var(--space-2); margin-bottom: var(--space-4);
+}
+.mission-foot .tally { font-size: 12px; color: var(--ink-text-2); }
+.btn-restamp {
+  margin-left: auto; padding: 2px 10px; font-size: 11px;
+  color: var(--ink-text-3); border: 1px dashed var(--ink-line);
+  border-radius: 3px;
+  transition: color 120ms ease-out, border-color 120ms ease-out;
+}
+.btn-restamp:hover { color: var(--ink-text-1); border-color: var(--ink-text-3); }
+
+/* 本届提名条：表决中的队伍（队长提名阵容 + 票数 tally） */
+.team-strip {
+  position: relative; z-index: 1; display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  padding: 10px 16px; margin-bottom: var(--space-4);
+  background: linear-gradient(90deg, rgba(168, 50, 50, 0.10), rgba(22, 18, 14, 0.4));
+  border: 1px solid rgba(168, 50, 50, 0.32); border-radius: var(--radius-sm);
+}
+.team-strip .ns-label {
+  font-family: var(--font-brush); font-size: 15px;
+  color: var(--ink-text-1); letter-spacing: 3px;
+}
+.team-members { display: flex; align-items: center; gap: 6px; }
+.team-members .avatar { width: 28px; height: 28px; font-size: 13px; }
+.team-tally { margin-left: auto; font-size: 12px; color: var(--ink-text-2); white-space: nowrap; }
+.team-tally .yes { color: var(--bamboo); }
+.team-tally .no { color: var(--cinnabar); }
+
+/* 阿瓦隆座位 */
+.seat-grid-avalon {
+  position: relative; z-index: 1; display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+.avalon-seat .seat-vote {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--ink-text-3); white-space: nowrap;
+}
+.avalon-seat.has-vote .seal-lead { margin-left: 0; }
+.avalon-seat .seal-lead { margin-left: auto; }
+/* 票点：墨点晕染（非西式实心圆） */
+.vote-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 52% 48% 55% 45%;
+}
+.vote-dot.approve {
+  background: radial-gradient(circle at 38% 34%, #7FAE8B, var(--bamboo) 72%);
+  box-shadow: 0 0 5px rgba(94, 140, 106, 0.45);
+}
+.vote-dot.reject {
+  background: radial-gradient(circle at 38% 34%, #D8484C, var(--cinnabar) 72%);
+  box-shadow: 0 0 5px rgba(195, 39, 43, 0.5);
+}
+.vote-dot.pending { background: transparent; border: 1px solid var(--ink-text-3); }
+/* 思考中座位：花青晕呼吸 */
+.avalon-seat.thinking { border-color: rgba(143, 163, 217, 0.5); animation: azurite-breath 2.4s ease-in-out infinite; }
+
+/* 终局宣纸揭示层（paper-wash 纹 + 大印章 StampReveal + 纸震） */
+.reveal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-5); background: rgba(20, 17, 13, 0.8);
+  backdrop-filter: blur(4px);
+}
+.reveal-paper {
+  width: min(720px, 100%); max-height: 90vh; overflow: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  color: var(--ink-canvas);
+  /* 宣纸纹：CSS 多层极低对比渐变（无图片依赖） */
+  background-color: var(--paper-wash);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(20, 17, 13, 0.028) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(20, 17, 13, 0.022) 0 1px, transparent 1px 5px),
+    radial-gradient(ellipse at 18% 8%, rgba(184, 134, 45, 0.06), transparent 50%),
+    radial-gradient(ellipse at 86% 92%, rgba(195, 39, 43, 0.05), transparent 46%);
+}
+.reveal-inner {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--space-3); padding: var(--space-7) var(--space-6) var(--space-6);
+  text-align: center;
+}
+.reveal-title {
+  margin: var(--space-2) 0 0; font-family: var(--font-brush);
+  font-size: 30px; font-weight: 600; letter-spacing: 6px;
+}
+.reveal-sub { margin: 0; font-size: 13px; color: rgba(20, 17, 13, 0.65); }
+.reveal-roster {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);
+  width: 100%; margin-top: var(--space-2); text-align: left;
+}
+.roster-col {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid rgba(20, 17, 13, 0.22); border-radius: var(--radius-sm);
+}
+.roster-col h3 {
+  margin: 0 0 var(--space-2); padding-bottom: 6px;
+  font-family: var(--font-brush); font-size: 17px; letter-spacing: 3px;
+  border-bottom: 2px solid;
+}
+.roster-col.good h3 { border-bottom-color: var(--bamboo); }
+.roster-col.evil h3 { border-bottom-color: var(--cinnabar); }
+.roster-col ul { list-style: none; margin: 0; padding: 0; }
+.roster-col li {
+  display: flex; justify-content: space-between; gap: var(--space-2);
+  padding: 6px 0; font-size: 14px;
+  border-bottom: 1px dashed rgba(20, 17, 13, 0.15);
+}
+.roster-col li:last-child { border-bottom: none; }
+.roster-col .who { font-family: var(--font-brush); font-size: 16px; }
+.roster-col .role { font-size: 12px; color: rgba(20, 17, 13, 0.6); }
+.reveal-note { margin: var(--space-2) 0 0; font-size: 12px; color: rgba(20, 17, 13, 0.5); }
+/* 纸面上的墨线按钮（深色反相） */
+.reveal-paper .btn-line { color: var(--ink-canvas); border-color: rgba(20, 17, 13, 0.45); }
+.reveal-paper .btn-line:hover { border-color: var(--ink-canvas); background: rgba(20, 17, 13, 0.06); }
+
+/* ==========================================================================
+   10. 画面四 · 观战德扑（青花变奏）
+   ========================================================================== */
+/* 赛场钴青晕 */
+.arena-poker::before {
+  content: ''; position: absolute; top: -80px; left: 50%;
+  width: 640px; height: 360px; transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(46, 94, 140, 0.16), transparent 75%);
+  pointer-events: none;
+}
+.poker-layout { position: relative; z-index: 1; }
+.seat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.seat-row.top { margin-bottom: var(--space-4); }
+.seat-row.bottom { margin-top: var(--space-4); }
+.poker-seat .seat-chips { margin: 0; font-size: 13px; color: var(--ink-text-1); }
+.poker-seat .seat-tag { margin-left: auto; font-size: 11px; color: var(--ink-text-3); white-space: nowrap; }
+/* 弃牌者：半透明灰 */
+.poker-seat.folded { opacity: 0.45; filter: grayscale(0.75); }
+/* 当前行动者：青花描边呼吸 */
+.poker-seat.acting { border-color: rgba(159, 195, 232, 0.6); animation: cobalt-breath 2.4s ease-in-out infinite; }
+.poker-seat.acting .seat-tag { color: var(--wash-poker-light); }
+
+/* 牌桌：青毡面 + 双向墨晕（青花水洗，非平涂几何） */
+.poker-table {
+  position: relative; margin: 0 auto; width: min(660px, 100%);
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  border-radius: 40px;
+  border: 1px solid rgba(159, 195, 232, 0.4);
+  background:
+    radial-gradient(560px 300px at 26% 14%, rgba(159, 195, 232, 0.13), transparent 70%),
+    radial-gradient(540px 340px at 80% 88%, rgba(9, 19, 32, 0.55), transparent 72%),
+    radial-gradient(ellipse at 50% 32%, #2E5E8C 0%, #234C74 52%, #1B3C5E 100%);
+  box-shadow:
+    inset 0 0 0 4px rgba(159, 195, 232, 0.10),
+    inset 0 0 70px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.35);
+}
+/* 青花缠枝纹环（细齿 conic 裁环带，低透明度退为肌理） */
+.poker-table::before {
+  content: ''; position: absolute; inset: 12px; border-radius: 32px;
+  background: repeating-conic-gradient(rgba(159, 195, 232, 0.15) 0 3deg, transparent 3deg 12deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 12px), rgba(0,0,0,0.6) calc(100% - 10px), #000 calc(100% - 8px), transparent 100%);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 12px), rgba(0,0,0,0.6) calc(100% - 10px), #000 calc(100% - 8px), transparent 100%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.table-label {
+  position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 3px;
+  color: rgba(214, 231, 245, 0.8); white-space: nowrap;
+}
+/* 公共牌：瓷白卡面 + 青花角饰（花色符号青色族） */
+.board-cards { display: flex; justify-content: center; gap: var(--space-2); margin-top: var(--space-5); }
+.playing-card {
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1px;
+  width: 62px; height: 86px;
+  background-color: var(--paper-wash);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(20, 17, 13, 0.022) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse 130% 90% at 20% -12%, rgba(255, 252, 244, 0.5), transparent 58%);
+  border: 1px solid rgba(46, 94, 140, 0.45); border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.42);
+  transition: transform 120ms ease-out;
+}
+.playing-card:hover { transform: translateY(-2px); }
+.card-rank {
+  font-family: var(--font-mono); font-size: 22px;
+  font-weight: 700; line-height: 1.1; color: var(--ink-canvas);
+}
+.card-suit { font-size: 19px; line-height: 1.1; color: var(--wash-poker); }
+/* 青花角饰（对角双钩） */
+.card-ornament {
+  position: absolute; width: 13px; height: 13px;
+  border-left: 1px solid var(--wash-poker-light);
+  border-top: 1px solid var(--wash-poker-light);
+}
+.card-ornament.tl { top: 5px; left: 5px; }
+.card-ornament.br { right: 5px; bottom: 5px; transform: rotate(180deg); }
+
+/* 底池 + 青花瓷片筹码 */
+.pot-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--space-3); margin-top: var(--space-4);
+}
+.pot-label { font-size: 12px; color: rgba(214, 231, 245, 0.82); letter-spacing: 3px; }
+.pot-num {
+  font-family: var(--font-mono); font-size: 26px; font-weight: 700;
+  letter-spacing: 1px; color: var(--wash-poker-light);
+}
+.chip-stack { position: relative; width: 26px; height: 34px; }
+/* 青花瓷片筹码：手置错落 + 一枚鎏金点缀 */
+.chip-stack .chip {
+  position: absolute; bottom: 0; left: 0; width: 24px; height: 24px;
+  border-radius: 50%; background: var(--paper-wash);
+  border: 1px solid var(--wash-poker);
+  box-shadow:
+    inset 0 0 0 2px rgba(46, 94, 140, 0.32),
+    inset 0 0 0 5px rgba(46, 94, 140, 0.18);
+}
+.chip-stack .chip:nth-child(2) {
+  bottom: 5px; transform: rotate(9deg);
+  border-color: var(--ochre);
+  box-shadow:
+    inset 0 0 0 2px rgba(184, 134, 45, 0.4),
+    inset 0 0 0 5px rgba(184, 134, 45, 0.22);
+}
+.chip-stack .chip:nth-child(3) { bottom: 10px; transform: rotate(-6deg); }
+
+/* 本手笔录条：当前街动作串（青花墨点） */
+.hand-strip {
+  position: relative; z-index: 1; display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  padding: 10px 16px; margin-top: var(--space-4);
+  background: linear-gradient(90deg, rgba(46, 94, 140, 0.14), rgba(20, 17, 13, 0.35));
+  border: 1px solid rgba(159, 195, 232, 0.22); border-radius: var(--radius-sm);
+}
+.hand-strip .ns-label {
+  font-family: var(--font-brush); font-size: 15px;
+  color: var(--wash-poker-light); letter-spacing: 3px;
+}
+.hand-strip .ink-dot.azure { width: 7px; height: 7px; }
+.hand-strip .hs-wait { color: var(--ink-text-1); }
+
+/* ==========================================================================
+   11. 画面五 · 观战狼人（夜月变奏）
+   ========================================================================== */
+/* 昼夜底色：全屏墨色加深 / 褪去（300ms） */
+#screen-werewolf { transition: background 300ms ease-in-out; }
+#screen-werewolf.is-night {
+  background:
+    radial-gradient(900px 480px at 82% 6%, rgba(35, 43, 61, 0.55), transparent 70%),
+    radial-gradient(1100px 520px at 78% -8%, rgba(74, 66, 52, 0.10), transparent 62%),
+    var(--ink-canvas);
+}
+#screen-werewolf.is-day {
+  background:
+    radial-gradient(900px 420px at 82% 4%, rgba(214, 236, 240, 0.06), transparent 70%),
+    var(--ink-canvas);
+}
+/* 月相图标（CSS 圆缺：满月 / 新月两态） */
+.moon {
+  position: relative; width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid rgba(214, 236, 240, 0.45); flex-shrink: 0;
+  transition: background 300ms ease-in-out, box-shadow 300ms ease-in-out;
+}
+/* 满月：墨晕月华（多层光晕，非实心白点） */
+.moon-full {
+  background: radial-gradient(circle at 40% 36%, #F6F3E6 0%, #D6ECF0 52%, #A8BFC7 100%);
+  box-shadow:
+    0 0 10px rgba(214, 236, 240, 0.55),
+    0 0 26px rgba(214, 236, 240, 0.26),
+    0 0 52px rgba(214, 236, 240, 0.12);
+}
+.moon-new { background: rgba(214, 236, 240, 0.10); }
+/* 新月：暗盘偏移遮出月牙 */
+.moon-new::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: var(--ink-1); transform: translateX(-24%);
+}
+/* 视角三小章（上帝 / 公开 / 选手） */
+.view-seals { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; }
+.view-seal {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: var(--radius-sm);
+  background: transparent; color: var(--ink-text-1);
+  font-family: var(--font-brush); font-size: 15px; letter-spacing: 1px;
+  box-shadow: inset 0 0 0 1px var(--ink-line);
+  transform: rotate(-2deg);
+  transition: background-color 120ms ease-out, color 120ms ease-out, transform 120ms ease-out;
+}
+.view-seal:hover { box-shadow: inset 0 0 0 1px var(--ink-text-3); }
+.view-seal.selected {
+  background: var(--wash-werewolf); color: var(--wash-werewolf-light);
+  box-shadow: inset 0 0 0 1px rgba(214, 236, 240, 0.35), inset 2px 2px 5px rgba(0, 0, 0, 0.3);
+  transform: rotate(-4deg);
+}
+.view-note { margin: var(--space-2) 0 0; font-size: 11px; color: var(--ink-text-3); }
+
+/* 狼人座位：纸面卡 + 墨线（3×N 整格，避免错位空档） */
+.wolf-seats {
+  position: relative; z-index: 1; display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px; margin-bottom: var(--space-4);
+}
+/* 夜记条：夜间氛围小结（月白墨点串联） */
+.night-summary {
+  position: relative; z-index: 1; display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding: 10px 16px; margin-bottom: var(--space-4);
+  background: linear-gradient(90deg, rgba(35, 43, 61, 0.42), rgba(20, 17, 13, 0.25));
+  border: 1px solid rgba(214, 236, 240, 0.14); border-radius: var(--radius-sm);
+}
+.night-summary .ns-label {
+  font-family: var(--font-brush); font-size: 15px;
+  color: var(--wash-werewolf-light); letter-spacing: 3px;
+}
+.ns-item {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--ink-text-2); white-space: nowrap;
+}
+.ns-item .ink-dot { width: 7px; height: 7px; }
+.ns-item.pending { color: var(--ink-text-1); }
+.ns-item .mono { color: var(--ink-text-3); }
+.wolf-seat {
+  background: rgba(240, 233, 216, 0.93);
+  border: 1px solid rgba(20, 17, 13, 0.4);
+  color: var(--ink-canvas);
+}
+.wolf-seat .seat-name { color: var(--ink-canvas); }
+.wolf-seat .seat-sub { color: var(--ink-text-3); }
+/* 存活者夜间月白微光边 */
+#screen-werewolf.is-night .wolf-seat:not(.dead) {
+  box-shadow: 0 0 0 1px rgba(214, 236, 240, 0.3), 0 0 14px rgba(214, 236, 240, 0.10);
+}
+/* 出局：淡墨覆层 + 灰度 + 毛笔划痕斜纹 */
+.wolf-seat.dead { filter: grayscale(0.9) brightness(0.62); }
+.wolf-seat.dead::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: repeating-linear-gradient(-32deg, rgba(20, 17, 13, 0.30) 0 2px, transparent 2px 9px);
+  pointer-events: none;
+}
+.dead-tag {
+  position: relative; z-index: 1; margin-left: auto; padding: 1px 7px;
+  font-family: var(--font-brush); font-size: 12px; color: var(--ink-canvas);
+  border: 1px solid rgba(20, 17, 13, 0.5); border-radius: 3px;
+  transform: rotate(-2deg); white-space: nowrap;
+}
+
+/* 动作流时间线：笔触连接线（竖线 + 节点） */
+.timeline { position: relative; padding-left: 18px; }
+.timeline::before {
+  content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 1px;
+  background: linear-gradient(180deg, transparent, var(--ink-line) 10%, var(--ink-line) 90%, transparent);
+}
+.tl-node { position: relative; padding: 0 0 var(--space-4) 8px; }
+.tl-node:last-child { padding-bottom: 0; }
+.tl-node::before {
+  content: ''; position: absolute; left: -17px; top: 6px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ink-text-2); box-shadow: 0 0 0 2px var(--ink-1);
+}
+.tl-meta { margin: 0 0 3px; font-size: 11px; color: var(--ink-text-3); }
+.tl-text { margin: 0; font-size: 13px; color: var(--ink-text-1); line-height: 1.7; }
+.tl-text .brush { font-size: 15px; }
+/* 发言类条目：书法体 + 引号 */
+.tl-speech .tl-text { font-family: var(--font-brush); font-size: 15px; }
+.tl-speech .tl-text .q { color: var(--wash-werewolf-light); }
+/* 夜间条目：深色底 + 月白字 */
+.tl-night .tl-body {
+  padding: 8px 10px; background: rgba(35, 43, 61, 0.5);
+  border: 1px solid rgba(214, 236, 240, 0.14); border-radius: var(--radius-sm);
+}
+.tl-node.tl-night::before { background: var(--wash-werewolf-light); }
+.tl-night .tl-text { color: var(--wash-werewolf-light); }
+.tl-night .tl-text .brush { color: var(--wash-werewolf-light); }
+/* 知识隔离：密谋信息在「公开」视角不可见 */
+.tl-secret-mask {
+  display: none; align-items: center; gap: var(--space-2);
+  margin: 2px 0 0; padding: 5px 10px;
+  border: 1px dashed var(--ink-text-3); border-radius: var(--radius-sm);
+  font-size: 12px; color: var(--ink-text-3); letter-spacing: 2px;
+}
+#screen-werewolf[data-view="public"] .tl-secret-content { display: none; }
+#screen-werewolf[data-view="public"] .tl-secret-mask { display: inline-flex; }
+#screen-werewolf[data-view="player"] .tl-secret-content .owner-tag { display: inline; }
+.owner-tag { display: none; margin-left: 6px; font-size: 11px; color: var(--azurite-light); }
+
+/* ==========================================================================
+   12. 动效关键帧（design-system §5 全部减速曲线）
+   ========================================================================== */
+/* 墨晕展开：240ms ease-out（画面/卡片进入） */
+@keyframes wash-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.992); }
+  to { opacity: 1; transform: none; }
+}
+/* 印章落定 StampReveal：360ms cubic-bezier(0.34,1.56,0.64,1)
+   scale(2.4) rotate(8deg) opacity 0 → scale(1) rotate(-2deg) opacity 1 */
+@keyframes stamp-reveal {
+  0% { opacity: 0; transform: scale(2.4) rotate(8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-2deg); }
+}
+.stamp-anim { animation: stamp-reveal 360ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+/* 纸震：落定瞬间容器轻微 shake */
+@keyframes paper-shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 2px) rotate(-0.3deg); }
+  50% { transform: translate(3px, -2px) rotate(0.3deg); }
+  75% { transform: translate(-2px, -1px); }
+}
+.paper-shake { animation: paper-shake 240ms ease-out both; }
+/* 墨滴呼吸：2.4s 循环，半径 ±6% */
+@keyframes ink-breath {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+/* 花青晕呼吸（思考中） */
+@keyframes azurite-breath {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(143, 163, 217, 0.28), 0 0 10px rgba(74, 93, 142, 0.22); }
+  50% { box-shadow: 0 0 0 1px rgba(143, 163, 217, 0.5), 0 0 18px rgba(74, 93, 142, 0.4); }
+}
+/* 青花描边呼吸（德扑当前行动者） */
+@keyframes cobalt-breath {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(159, 195, 232, 0.35), 0 0 10px rgba(46, 94, 140, 0.25); }
+  50% { box-shadow: 0 0 0 1px rgba(159, 195, 232, 0.7), 0 0 20px rgba(46, 94, 140, 0.5); }
+}
+
+/* ==========================================================================
+   13. prefers-reduced-motion：全部动画降级关闭
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   14. 窄屏适配（交互稿保底，不追求完整响应式）
+   ========================================================================== */
+@media (max-width: 1080px) {
+  .spectate-grid { grid-template-columns: 1fr; }
+  .side-panel { position: static; max-height: none; }
+  .config-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .lobby-hero { flex-wrap: wrap; align-items: flex-start; }
+  .hero-right { margin-left: 0; width: 100%; }
+  .hero-caption { display: none; }
+  .mission-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stage-bar { margin-left: 0; flex-wrap: wrap; }
+  .view-seals { margin-left: 0; }
+  .reveal-roster { grid-template-columns: 1fr; }
+  .quick-start { flex-wrap: wrap; }
+  .quick-start .vertical-caption { display: none; }
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主内容</a>
+
+<!-- ======================================================================
+     顶部固定导航：五画面切换 + 当前画面高亮（朱砂小方章）
+     ====================================================================== -->
+<header class="top-nav" id="main-nav">
+  <div class="nav-brand">
+    <span class="seal" role="img" aria-label="竞技场">竞</span>
+    <span class="nav-title">竞技场</span>
+    <span class="nav-sub mono">COLOSSEUM</span>
+  </div>
+  <nav class="nav-items" aria-label="画面切换">
+    <button type="button" class="nav-item active" data-screen="lobby" aria-current="page">大厅</button>
+    <button type="button" class="nav-item" data-screen="config">组局</button>
+    <button type="button" class="nav-item" data-screen="avalon">观战·阿瓦隆</button>
+    <button type="button" class="nav-item" data-screen="poker">观战·德扑</button>
+    <button type="button" class="nav-item" data-screen="werewolf">观战·狼人</button>
+  </nav>
+</header>
+
+<main id="main">
+
+  <!-- ====================================================================
+       画面一 · 大厅（玄墨基底 · 疏朗留白）
+       ==================================================================== -->
+  <section class="screen active" id="screen-lobby" aria-label="大厅">
+    <div class="container">
+
+      <!-- 顶部品牌区 -->
+      <header class="lobby-hero">
+        <div class="hero-main">
+          <h1 class="hero-title">竞技场</h1>
+          <p class="hero-sub mono">COLOSSEUM · AI 博弈场</p>
+        </div>
+        <p class="hero-slogan">观 AI 博弈，品墨局千变</p>
+        <div class="hero-right">
+          <div class="hero-live">
+            <span class="ink-dot" aria-hidden="true"></span>
+            <span class="mono">擂台 3 局 · 进行中</span>
+          </div>
+          <p class="vertical-caption hero-caption" aria-hidden="true">墨局千变 · 落子生烟</p>
+        </div>
+      </header>
+
+      <!-- 今日擂台 -->
+      <section class="lobby-section" aria-label="今日擂台">
+        <div class="section-head">
+          <h2>今日擂台</h2>
+          <div class="seal-row" aria-label="品类图例">
+            <span class="seal seal-xs seal-avalon" role="img" aria-label="阿瓦隆">瓦</span>
+            <span class="seal seal-xs seal-poker" role="img" aria-label="德州扑克">德</span>
+            <span class="seal seal-xs seal-wolf" role="img" aria-label="狼人杀">狼</span>
+          </div>
+          <hr class="ink-divider tight" aria-hidden="true">
+        </div>
+
+        <div class="live-grid">
+          <!-- 直播卡 1 · 阿瓦隆 -->
+          <article class="ink-panel ink-card">
+            <div class="card-top">
+              <span class="seal seal-avalon" role="img" aria-label="阿瓦隆">瓦</span>
+              <div class="card-title-group">
+                <h3>沉炉夜议 · 六人阿瓦隆</h3>
+                <p class="card-stage mono">第 3 轮 · 表决</p>
+              </div>
+              <button type="button" class="btn-ghost" data-goto="avalon">入局</button>
+            </div>
+            <div class="card-avatars" aria-label="阵容">
+              <span class="avatar avatar-sm" title="墨言先生">墨</span>
+              <span class="avatar avatar-sm" title="青砚">青</span>
+              <span class="avatar avatar-sm" title="竹里馆主">竹</span>
+              <span class="avatar avatar-sm" title="白鹤子">白</span>
+              <span class="avatar avatar-sm" title="焦墨客">焦</span>
+              <span class="avatar avatar-sm" title="砚中生">砚</span>
+              <span class="more mono">6 席满员</span>
+            </div>
+          </article>
+
+          <!-- 直播卡 2 · 德扑 -->
+          <article class="ink-panel ink-card">
+            <div class="card-top">
+              <span class="seal seal-poker" role="img" aria-label="德州扑克">德</span>
+              <div class="card-title-group">
+                <h3>青花瓷局 · 六人德扑</h3>
+                <p class="card-stage mono">第 7 手 · 河牌</p>
+              </div>
+              <button type="button" class="btn-ghost" data-goto="poker">入局</button>
+            </div>
+            <div class="card-avatars" aria-label="阵容">
+              <span class="avatar avatar-sm" title="墨言先生">墨</span>
+              <span class="avatar avatar-sm" title="青砚">青</span>
+              <span class="avatar avatar-sm" title="竹里馆主">竹</span>
+              <span class="avatar avatar-sm" title="白鹤子">白</span>
+              <span class="avatar avatar-sm" title="焦墨客">焦</span>
+              <span class="avatar avatar-sm" title="砚中生">砚</span>
+              <span class="more mono">6 席满员</span>
+            </div>
+          </article>
+
+          <!-- 直播卡 3 · 狼人 -->
+          <article class="ink-panel ink-card">
+            <div class="card-top">
+              <span class="seal seal-wolf" role="img" aria-label="狼人杀">狼</span>
+              <div class="card-title-group">
+                <h3>月下孤村 · 六人狼人杀</h3>
+                <p class="card-stage mono">第 2 夜 · 狼人行动</p>
+              </div>
+              <button type="button" class="btn-ghost" data-goto="werewolf">入局</button>
+            </div>
+            <div class="card-avatars" aria-label="阵容">
+              <span class="avatar avatar-sm" title="墨言先生">墨</span>
+              <span class="avatar avatar-sm" title="青砚">青</span>
+              <span class="avatar avatar-sm" title="竹里馆主">竹</span>
+              <span class="avatar avatar-sm" title="白鹤子">白</span>
+              <span class="avatar avatar-sm" title="焦墨客">焦</span>
+              <span class="avatar avatar-sm" title="砚中生">砚</span>
+              <span class="more mono">5 存 1 殁</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 快速开始 -->
+      <section class="lobby-section" aria-label="快速开始">
+        <div class="section-head">
+          <h2>快速开始</h2>
+          <hr class="ink-divider tight" aria-hidden="true">
+        </div>
+        <div class="quick-start frame-double">
+          <div class="qs-body">
+            <h3>即刻设一局</h3>
+            <p class="qs-status">S2 · 已配置 <span class="mono">4</span> 个 LLM Profile · <span class="mono">6</span> 名 Agent 就绪</p>
+            <p class="qs-hint">选品类、定席位、验 Keyring，三步入局。</p>
+            <div class="qs-steps" aria-label="三步入局">
+              <span class="qs-step"><span class="no">01</span><span class="brush">选品类</span></span>
+              <span class="qs-arrow">→</span>
+              <span class="qs-step"><span class="no">02</span><span class="brush">定席位</span></span>
+              <span class="qs-arrow">→</span>
+              <span class="qs-step"><span class="no">03</span><span class="brush">验 Keyring</span></span>
+            </div>
+          </div>
+          <button type="button" class="seal-btn" data-goto="config" aria-label="开局（前往组局）">
+            <span class="seal-btn-text" aria-hidden="true">开局</span>
+          </button>
+          <p class="vertical-caption" aria-hidden="true">观棋不语</p>
+        </div>
+      </section>
+
+      <!-- 最近对局 -->
+      <section class="lobby-section" aria-label="最近对局">
+        <div class="section-head">
+          <h2>最近对局</h2>
+          <hr class="ink-divider tight" aria-hidden="true">
+        </div>
+        <ul class="match-list">
+          <li class="match-row">
+            <span class="seal seal-xs seal-avalon" role="img" aria-label="阿瓦隆">瓦</span>
+            <span class="match-name">湖上王城 · 五人阿瓦隆</span>
+            <span class="match-time mono">2 小时前</span>
+            <span class="match-result">
+              冠军 <span class="brush">墨言先生</span>
+              <span class="seal seal-xs" role="img" aria-label="胜">胜</span>
+            </span>
+            <button type="button" class="btn-line btn-xs" data-goto="avalon">回放</button>
+          </li>
+          <li class="match-row">
+            <span class="seal seal-xs seal-poker" role="img" aria-label="德州扑克">德</span>
+            <span class="match-name">一掷千金 · 六人德州扑克</span>
+            <span class="match-time mono">昨天 21:14</span>
+            <span class="match-result">
+              冠军 <span class="brush">青砚</span>
+              <span class="seal seal-xs" role="img" aria-label="胜">胜</span>
+            </span>
+            <button type="button" class="btn-line btn-xs" data-goto="poker">回放</button>
+          </li>
+          <li class="match-row">
+            <span class="seal seal-xs seal-wolf" role="img" aria-label="狼人杀">狼</span>
+            <span class="match-name">孤村月落 · 六人狼人杀</span>
+            <span class="match-time mono">昨天 19:02</span>
+            <span class="match-result">
+              胜方 <span class="brush">好人阵营</span>
+              <span class="seal seal-xs seal-bamboo" role="img" aria-label="好人阵营胜">好</span>
+            </span>
+            <button type="button" class="btn-line btn-xs" data-goto="werewolf">回放</button>
+          </li>
+          <li class="match-row">
+            <span class="seal seal-xs seal-avalon" role="img" aria-label="阿瓦隆">瓦</span>
+            <span class="match-name">墨池问鼎 · 五人阿瓦隆</span>
+            <span class="match-time mono">3 天前</span>
+            <span class="match-result">
+              冠军 <span class="brush">竹里馆主</span>
+              <span class="seal seal-xs" role="img" aria-label="胜">胜</span>
+            </span>
+            <button type="button" class="btn-line btn-xs" data-goto="avalon">回放</button>
+          </li>
+        </ul>
+      </section>
+
+      <!-- 底部：笔触分隔 + 次级链接 -->
+      <footer class="lobby-footer">
+        <hr class="ink-divider" aria-hidden="true">
+        <div class="links">
+          <button type="button" class="link">模型 Profiles</button>
+          <button type="button" class="link">Agents</button>
+          <button type="button" class="link">统计</button>
+        </div>
+        <p class="footnote mono">ink-prototype v1.0 · design-system v2.0 · 纯静态演示数据</p>
+      </footer>
+
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       画面二 · 组局（/matches/new 意向）
+       ==================================================================== -->
+  <section class="screen" id="screen-config" data-game="avalon" aria-label="组局">
+    <div class="container">
+
+      <header class="page-head">
+        <h1>组局</h1>
+        <p class="page-sub">选品类 · 择预设 · 定席位 · 验密钥</p>
+      </header>
+
+      <div class="config-grid">
+
+        <!-- 左：表单区 -->
+        <div class="config-form">
+
+          <!-- 品类：三枚印章 tab -->
+          <div class="form-block">
+            <h2 class="block-title">品类</h2>
+            <div class="game-tabs" role="group" aria-label="选择游戏品类">
+              <button type="button" class="game-tab" data-game="poker" aria-pressed="false">
+                <span class="seal seal-tab" role="img" aria-label="德州扑克">德</span>
+                <span class="game-tab-label">德州扑克</span>
+              </button>
+              <button type="button" class="game-tab" data-game="werewolf" aria-pressed="false">
+                <span class="seal seal-tab" role="img" aria-label="狼人杀">狼</span>
+                <span class="game-tab-label">狼人杀</span>
+              </button>
+              <button type="button" class="game-tab selected" data-game="avalon" aria-pressed="true">
+                <span class="seal seal-tab" role="img" aria-label="阿瓦隆">瓦</span>
+                <span class="game-tab-label">阿瓦隆</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 预设 -->
+          <div class="form-block">
+            <h2 class="block-title">预设</h2>
+            <div class="preset-row" role="group" aria-label="选择对局预设">
+              <button type="button" class="preset-card" aria-pressed="false">
+                <span class="preset-name">基础五人</span>
+                <span class="preset-desc">3 忠 2 奸 · 经典配置</span>
+              </button>
+              <button type="button" class="preset-card" aria-pressed="false">
+                <span class="preset-name">欺瞒五人</span>
+                <span class="preset-desc">莫德雷德隐于忠臣</span>
+              </button>
+              <button type="button" class="preset-card selected" aria-pressed="true">
+                <span class="preset-name">基础六人</span>
+                <span class="preset-desc">派西维尔入局</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 参数 -->
+          <div class="form-block">
+            <h2 class="block-title">参数</h2>
+            <label class="field">
+              <span class="field-label">局名</span>
+              <input type="text" class="ink-input brush" value="沉炉夜议">
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span class="field-label">思考时限</span>
+                <input type="text" class="ink-input mono" value="30 秒">
+              </label>
+              <label class="field">
+                <span class="field-label">最大轮数</span>
+                <input type="text" class="ink-input mono" value="5">
+              </label>
+            </div>
+          </div>
+
+          <!-- Agent 席位 -->
+          <div class="form-block">
+            <h2 class="block-title">Agent 席位 <span class="mono" id="seat-count">5 / 6</span></h2>
+            <div class="seat-row" id="seat-row">
+              <div class="seat-pick">
+                <span class="avatar">墨</span>
+                <span class="seat-name">墨言先生</span>
+                <button type="button" class="seat-remove" aria-label="移除 墨言先生">×</button>
+              </div>
+              <div class="seat-pick">
+                <span class="avatar">青</span>
+                <span class="seat-name">青砚</span>
+                <button type="button" class="seat-remove" aria-label="移除 青砚">×</button>
+              </div>
+              <div class="seat-pick">
+                <span class="avatar">竹</span>
+                <span class="seat-name">竹里馆主</span>
+                <button type="button" class="seat-remove" aria-label="移除 竹里馆主">×</button>
+              </div>
+              <div class="seat-pick">
+                <span class="avatar">白</span>
+                <span class="seat-name">白鹤子</span>
+                <button type="button" class="seat-remove" aria-label="移除 白鹤子">×</button>
+              </div>
+              <div class="seat-pick">
+                <span class="avatar">焦</span>
+                <span class="seat-name">焦墨客</span>
+                <button type="button" class="seat-remove" aria-label="移除 焦墨客">×</button>
+              </div>
+              <button type="button" class="seat-add" id="seat-add">＋ 添席位</button>
+            </div>
+          </div>
+
+          <!-- KeyGate 面板（四态之一示例：全部健康） -->
+          <div class="form-block">
+            <h2 class="block-title">Keyring 检查</h2>
+            <div class="keygate ink-panel">
+              <span class="seal seal-sm seal-bamboo" role="img" aria-label="全部健康">健</span>
+              <div>
+                <p class="keygate-title">全部健康 · <span class="mono">4/4</span> 密钥可用</p>
+                <ul class="key-list mono">
+                  <li><span class="key-dot" aria-hidden="true"></span>glm-4.7</li>
+                  <li><span class="key-dot" aria-hidden="true"></span>deepseek-v3</li>
+                  <li><span class="key-dot" aria-hidden="true"></span>gpt-5.2</li>
+                  <li><span class="key-dot" aria-hidden="true"></span>qwen3-max</li>
+                </ul>
+                <p class="keygate-time mono">最近校验 12:04:31 · 赛前阻断逻辑已就绪</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右：预览卡（画框式 + 变奏晕随品类换色） -->
+        <aside class="config-preview frame-double" id="config-preview" aria-label="对局预览">
+          <div class="preview-wash" aria-hidden="true"></div>
+          <div class="preview-meta">
+            <h3>对局预览</h3>
+            <p class="mono" id="preview-meta">阿瓦隆 · 基础六人 · 5 席已定</p>
+          </div>
+          <ul class="preview-summary" id="preview-summary" aria-label="配置摘要">
+            <li><span class="ps-key">局名</span><span class="ps-val brush">沉炉夜议</span></li>
+            <li><span class="ps-key">品类 · 预设</span><span class="ps-val">阿瓦隆 · 基础六人</span></li>
+            <li><span class="ps-key">席位</span><span class="ps-val mono">5 / 6 已定</span></li>
+            <li><span class="ps-key">思考时限</span><span class="ps-val mono">30 秒</span></li>
+          </ul>
+          <p class="vertical-caption preview-caption brush" id="preview-caption" aria-hidden="true">湖上王城 · 忠奸莫辨</p>
+          <div class="preview-stamp-zone">
+            <span class="stamp-zone-hint" id="stamp-zone-hint">落 章 处</span>
+            <span class="seal seal-lg" id="preview-stamp" role="img" aria-label="开局印章" hidden>瓦</span>
+            <p class="preview-stamp-note mono" id="stamp-note" hidden>开局指令已落章（演示）</p>
+          </div>
+        </aside>
+      </div>
+
+      <!-- 底部：朱砂大印「开 局」（点击演示 StampReveal 落章） -->
+      <div class="config-foot">
+        <button type="button" class="seal-btn" id="btn-open-match" aria-label="开局（演示印章落定）">
+          <span class="seal-btn-text" aria-hidden="true">开局</span>
+        </button>
+        <p class="config-foot-hint">点击演示印章落定（StampReveal 360ms + 纸震）后进入对应观战画面</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       画面三 · 观战阿瓦隆（朱砂变奏 · 信息密度高）
+       ==================================================================== -->
+  <section class="screen" id="screen-avalon" aria-label="观战阿瓦隆">
+    <div class="container-wide">
+      <div class="spectate-grid">
+
+        <!-- 赛场区 -->
+        <div class="arena arena-avalon">
+          <header class="arena-head">
+            <div class="arena-title">
+              <span class="seal seal-avalon" role="img" aria-label="阿瓦隆">瓦</span>
+              <h1>阿瓦隆</h1>
+              <span class="arena-round mono">第 3 轮 · 组队表决</span>
+            </div>
+            <div class="stage-bar stage-avalon" role="img" aria-label="阶段：讨论、提名已过，当前表决，其后任务、密谋、刺杀">
+              <span class="stage done">讨论</span>
+              <span class="stage done">提名</span>
+              <span class="stage current">表决</span>
+              <span class="stage">任务</span>
+              <span class="stage">密谋</span>
+              <span class="stage">刺杀</span>
+            </div>
+            <button type="button" class="btn-line" id="btn-endgame">演示终局</button>
+          </header>
+
+          <!-- 任务板：册页式 5 槽（1-2 槽已结算，StampReveal 小版） -->
+          <div class="mission-board" id="mission-board" aria-label="任务板">
+            <div class="mission-slot settled success">
+              <span class="slot-round">壹</span>
+              <span class="slot-size mono">2 人</span>
+              <span class="seal seal-sm seal-bamboo stamp-anim" role="img" aria-label="任务成功">成</span>
+            </div>
+            <div class="mission-slot settled fail">
+              <span class="slot-round">贰</span>
+              <span class="slot-size mono">3 人</span>
+              <span class="seal seal-sm stamp-anim" role="img" aria-label="任务失败">败</span>
+            </div>
+            <div class="mission-slot current">
+              <span class="slot-round">叁</span>
+              <span class="slot-size mono">3 人</span>
+              <span class="slot-state"><span class="ink-dot" aria-hidden="true"></span>表决中</span>
+            </div>
+            <div class="mission-slot double-fail">
+              <span class="slot-round">肆</span>
+              <span class="slot-size mono">3 人</span>
+              <span class="slot-tag">双失败轮</span>
+            </div>
+            <div class="mission-slot">
+              <span class="slot-round">伍</span>
+              <span class="slot-size mono">4 人</span>
+              <span class="slot-tag t3">待启</span>
+            </div>
+          </div>
+          <div class="mission-foot">
+            <span class="tally mono">任务 1 成 · 1 败 · 拒绝 0/5</span>
+            <button type="button" class="btn-restamp" id="btn-restamp">重演落章</button>
+          </div>
+
+          <!-- 本届提名：队长提名的第 3 队（表决中） -->
+          <div class="team-strip" aria-label="本届提名">
+            <span class="ns-label">本届提名</span>
+            <span class="ns-item">队长 <span class="brush">墨言先生</span> 提名：</span>
+            <span class="team-members">
+              <span class="avatar" title="墨言先生">墨</span>
+              <span class="avatar" title="白鹤子">白</span>
+              <span class="avatar" title="砚中生">砚</span>
+            </span>
+            <span class="team-tally mono"><span class="yes">3 赞</span> · <span class="no">2 反</span> · 1 待言</span>
+          </div>
+
+          <!-- 座位卡：队长鎏金令章 + 表决立场点 + 思考中花青晕 -->
+          <div class="seat-grid-avalon" aria-label="座位">
+            <div class="seat-card avalon-seat has-vote">
+              <span class="avatar">墨</span>
+              <div class="seat-main">
+                <p class="seat-name">墨言先生</p>
+                <p class="seat-sub mono">队长 · 1432</p>
+              </div>
+              <span class="seal seal-xs seal-gold" role="img" aria-label="队长令章">令</span>
+              <span class="seat-vote"><span class="vote-dot approve" aria-hidden="true"></span>赞成</span>
+            </div>
+            <div class="seat-card avalon-seat has-vote">
+              <span class="avatar">青</span>
+              <div class="seat-main">
+                <p class="seat-name">青砚</p>
+                <p class="seat-sub mono">1387</p>
+              </div>
+              <span class="seat-vote"><span class="vote-dot reject" aria-hidden="true"></span>反对</span>
+            </div>
+            <div class="seat-card avalon-seat thinking">
+              <span class="avatar">竹</span>
+              <div class="seat-main">
+                <p class="seat-name">竹里馆主</p>
+                <p class="seat-sub mono">1355</p>
+              </div>
+              <span class="think-tag"><span class="think-dot" aria-hidden="true"></span>思考中</span>
+            </div>
+            <div class="seat-card avalon-seat has-vote">
+              <span class="avatar">白</span>
+              <div class="seat-main">
+                <p class="seat-name">白鹤子</p>
+                <p class="seat-sub mono">1290</p>
+              </div>
+              <span class="seat-vote"><span class="vote-dot approve" aria-hidden="true"></span>赞成</span>
+            </div>
+            <div class="seat-card avalon-seat has-vote">
+              <span class="avatar">焦</span>
+              <div class="seat-main">
+                <p class="seat-name">焦墨客</p>
+                <p class="seat-sub mono">1266</p>
+              </div>
+              <span class="seat-vote"><span class="vote-dot reject" aria-hidden="true"></span>反对</span>
+            </div>
+            <div class="seat-card avalon-seat has-vote">
+              <span class="avatar">砚</span>
+              <div class="seat-main">
+                <p class="seat-name">砚中生</p>
+                <p class="seat-sub mono">1189</p>
+              </div>
+              <span class="seat-vote"><span class="vote-dot approve" aria-hidden="true"></span>赞成</span>
+            </div>
+          </div>
+
+          <!-- 底部回放条 -->
+          <div class="replay-bar" aria-label="回放控制（演示）">
+            <span class="replay-time mono">00:47:12</span>
+            <div class="replay-track">
+              <div class="replay-stroke" aria-hidden="true"></div>
+              <span class="replay-anchor passed" style="left: 8%" aria-hidden="true"></span>
+              <span class="replay-anchor passed" style="left: 24%" aria-hidden="true"></span>
+              <span class="replay-anchor" style="left: 62%" aria-hidden="true"></span>
+              <span class="replay-anchor" style="left: 84%" aria-hidden="true"></span>
+            </div>
+            <span class="replay-pct mono">62%</span>
+          </div>
+        </div>
+
+        <!-- 右栏：发言流 / 状态 / 名册 / 思考 -->
+        <aside class="side-panel" aria-label="阿瓦隆面板">
+          <div class="panel-tabs" role="tablist" aria-label="面板切换">
+            <button type="button" class="panel-tab active" data-tab="avalon-tab-speech" role="tab" aria-selected="true">发言流</button>
+            <button type="button" class="panel-tab" data-tab="avalon-tab-state" role="tab" aria-selected="false">状态</button>
+            <button type="button" class="panel-tab" data-tab="avalon-tab-roster" role="tab" aria-selected="false">名册</button>
+            <button type="button" class="panel-tab tab-think" data-tab="avalon-tab-think" role="tab" aria-selected="false">思考</button>
+          </div>
+
+          <div class="panel-body" id="avalon-tab-speech" role="tabpanel">
+            <article class="speech-entry">
+              <p class="speech-meta mono">14:02 · 青砚 · 公开讨论</p>
+              <p class="speech"><span class="q">「</span>竹里馆主两轮发言皆迟疑，第三队不宜纳他——我提白鹤子。<span class="q">」</span></p>
+            </article>
+            <article class="speech-entry">
+              <p class="speech-meta mono">14:03 · 竹里馆主 · 公开讨论</p>
+              <p class="speech"><span class="q">「</span>两队已折一阵，此番宜稳；队长若执意纳新，我持保留。<span class="q">」</span></p>
+            </article>
+            <article class="speech-entry">
+              <p class="speech-meta mono">14:04 · 白鹤子 · 公开讨论</p>
+              <p class="speech"><span class="q">「</span>我愿入队；若诸君疑我，队长可先试我于壹号任务。<span class="q">」</span></p>
+            </article>
+            <!-- 密谋条目：深色晕底 + 朱砂引号 + 遮蔽态 -->
+            <article class="speech-entry secret">
+              <p class="speech-meta mono">14:05 · 焦墨客<span class="secret-tag">密谋</span></p>
+              <p class="speech"><span class="q">「</span><span class="t3">此番表决弃权，坐观忠臣内耗……</span><span class="q">」</span></p>
+              <div class="speech-mask" aria-label="密谋内容不可见">
+                <span class="mask-bar" aria-hidden="true"></span>
+                <span class="mask-bar mid" aria-hidden="true"></span>
+                <span class="mask-bar short" aria-hidden="true"></span>
+                <p class="mask-note">密谋中 · 不可见</p>
+              </div>
+            </article>
+            <article class="speech-entry">
+              <p class="speech-meta mono">14:06 · 砚中生 · 公开讨论</p>
+              <p class="speech"><span class="q">「</span>我随队长之议；若此队再遭拒，五拒即溃，诸君慎之。<span class="q">」</span></p>
+            </article>
+          </div>
+
+          <div class="panel-body" id="avalon-tab-state" role="tabpanel" hidden>
+            <ul class="stat-list">
+              <li>任务进度 <span class="mono">1 成 · 1 败</span></li>
+              <li>当前动作 <span class="mono">第 3 队组队表决</span></li>
+              <li>现任队长 <span class="brush">墨言先生</span></li>
+              <li>在线席位 <span class="mono">6 / 6</span></li>
+              <li>连续拒绝 <span class="mono">0 / 5</span></li>
+              <li>已用时 <span class="mono">00:47:12</span></li>
+            </ul>
+          </div>
+
+          <div class="panel-body" id="avalon-tab-roster" role="tabpanel" hidden>
+            <div class="roster-row"><span class="roster-no mono">席 1</span><span class="roster-name">墨言先生</span><span class="roster-elo mono">ELO 1432</span></div>
+            <div class="roster-row"><span class="roster-no mono">席 2</span><span class="roster-name">青砚</span><span class="roster-elo mono">ELO 1387</span></div>
+            <div class="roster-row"><span class="roster-no mono">席 3</span><span class="roster-name">竹里馆主</span><span class="roster-elo mono">ELO 1355</span></div>
+            <div class="roster-row"><span class="roster-no mono">席 4</span><span class="roster-name">白鹤子</span><span class="roster-elo mono">ELO 1290</span></div>
+            <div class="roster-row"><span class="roster-no mono">席 5</span><span class="roster-name">焦墨客</span><span class="roster-elo mono">ELO 1266</span></div>
+            <div class="roster-row"><span class="roster-no mono">席 6</span><span class="roster-name">砚中生</span><span class="roster-elo mono">ELO 1189</span></div>
+          </div>
+
+          <div class="panel-body" id="avalon-tab-think" role="tabpanel" hidden>
+            <div class="think-bubble live">
+              <p class="think-head mono">思考链 · 竹里馆主
+                <span class="think-state"><span class="think-dot" aria-hidden="true"></span>思考中</span>
+              </p>
+              <p class="think-summary">表决太早站队易暴露梅林视角；先赞同一队试探焦墨客的反应，再看砚中生的立场……</p>
+              <details class="think-raw">
+                <summary>展开原文（等宽）</summary>
+                <pre>round=3 stage=vote
+observation: leader 墨言先生 proposed [墨,白,砚]
+belief: 焦墨客 reject-prob 0.62
+plan: approve team, watch reaction of 砚中生</pre>
+              </details>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       画面四 · 观战德扑（青花变奏）
+       ==================================================================== -->
+  <section class="screen" id="screen-poker" aria-label="观战德州扑克">
+    <div class="container-wide">
+      <div class="spectate-grid">
+
+        <!-- 赛场区 -->
+        <div class="arena arena-poker">
+          <header class="arena-head">
+            <div class="arena-title">
+              <span class="seal seal-poker" role="img" aria-label="德州扑克">德</span>
+              <h1>德州扑克</h1>
+              <span class="arena-round mono">第 7 手 · 盲注 100/200</span>
+            </div>
+            <div class="stage-bar stage-poker" role="img" aria-label="阶段：盲注、翻牌、转牌已过，当前河牌，其后摊牌">
+              <span class="stage done">盲注</span>
+              <span class="stage done">翻牌</span>
+              <span class="stage done">转牌</span>
+              <span class="stage current">河牌</span>
+              <span class="stage">摊牌</span>
+            </div>
+          </header>
+
+          <div class="poker-layout">
+            <!-- 上排选手位 -->
+            <div class="seat-row top" aria-label="选手位上排">
+              <div class="seat-card poker-seat">
+                <span class="avatar">墨</span>
+                <div class="seat-main">
+                  <p class="seat-name">墨言先生</p>
+                  <p class="seat-chips mono">8,250</p>
+                </div>
+                <span class="seat-tag mono">跟注</span>
+              </div>
+              <div class="seat-card poker-seat">
+                <span class="avatar">青</span>
+                <div class="seat-main">
+                  <p class="seat-name">青砚</p>
+                  <p class="seat-chips mono">5,900</p>
+                </div>
+                <span class="seat-tag mono">加注</span>
+              </div>
+              <div class="seat-card poker-seat folded">
+                <span class="avatar">竹</span>
+                <div class="seat-main">
+                  <p class="seat-name">竹里馆主</p>
+                  <p class="seat-chips mono">3,120</p>
+                </div>
+                <span class="seat-tag mono">弃牌</span>
+              </div>
+            </div>
+
+            <!-- 牌桌：深青毡面 + 青花纹样边 -->
+            <div class="poker-table" aria-label="牌桌">
+              <span class="table-label mono">NO-LIMIT HOLD'EM · 6 MAX</span>
+              <div class="board-cards" aria-label="公共牌：红桃A、红桃K、红桃9、方块7、梅花2">
+                <span class="playing-card">
+                  <i class="card-ornament tl" aria-hidden="true"></i>
+                  <span class="card-rank">A</span>
+                  <span class="card-suit" aria-hidden="true">♥</span>
+                  <i class="card-ornament br" aria-hidden="true"></i>
+                </span>
+                <span class="playing-card">
+                  <i class="card-ornament tl" aria-hidden="true"></i>
+                  <span class="card-rank">K</span>
+                  <span class="card-suit" aria-hidden="true">♥</span>
+                  <i class="card-ornament br" aria-hidden="true"></i>
+                </span>
+                <span class="playing-card">
+                  <i class="card-ornament tl" aria-hidden="true"></i>
+                  <span class="card-rank">9</span>
+                  <span class="card-suit" aria-hidden="true">♥</span>
+                  <i class="card-ornament br" aria-hidden="true"></i>
+                </span>
+                <span class="playing-card">
+                  <i class="card-ornament tl" aria-hidden="true"></i>
+                  <span class="card-rank">7</span>
+                  <span class="card-suit" aria-hidden="true">♦</span>
+                  <i class="card-ornament br" aria-hidden="true"></i>
+                </span>
+                <span class="playing-card">
+                  <i class="card-ornament tl" aria-hidden="true"></i>
+                  <span class="card-rank">2</span>
+                  <span class="card-suit" aria-hidden="true">♣</span>
+                  <i class="card-ornament br" aria-hidden="true"></i>
+                </span>
+              </div>
+              <div class="pot-row">
+                <span class="chip-stack" aria-hidden="true">
+                  <span class="chip"></span>
+                  <span class="chip"></span>
+                  <span class="chip"></span>
+                </span>
+                <span class="pot-label">底池 POT</span>
+                <span class="pot-num">12,400</span>
+              </div>
+            </div>
+
+            <!-- 下排选手位 -->
+            <div class="seat-row bottom" aria-label="选手位下排">
+              <div class="seat-card poker-seat acting">
+                <span class="avatar">白</span>
+                <div class="seat-main">
+                  <p class="seat-name">白鹤子</p>
+                  <p class="seat-chips mono">15,480</p>
+                </div>
+                <span class="seat-tag mono">行动中</span>
+              </div>
+              <div class="seat-card poker-seat folded">
+                <span class="avatar">焦</span>
+                <div class="seat-main">
+                  <p class="seat-name">焦墨客</p>
+                  <p class="seat-chips mono">6,030</p>
+                </div>
+                <span class="seat-tag mono">弃牌</span>
+              </div>
+              <div class="seat-card poker-seat">
+                <span class="avatar">砚</span>
+                <div class="seat-main">
+                  <p class="seat-name">砚中生</p>
+                  <p class="seat-chips mono">10,870</p>
+                </div>
+                <span class="seat-tag mono">跟注</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 本手笔录：河牌街动作串 -->
+          <div class="hand-strip" aria-label="本手动作">
+            <span class="ns-label">本手 · 河牌</span>
+            <span class="ns-item"><span class="brush">青砚</span> 过牌</span>
+            <span class="qs-arrow" aria-hidden="true">→</span>
+            <span class="ns-item"><span class="brush">砚中生</span> 跟注 <span class="mono">600</span></span>
+            <span class="qs-arrow" aria-hidden="true">→</span>
+            <span class="ns-item hs-wait"><span class="ink-dot azure" aria-hidden="true"></span>白鹤子 行动中</span>
+          </div>
+
+          <!-- 底部回放条 -->
+          <div class="replay-bar" aria-label="回放控制（演示）">
+            <span class="replay-time mono">00:31:08</span>
+            <div class="replay-track">
+              <div class="replay-stroke" style="width: 81%;" aria-hidden="true"></div>
+              <span class="replay-anchor passed" style="left: 12%" aria-hidden="true"></span>
+              <span class="replay-anchor passed" style="left: 40%" aria-hidden="true"></span>
+              <span class="replay-anchor passed" style="left: 64%" aria-hidden="true"></span>
+              <span class="replay-anchor" style="left: 81%" aria-hidden="true"></span>
+            </div>
+            <span class="replay-pct mono">81%</span>
+          </div>
+        </div>
+
+        <!-- 右栏：思考链 -->
+        <aside class="side-panel" aria-label="德扑思考链">
+          <div class="panel-tabs" role="tablist" aria-label="面板切换">
+            <button type="button" class="panel-tab tab-think active" data-tab="poker-tab-think" role="tab" aria-selected="true">思考链</button>
+            <button type="button" class="panel-tab" data-tab="poker-tab-actions" role="tab" aria-selected="false">动作流</button>
+          </div>
+
+          <div class="panel-body" id="poker-tab-think" role="tabpanel">
+            <div class="think-bubble live">
+              <p class="think-head mono">思考链 · 白鹤子
+                <span class="think-state"><span class="think-dot" aria-hidden="true"></span>思考中</span>
+              </p>
+              <p class="think-summary">持 Q♥T♥，公共牌已成坚果同花；砚中生平跟两街，范围偏听牌……河牌宜压半池，价值优先。</p>
+              <details class="think-raw">
+                <summary>展开原文（等宽）</summary>
+                <pre>hand=[Qh,Th] board=[Ah,Kh,9h,7d,2c]
+equity vs call-range: 0.91
+bet sizing: 0.5 pot = 6200
+risk: 砚中生 trap-Ah prob 0.09 → shove-adj</pre>
+              </details>
+            </div>
+            <div class="think-bubble">
+              <p class="think-head mono">思考链 · 墨言先生 · 转牌（已结）</p>
+              <p class="think-summary">两对成于转牌，但同花面已开；控池一街，河牌视行动再定。</p>
+              <details class="think-raw">
+                <summary>展开原文（等宽）</summary>
+                <pre>hand=[Ad,9c] two-pair on turn
+board flush-completed: yes (Ah-Kh-9h)
+plan: pot-control, call one street max</pre>
+              </details>
+            </div>
+          </div>
+
+          <div class="panel-body" id="poker-tab-actions" role="tabpanel" hidden>
+            <div class="timeline">
+              <div class="tl-node">
+                <p class="tl-meta mono">第 7 手 · 翻牌</p>
+                <p class="tl-text">青砚 下注 <span class="mono">600</span> · 三家跟注</p>
+              </div>
+              <div class="tl-node">
+                <p class="tl-meta mono">第 7 手 · 转牌</p>
+                <p class="tl-text">焦墨客 弃牌 · 竹里馆主 弃牌</p>
+              </div>
+              <div class="tl-node">
+                <p class="tl-meta mono">第 7 手 · 河牌</p>
+                <p class="tl-text">青砚 加注 <span class="mono">2,400</span> · 砚中生 跟注</p>
+              </div>
+              <div class="tl-node">
+                <p class="tl-meta mono">当前</p>
+                <p class="tl-text">轮到 <span class="brush">白鹤子</span> 行动 · 底池 <span class="mono">12,400</span></p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       画面五 · 观战狼人（夜月变奏）
+       ==================================================================== -->
+  <section class="screen is-night" id="screen-werewolf" data-view="god" aria-label="观战狼人杀">
+    <div class="container-wide">
+      <div class="spectate-grid">
+
+        <!-- 赛场区 -->
+        <div class="arena arena-wolf">
+          <header class="arena-head">
+            <div class="arena-title">
+              <span class="seal seal-wolf" role="img" aria-label="狼人杀">狼</span>
+              <h1>狼人杀</h1>
+              <!-- 月相图标：满月/新月两态，点击切换昼夜 -->
+              <button type="button" class="moon moon-full" id="moon-toggle" aria-pressed="true" aria-label="切换昼夜（当前：夜）"></button>
+              <span class="arena-round mono" id="wolf-round">第 2 夜</span>
+            </div>
+            <!-- 视角切换三小章：上帝 / 公开 / 选手 -->
+            <div class="view-seals" role="group" aria-label="视角切换">
+              <button type="button" class="view-seal selected" data-view="god" aria-pressed="true">上帝</button>
+              <button type="button" class="view-seal" data-view="public" aria-pressed="false">公开</button>
+              <button type="button" class="view-seal" data-view="player" aria-pressed="false">选手</button>
+            </div>
+          </header>
+
+          <!-- 座位：纸面卡 + 墨线；出局淡墨覆层；存活者夜间月白微光 -->
+          <div class="wolf-seats" aria-label="座位">
+            <div class="seat-card wolf-seat dead">
+              <span class="avatar">墨</span>
+              <div class="seat-main">
+                <p class="seat-name">墨言先生</p>
+                <p class="seat-sub mono">1 号 · 平民</p>
+              </div>
+              <span class="dead-tag">出局</span>
+            </div>
+            <div class="seat-card wolf-seat">
+              <span class="avatar">青</span>
+              <div class="seat-main">
+                <p class="seat-name">青砚</p>
+                <p class="seat-sub mono">2 号</p>
+              </div>
+            </div>
+            <div class="seat-card wolf-seat">
+              <span class="avatar">竹</span>
+              <div class="seat-main">
+                <p class="seat-name">竹里馆主</p>
+                <p class="seat-sub mono">3 号</p>
+              </div>
+            </div>
+            <div class="seat-card wolf-seat">
+              <span class="avatar">白</span>
+              <div class="seat-main">
+                <p class="seat-name">白鹤子</p>
+                <p class="seat-sub mono">4 号</p>
+              </div>
+            </div>
+            <div class="seat-card wolf-seat">
+              <span class="avatar">焦</span>
+              <div class="seat-main">
+                <p class="seat-name">焦墨客</p>
+                <p class="seat-sub mono">5 号</p>
+              </div>
+            </div>
+            <div class="seat-card wolf-seat">
+              <span class="avatar">砚</span>
+              <div class="seat-main">
+                <p class="seat-name">砚中生</p>
+                <p class="seat-sub mono">6 号</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 夜记条：本夜已了之事 + 待定之危 -->
+          <div class="night-summary" aria-label="本夜小结">
+            <span class="ns-label">夜记</span>
+            <span class="ns-item"><span class="ink-dot azure" aria-hidden="true"></span>狼刀已落</span>
+            <span class="ns-item"><span class="ink-dot azure" aria-hidden="true"></span>查验已成 <span class="mono">· 仅上帝可见</span></span>
+            <span class="ns-item pending"><span class="ink-dot" aria-hidden="true"></span>静候天明</span>
+          </div>
+
+          <!-- 底部回放条 -->
+          <div class="replay-bar" aria-label="回放控制（演示）">
+            <span class="replay-time mono">00:22:46</span>
+            <div class="replay-track">
+              <div class="replay-stroke" style="width: 44%;" aria-hidden="true"></div>
+              <span class="replay-anchor passed" style="left: 10%" aria-hidden="true"></span>
+              <span class="replay-anchor passed" style="left: 30%" aria-hidden="true"></span>
+              <span class="replay-anchor" style="left: 44%" aria-hidden="true"></span>
+              <span class="replay-anchor" style="left: 90%" aria-hidden="true"></span>
+            </div>
+            <span class="replay-pct mono">44%</span>
+          </div>
+        </div>
+
+        <!-- 右栏：动作流（笔触连接线时间线 + 视角知识隔离） -->
+        <aside class="side-panel" aria-label="狼人动作流">
+          <h4>动作流</h4>
+          <div class="timeline">
+            <div class="tl-node tl-night">
+              <div class="tl-body">
+                <p class="tl-meta mono">第 1 夜 · 狼人行动</p>
+                <p class="tl-text">刀口指向 <span class="brush">墨言先生</span></p>
+              </div>
+            </div>
+            <div class="tl-node">
+              <p class="tl-meta mono">第 1 昼 · 遗言</p>
+              <p class="tl-text"><span class="brush">墨言先生</span>：「我是平民，5 号发言漂浮，诸君明察。」</p>
+            </div>
+            <div class="tl-node tl-speech">
+              <p class="tl-meta mono">第 2 昼 · 发言</p>
+              <p class="tl-text"><span class="q">「</span>我昨夜验的是 6 号，金水——砚中生可暂信。<span class="q">」</span><span class="brush">—— 青砚</span></p>
+            </div>
+            <!-- 密谋信息：上帝/选手视角可见，「公开」视角遮蔽（知识隔离） -->
+            <div class="tl-node tl-night tl-secret">
+              <div class="tl-body">
+                <p class="tl-meta mono">第 2 夜 · 狼人密语（焦墨客）</p>
+                <p class="tl-text tl-secret-content"><span class="q">「</span>留刀竹里馆主，明日咬墨言……<span class="q">」</span><span class="owner-tag mono">选手视角：仅焦墨客本人可见</span></p>
+                <p class="tl-secret-mask" role="status">公开视角 · 不可见</p>
+              </div>
+            </div>
+            <div class="tl-node tl-night">
+              <div class="tl-body">
+                <p class="tl-meta mono">第 2 夜 · 预言家行动</p>
+                <p class="tl-text">查验 <span class="brush">5 号 焦墨客</span> · 结果仅上帝可见</p>
+              </div>
+            </div>
+          </div>
+          <p class="view-note mono" id="wolf-view-note">视角：上帝 · 全知</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ======================================================================
+     阿瓦隆终局：全屏宣纸揭示层 + 大印章「弑」StampReveal + 阵营墨榜
+     （交互稿高潮演示：命中 = 「弑」；未中 = 「护」，此处演示命中态）
+     ====================================================================== -->
+<div class="reveal-overlay" id="avalon-reveal" role="dialog" aria-modal="true" aria-labelledby="reveal-title" hidden>
+  <div class="reveal-paper">
+    <div class="reveal-inner" id="reveal-inner">
+      <span class="seal seal-huge stamp-anim" id="reveal-seal" role="img" aria-label="刺杀命中">弑</span>
+      <h2 class="reveal-title" id="reveal-title">刺杀命中 · 邪恶阵营胜</h2>
+      <p class="reveal-sub mono">梅林 墨言先生 陨于刺客之手 · 第 3 轮表决后刺杀阶段</p>
+      <div class="reveal-roster">
+        <div class="roster-col good">
+          <h3>好人阵营</h3>
+          <ul>
+            <li><span class="who">墨言先生</span><span class="role">梅林</span></li>
+            <li><span class="who">青砚</span><span class="role">派西维尔</span></li>
+            <li><span class="who">竹里馆主</span><span class="role">忠臣</span></li>
+            <li><span class="who">白鹤子</span><span class="role">忠臣</span></li>
+          </ul>
+        </div>
+        <div class="roster-col evil">
+          <h3>邪恶阵营</h3>
+          <ul>
+            <li><span class="who">焦墨客</span><span class="role">刺客</span></li>
+            <li><span class="who">砚中生</span><span class="role">莫德雷德</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="reveal-note">宣纸揭示层（--paper-wash 纹）· 印章落定 StampReveal 360ms · 纸震 240ms</p>
+      <button type="button" class="btn-line" id="reveal-close">关 闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------
+     工具
+  ------------------------------------------------------------------ */
+  function $(sel, root) {
+    return (root || document).querySelector(sel);
+  }
+
+  function $$(sel, root) {
+    return Array.prototype.slice.call((root || document).querySelectorAll(sel));
+  }
+
+  /* 重新触发指定范围内的 StampReveal 落章动画 */
+  function replayStamps(scope) {
+    $$('.stamp-anim', scope).forEach(function (el) {
+      el.classList.remove('stamp-anim');
+      void el.offsetWidth; /* 强制回流，重启动画 */
+      el.classList.add('stamp-anim');
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     交互 1 · 画面切换（display 切换 + 墨晕展开 240ms ease-out）
+  ------------------------------------------------------------------ */
+  function switchScreen(name) {
+    $$('.screen').forEach(function (s) {
+      s.classList.toggle('active', s.id === 'screen-' + name);
+    });
+    $$('#main-nav [data-screen]').forEach(function (b) {
+      var on = b.getAttribute('data-screen') === name;
+      b.classList.toggle('active', on);
+      if (on) {
+        b.setAttribute('aria-current', 'page');
+      } else {
+        b.removeAttribute('aria-current');
+      }
+    });
+    window.scrollTo(0, 0);
+    if (name === 'avalon') {
+      /* 进入阿瓦隆画面时重演任务板结果印章的小版落章 */
+      replayStamps($('#mission-board'));
+    }
+  }
+
+  $('#main-nav').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-screen]');
+    if (!btn) {
+      return;
+    }
+    switchScreen(btn.getAttribute('data-screen'));
+  });
+
+  /* 大厅联动入口：开局 → 组局；入局 / 回放 → 对应观战画面 */
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-goto]');
+    if (el) {
+      switchScreen(el.getAttribute('data-goto'));
+    }
+  });
+
+  /* ------------------------------------------------------------------
+     交互 2 · 组局：三枚印章 tab（预览卡变奏晕随之换色）
+  ------------------------------------------------------------------ */
+  var configScreen = $('#screen-config');
+  var gameMeta = {
+    avalon: { seal: '瓦', label: '阿瓦隆', caption: '湖上王城 · 忠奸莫辨' },
+    poker: { seal: '德', label: '德州扑克', caption: '青花瓷案 · 一掷千金' },
+    werewolf: { seal: '狼', label: '狼人杀', caption: '月下孤村 · 人鬼难分' }
+  };
+
+  function seatCount() {
+    return $$('.seat-pick', $('#seat-row')).length;
+  }
+
+  function updateSeatMeta() {
+    var n = seatCount();
+    $('#seat-count').textContent = n + ' / 6';
+    var game = configScreen.getAttribute('data-game');
+    $('#preview-meta').textContent = gameMeta[game].label + ' · 基础六人 · ' + n + ' 席已定';
+    var addBtn = $('#seat-add');
+    if (n >= 6) {
+      addBtn.setAttribute('disabled', '');
+      addBtn.textContent = '席位已满';
+    } else {
+      addBtn.removeAttribute('disabled');
+      addBtn.textContent = '＋ 添席位';
+    }
+  }
+
+  $$('.game-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var game = tab.getAttribute('data-game');
+      configScreen.setAttribute('data-game', game);
+      $$('.game-tab').forEach(function (t) {
+        var on = t === tab;
+        t.classList.toggle('selected', on);
+        t.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      $('#preview-caption').textContent = gameMeta[game].caption;
+      $('#preview-stamp').textContent = gameMeta[game].seal;
+      updateSeatMeta();
+    });
+  });
+
+  /* 预设小卡选中（双钩 + 朱砂角标） */
+  $$('.preset-card').forEach(function (card) {
+    card.addEventListener('click', function () {
+      $$('.preset-card').forEach(function (c) {
+        var on = c === card;
+        c.classList.toggle('selected', on);
+        c.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
+  });
+
+  /* Agent 席位：移除 × / 添席位（循环使用后备名单） */
+  var seatPool = ['砚中生', '焦墨客'];
+  var seatRow = $('#seat-row');
+
+  seatRow.addEventListener('click', function (e) {
+    var rm = e.target.closest('.seat-remove');
+    if (rm) {
+      var pick = rm.closest('.seat-pick');
+      seatPool.push($('.seat-name', pick).textContent);
+      pick.remove();
+      if (seatCount() === 0) {
+        var empty = document.createElement('p');
+        empty.className = 'seat-empty-note';
+        empty.textContent = '席位已空——请至少邀一名 Agent 入局';
+        seatRow.insertBefore(empty, $('#seat-add'));
+      }
+      updateSeatMeta();
+      return;
+    }
+    var add = e.target.closest('#seat-add');
+    if (add && seatPool.length && seatCount() < 6) {
+      var emptyNote = $('.seat-empty-note', seatRow);
+      if (emptyNote) {
+        emptyNote.remove();
+      }
+      var name = seatPool.shift();
+      var el = document.createElement('div');
+      el.className = 'seat-pick';
+      var avatar = document.createElement('span');
+      avatar.className = 'avatar';
+      avatar.textContent = name.charAt(0);
+      var label = document.createElement('span');
+      label.className = 'seat-name';
+      label.textContent = name;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'seat-remove';
+      btn.setAttribute('aria-label', '移除 ' + name);
+      btn.textContent = '×';
+      el.appendChild(avatar);
+      el.appendChild(label);
+      el.appendChild(btn);
+      seatRow.insertBefore(el, add);
+      updateSeatMeta();
+    }
+  });
+
+  /* 开局：朱砂大印点击 → 预览卡落章（StampReveal）+ 纸震 → 进入对应观战 */
+  var stampTimer = null;
+  $('#btn-open-match').addEventListener('click', function () {
+    var stamp = $('#preview-stamp');
+    var note = $('#stamp-note');
+    var hint = $('#stamp-zone-hint');
+    var preview = $('#config-preview');
+    stamp.hidden = false;
+    note.hidden = false;
+    hint.hidden = true;
+    stamp.classList.remove('stamp-anim');
+    void stamp.offsetWidth;
+    stamp.classList.add('stamp-anim');
+    preview.classList.remove('paper-shake');
+    clearTimeout(stampTimer);
+    stampTimer = setTimeout(function () {
+      preview.classList.add('paper-shake'); /* 落定瞬间纸震 */
+    }, 300);
+    var game = configScreen.getAttribute('data-game');
+    setTimeout(function () {
+      switchScreen(game);
+    }, 1400);
+  });
+
+  /* ------------------------------------------------------------------
+     阿瓦隆 · 右栏 tabs（发言流 / 状态 / 名册 / 思考）
+  ------------------------------------------------------------------ */
+  $$('.panel-tabs').forEach(function (group) {
+    group.addEventListener('click', function (e) {
+      var tab = e.target.closest('.panel-tab');
+      if (!tab) {
+        return;
+      }
+      var panel = group.closest('.side-panel');
+      $$('.panel-tab', group).forEach(function (t) {
+        var on = t === tab;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      $$('.panel-body', panel).forEach(function (b) {
+        b.hidden = b.id !== tab.getAttribute('data-tab');
+      });
+    });
+  });
+
+  /* 联动：点击「思考中」座位 → 右栏自动切到思考 Tab（花青语义直达） */
+  $$('.seat-card.thinking').forEach(function (seat) {
+    seat.style.cursor = 'pointer';
+    seat.setAttribute('role', 'button');
+    seat.setAttribute('tabindex', '0');
+    seat.setAttribute('aria-label', '查看该席思考链');
+    seat.addEventListener('click', function () {
+      var panel = seat.closest('.spectate-grid').querySelector('.side-panel');
+      var thinkTab = panel.querySelector('.panel-tab.tab-think');
+      if (thinkTab && !thinkTab.classList.contains('active')) {
+        thinkTab.click();
+      }
+    });
+  });
+
+  /* 阿瓦隆 · 任务板落章重演 */
+  $('#btn-restamp').addEventListener('click', function () {
+    replayStamps($('#mission-board'));
+  });
+
+  /* ------------------------------------------------------------------
+     交互 3 · StampReveal 终局演示（宣纸揭示层 + 大章「弑」+ 纸震）
+  ------------------------------------------------------------------ */
+  var reveal = $('#avalon-reveal');
+  var revealShakeTimer = null;
+
+  function openReveal() {
+    reveal.hidden = false;
+    document.documentElement.classList.add('no-scroll');
+    var seal = $('#reveal-seal');
+    seal.classList.remove('stamp-anim');
+    void seal.offsetWidth;
+    seal.classList.add('stamp-anim');
+    var inner = $('#reveal-inner');
+    inner.classList.remove('paper-shake');
+    clearTimeout(revealShakeTimer);
+    revealShakeTimer = setTimeout(function () {
+      inner.classList.add('paper-shake'); /* 落定瞬间容器纸震 */
+    }, 320);
+    $('#reveal-close').focus();
+  }
+
+  function closeReveal() {
+    reveal.hidden = true;
+    document.documentElement.classList.remove('no-scroll');
+    clearTimeout(revealShakeTimer);
+  }
+
+  $('#btn-endgame').addEventListener('click', openReveal);
+  $('#reveal-close').addEventListener('click', closeReveal);
+  reveal.addEventListener('click', function (e) {
+    if (e.target === reveal) {
+      closeReveal();
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !reveal.hidden) {
+      closeReveal();
+    }
+  });
+
+  /* ------------------------------------------------------------------
+     交互 4a · 狼人昼夜切换（月相图标圆缺 + 全屏墨色加深/褪去）
+  ------------------------------------------------------------------ */
+  var wolfScreen = $('#screen-werewolf');
+  var moonBtn = $('#moon-toggle');
+
+  moonBtn.addEventListener('click', function () {
+    var night = wolfScreen.classList.toggle('is-night');
+    moonBtn.classList.toggle('moon-full', night);
+    moonBtn.classList.toggle('moon-new', !night);
+    moonBtn.setAttribute('aria-pressed', String(night));
+    moonBtn.setAttribute('aria-label', night ? '切换昼夜（当前：夜）' : '切换昼夜（当前：昼）');
+    $('#wolf-round').textContent = night ? '第 2 夜' : '第 2 日';
+  });
+
+  /* ------------------------------------------------------------------
+     交互 4b · 三视角切换（上帝 / 公开 / 选手）：密谋信息知识隔离
+  ------------------------------------------------------------------ */
+  var viewNotes = {
+    god: '视角：上帝 · 全知',
+    public: '视角：公开 · 狼人密语已遮蔽（知识隔离）',
+    player: '视角：选手（焦墨客）· 仅见己方密谋'
+  };
+
+  $$('.view-seal').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var view = btn.getAttribute('data-view');
+      wolfScreen.setAttribute('data-view', view);
+      $$('.view-seal').forEach(function (b) {
+        var on = b === btn;
+        b.classList.toggle('selected', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      $('#wolf-view-note').textContent = viewNotes[view];
+    });
+  });
+
+  /* 初始化席位计数 */
+  updateSeatMeta();
+})();
+</script>
+</body>
+</html>
