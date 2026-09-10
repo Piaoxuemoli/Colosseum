@@ -31,6 +31,11 @@ services:
       - BASE_URL=${BASE_URL}
       - MATCH_TOKEN_SECRET=${MATCH_TOKEN_SECRET}
       - LOG_LEVEL=info
+      # 泄漏取证（2026-09-10）：生产出现间歇性 heap 泄漏（部分实例 47MB/min
+      # 涨满 OOM，部分实例数小时平稳；SSE/首页/Redis 断连/连接 churn 均已
+      # 实验排除）。接近上限时自动 dump 快照到 /app（Dockerfile 已放开写
+      # 权限），供下一波触发时定位。定位修复后移除本行与 Dockerfile chmod。
+      - NODE_OPTIONS=--heapsnapshot-near-heap-limit=2 --max-old-space-size=1600
     volumes:
       - arena_data:/data
     depends_on:

@@ -76,6 +76,9 @@ RUN chmod +x /entrypoint.sh
 
 # Prepare data dir owned by nextjs for SQLite volume mount.
 RUN mkdir -p /data && chown nextjs:nodejs /data
+# 泄漏取证（2026-09-10）：V8 near-heap-limit 快照输出到 cwd=/app，nextjs
+# 用户需要 /app 写权限（见 compose 的 NODE_OPTIONS 注释；定位修复后移除）。
+RUN chmod 777 /app
 
 USER nextjs
 EXPOSE 3000
