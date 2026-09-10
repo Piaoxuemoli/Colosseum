@@ -9,6 +9,7 @@ import { Badge } from '@/frontend/components/ui/badge'
 import { Card, CardContent } from '@/frontend/components/ui/card'
 import { Empty } from '@/frontend/components/Empty'
 import { db } from '@/platform/db/client'
+import { getEloLadder, type EloLadderRow } from '@/platform/db/queries/elo'
 import {
   getAgentLeaderboard,
   getUsageAggregates,
@@ -18,7 +19,13 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-const GAME_TYPE_LABELS: Record<string, string> = { poker: '德扑', werewolf: '狼人杀' }
+const GAME_TYPE_LABELS: Record<string, string> = { poker: '德扑', werewolf: '狼人杀', avalon: '阿瓦隆' }
+
+const ELO_GAME_OPTIONS = [
+  { value: 'poker', label: '德扑' },
+  { value: 'werewolf', label: '狼人杀' },
+  { value: 'avalon', label: '阿瓦隆' },
+] as const
 
 const PURPOSE_LABELS: Record<string, string> = {
   'agent-decision': '决策',
@@ -66,6 +73,81 @@ function usageGroupKeyLabel(
   return row.key ?? '—'
 }
 
+function safeEloGame(raw: string | string[] | undefined): 'poker' | 'werewolf' | 'avalon' {
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return value === 'werewolf' || value === 'avalon' ? value : 'poker'
+}
+
+function EloLadderTable({ gameType, rows }: { gameType: string; rows: EloLadderRow[] }) {
+  if (rows.length === 0) {
+    return (
+      <Empty
+        title={`${GAME_TYPE_LABELS[gameType] ?? gameType} 天梯还没有选手`}
+        description="对局完成时自动结算 ELO；历史上已结束的对局可通过重建端点回填（幂等）。"
+      />
+    )
+  }
+  return (
+    <Card>
+      <CardContent className="overflow-x-auto p-0">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <th className="px-4 py-3 font-medium">#</th>
+              <th className="px-4 py-3 font-medium">选手</th>
+              <th className="px-4 py-3 text-right font-medium">ELO</th>
+              <th className="px-4 py-3 text-right font-medium">上次变动</th>
+              <th className="px-4 py-3 text-right font-medium">场次</th>
+              <th className="px-4 py-3 text-right font-medium">胜 / 负</th>
+              <th className="px-4 py-3 text-right font-medium">胜率</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr
+                key={row.agentId}
+                className="border-b border-white/5 transition-colors last:border-b-0 hover:bg-white/[0.03]"
+              >
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{index + 1}</td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/?q=${encodeURIComponent(row.displayName)}`}
+                    className="font-medium text-white hover:text-cyan-200"
+                    title={`查看 ${row.displayName} 参与的对局`}
+                  >
+                    {row.avatarEmoji ? <span className="mr-1.5">{row.avatarEmoji}</span> : null}
+                    {row.displayName}
+                  </Link>
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-base font-bold text-cyan-200">{fmtInt(row.rating)}</td>
+                <td
+                  className={`px-4 py-3 text-right font-mono text-xs ${
+                    row.lastDelta > 0 ? 'text-emerald-300' : row.lastDelta < 0 ? 'text-rose-300' : 'text-muted-foreground'
+                  }`}
+                >
+                  {fmtDelta(row.lastDelta)}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-cyan-100">{fmtInt(row.matchesPlayed)}</td>
+                <td className="px-4 py-3 text-right font-mono text-cyan-100">
+                  {fmtInt(row.wins)} / {fmtInt(row.losses)}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-cyan-100">
+                  {row.matchesPlayed > 0 ? fmtPct(row.wins / row.matchesPlayed) : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
+  )
+}
+
+function fmtDelta(delta: number): string {
+  if (delta > 0) return `+${delta}`
+  return String(delta)
+}
+
 export default async function StatsPage({
   searchParams,
 }: {
@@ -73,10 +155,12 @@ export default async function StatsPage({
 }) {
   const params = await searchParams
   const groupBy = safeGroupBy(params.groupBy)
+  const eloGame = safeEloGame(params.eloGame)
 
-  const [leaderboard, usage] = await Promise.all([
+  const [leaderboard, usage, eloLadder] = await Promise.all([
     getAgentLeaderboard(db, {}),
     getUsageAggregates(db, { groupBy }),
+    getEloLadder(db, eloGame),
   ])
 
   return (
@@ -85,15 +169,43 @@ export default async function StatsPage({
         <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">Spectator Analytics</p>
         <h1 className="mt-3 text-4xl font-black tracking-tight text-white">统计</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          跨对局选手排行（仅统计已结束对局）与 LLM 用量汇总——按选手、按用途查看 token 消耗与调用次数。
+          跨对局选手排行、ELO 天梯与 LLM 用量汇总——按选手、按用途查看 token 消耗与调用次数。
         </p>
       </div>
 
+      {/* ── FR-4.9-01：ELO 天梯（按品类分列） ───────────────────────────── */}
+      <section className="mt-2" id="elo">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-white">ELO 天梯</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              初始 1000 · K=32 · 多人零和两两更新；平局不计分；按品类分列互不换算。
+            </p>
+          </div>
+          <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+            {ELO_GAME_OPTIONS.map((option) => (
+              <PendingLink
+                key={option.value}
+                href={`/stats?eloGame=${option.value}#elo`}
+                className={
+                  eloGame === option.value
+                    ? 'rounded-md border border-cyan-300/25 bg-cyan-300/[0.08] px-3 py-1.5 text-xs font-medium text-cyan-50'
+                    : 'rounded-md border border-transparent px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/[0.05]'
+                }
+              >
+                {option.label}
+              </PendingLink>
+            ))}
+          </div>
+        </div>
+        <EloLadderTable gameType={eloGame} rows={eloLadder} />
+      </section>
+
       {/* ── FR-4.6-05：选手排行 ─────────────────────────────────────────── */}
-      <section className="mt-2" id="leaderboard">
+      <section className="mt-10" id="leaderboard">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">选手排行</h2>
-          <span className="text-xs text-muted-foreground">口径：rank 1 或胜方阵营（狼人杀）</span>
+          <span className="text-xs text-muted-foreground">口径：rank 1 或胜方阵营（狼人杀 / 阿瓦隆）</span>
         </div>
         {leaderboard.length === 0 ? (
           <Empty

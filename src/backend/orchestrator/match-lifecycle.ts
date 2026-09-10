@@ -11,7 +11,9 @@ import { newEventId, newMatchToken } from '@/platform/core/ids'
 import { getGameV2 } from '@/platform/core/registry'
 import { defaultMatchConfig, type GameEvent, type GameType, type MatchConfig, type MatchResult } from '@/platform/core/types'
 import { v2RestrictedTo, v2Visibility, type V2Event } from '@/platform/engine/contracts-v2'
+import { db } from '@/platform/db/client'
 import { appendEvents } from '@/platform/db/queries/events'
+import { applyEloForMatch } from '@/platform/db/queries/elo'
 import { deleteWorkingMemory } from '@/platform/db/queries/memory'
 import {
   createMatch,
@@ -143,6 +145,22 @@ export async function finalizeMatch(matchId: string, options?: { result?: MatchR
   }
 
   await finalizeMatchRow({ matchId, winnerFaction: result.winnerFaction, result })
+
+  // FR-4.9-01 ELO 结算（非阻塞伴生步骤：失败只记日志，不影响终局落库；
+  // 幂等兜底 = POST /api/stats/elo/rebuild 全量重建）。
+  try {
+    const updated = await applyEloForMatch(db, {
+      id: matchId,
+      gameType: match.gameType,
+      winnerFaction: result.winnerFaction ?? null,
+      finalRanking: result,
+      status: 'completed',
+    })
+    if (updated > 0) log.info('elo updated', { matchId, players: updated })
+  } catch (err) {
+    log.warn('elo update failed (non-blocking)', { matchId, err: String(err) })
+  }
+
   await redis.del(keys.matchState(matchId))
   await redis.del(keys.matchStopRequested(matchId))
   await redis.del(keys.matchKeyring(matchId))

@@ -8,8 +8,8 @@
 //   game_events（PRD FR-4.6-05 观众面；行为倾向等重组件画像随 OD-5 后置）。
 // - 选手胜负判定按各游戏在 MatchResult 契约上已写明的语义读数：
 //   · poker  ：rank === 1 为冠军（winnerFaction 列即冠军 agentId）。
-//   · werewolf：score === 1 为胜方阵营成员，且 winnerFaction 为 wolves/good
-//     时才计胜（tie 时全员 score=1，不属胜局）。
+//   · werewolf / avalon：score === 1 为胜方阵营成员，且 winnerFaction 为
+//     有效阵营（wolves/good/evil）时才计胜（tie 时全员 score=1，不属胜局）。
 //   该 per-game 读数集中在本文件一处，不进入 games/ 包（games 自治不受影响）。
 
 import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm'
@@ -59,13 +59,19 @@ export function rankingRowOutcome(
   const rank =
     typeof rawRank === 'number' && Number.isFinite(rawRank) && rawRank >= 1 ? Math.trunc(rawRank) : null
 
-  if (gameType === 'werewolf') {
-    const factionWon = winnerFaction === 'wolves' || winnerFaction === 'good'
-    const score = row.score
-    const win = factionWon && score === 1
-    const alive = typeof row.extra === 'object' && row.extra !== null ? (row.extra as { alive?: unknown }).alive : undefined
-    const survived = alive === true ? true : alive === false ? false : null
-    return { rank, win, survived, eliminated: survived === null ? null : !survived }
+  if (gameType === 'werewolf' || gameType === 'avalon') {
+    // 阵营游戏（FR-4.9-01 口径 6：胜负判定与观众面同源）：score === 1 且
+    // winnerFaction 为有效阵营才计胜；tie 全员 score=1 不属胜局（ELO 侧
+    // 另按「全体同分 → 平局跳过」处理）。
+    const factionWon =
+      winnerFaction === 'wolves' || winnerFaction === 'good' || winnerFaction === 'evil'
+    const win = factionWon && row.score === 1
+    if (gameType === 'werewolf') {
+      const alive = typeof row.extra === 'object' && row.extra !== null ? (row.extra as { alive?: unknown }).alive : undefined
+      const survived = alive === true ? true : alive === false ? false : null
+      return { rank, win, survived, eliminated: survived === null ? null : !survived }
+    }
+    return { rank, win, survived: win, eliminated: !win }
   }
 
   // poker 及默认口径
@@ -98,7 +104,7 @@ export type AgentLeaderboardRow = {
 }
 
 export type LeaderboardFilter = {
-  gameType?: 'poker' | 'werewolf'
+  gameType?: 'poker' | 'werewolf' | 'avalon'
   limit?: number
 }
 

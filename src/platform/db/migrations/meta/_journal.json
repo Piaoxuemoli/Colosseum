@@ -22,6 +22,13 @@
       "when": 1788956615098,
       "tag": "0002_workable_steve_rogers",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1789047050081,
+      "tag": "0003_nice_pandemic",
+      "breakpoints": true
     }
   ]
 }

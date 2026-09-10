@@ -120,6 +120,31 @@ export const llmUsage = sqliteTable(
   ],
 )
 
+/**
+ * FR-4.9-01 跨对局 ELO 天梯（按品类分列；composite PK = agent + gameType）。
+ * 无外键审计流水口径与 llm_usage 一致——agents 删除时 ratings 留存。
+ */
+export const eloRatings = sqliteTable(
+  'elo_ratings',
+  {
+    agentId: text('agent_id').notNull(),
+    gameType: text('game_type').notNull(),
+    rating: integer('rating').notNull().default(1000),
+    matchesPlayed: integer('matches_played').notNull().default(0),
+    wins: integer('wins').notNull().default(0),
+    losses: integer('losses').notNull().default(0),
+    /** 最近一次评分变动（正负或 0），天梯趋势展示用。 */
+    lastDelta: integer('last_delta').notNull().default(0),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .default(sql`(strftime('%s','now'))`),
+  },
+  (table) => [
+    primaryKey({ columns: [table.agentId, table.gameType] }),
+    index('elo_ratings_game_idx').on(table.gameType),
+  ],
+)
+
 export const agentErrors = sqliteTable('agent_errors', {
   id: text('id').primaryKey(),
   matchId: text('match_id').notNull(),
